@@ -94,6 +94,16 @@ function updateUI() {
         document.getElementById('black-flash-badge').style.display = 'none';
     }
 
+    // 가호(전리품) 버프 상태 UI 업데이트
+    const blessingBadge = document.getElementById('blessing-badge');
+    if (player.lootInventory.length > 0) {
+        blessingBadge.style.display = 'inline-block';
+        const blessingNames = player.lootInventory.map(loot => loot.name).join('\n');
+        blessingBadge.title = `보유 중인 가호:\n${blessingNames}`;
+    } else {
+        blessingBadge.style.display = 'none';
+    }
+
     // 몬스터 UI 동적 생성 및 업데이트
     const monsterArea = document.getElementById('monster-area');
     monsterArea.innerHTML = '';
@@ -137,9 +147,8 @@ function showSkillSelection() {
     const defenseBtnClass = player.defenseStance ? 'btn-defend-active' : 'btn-defend';
 
     // 스킬 데미지 계산 (마력 스탯 적용)
-    const magicMultiplier = 1 + (player.mag * 0.015);
-    const powerAttackDmg = Math.floor(player.atk * 2.0 * magicMultiplier);
-    const sweepAttackDmg = Math.floor(player.atk * 0.8 * magicMultiplier); // 휩쓸기는 광역이라 기본 공격력의 80%로 표시
+    const powerAttackDmg = Math.floor(player.atk * 2.0 * player.magicMultiplier);
+    const sweepAttackDmg = Math.floor(player.atk * 0.8 * player.magicMultiplier); // 휩쓸기는 광역이라 기본 공격력의 80%로 표시
 
     controlsPanel.style.gridTemplateColumns = '1fr 1fr 1fr 1fr'; // 4개의 스킬 버튼을 위한 레이아웃
     controlsPanel.innerHTML = `
@@ -285,6 +294,14 @@ function renderStatUpModal() {
     const weaponBonus = player.equippedWeapon ? player.equippedWeapon.atkBonus : 0;
     const armorBonus = player.equippedArmor ? player.equippedArmor.maxHpBonus : 0;
 
+    // 전리품 보너스 계산 (미리보기용)
+    const lootBonuses = { str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0 };
+    player.lootInventory.forEach(loot => {
+        if (loot.type === 'permanent_stat' && lootBonuses.hasOwnProperty(loot.stat)) {
+            lootBonuses[loot.stat] += loot.value;
+        }
+    });
+
     // "현재" 값 (버프 제외, 순수 스탯/장비 효과만)
     const currentAtk = player.baseAtk + (player.str * 2) + weaponBonus;
     const currentMaxHp = player.baseMaxHp + (player.vit * 5) + armorBonus;
@@ -294,14 +311,14 @@ function renderStatUpModal() {
     const currentGoldBonus = 1 + (player.int * 0.02);
     const currentBlackFlashChance = 0.008 + (player.fcs * 0.004);
 
-    // "임시" 값 (스탯 분배 후)
-    const tempAtk = player.baseAtk + (tempStats.str * 2) + weaponBonus;
-    const tempMaxHp = player.baseMaxHp + (tempStats.vit * 5) + armorBonus;
-    const tempMaxMp = player.baseMaxMp + (tempStats.mnd * 5);
-    const tempCritChance = 11 + (tempStats.luk * 0.7);
-    const tempEvasionChance = 4 + (tempStats.agi * 2);
-    const tempGoldBonus = 1 + (tempStats.int * 0.02);
-    const tempBlackFlashChance = 0.008 + (tempStats.fcs * 0.004);
+    // "임시" 값 (스탯 분배 후 + 전리품 효과 포함)
+    const tempAtk = player.baseAtk + ((tempStats.str + lootBonuses.str) * 2) + weaponBonus;
+    const tempMaxHp = player.baseMaxHp + ((tempStats.vit + lootBonuses.vit) * 5) + armorBonus;
+    const tempMaxMp = player.baseMaxMp + ((tempStats.mnd + lootBonuses.mnd) * 5);
+    const tempCritChance = 11 + ((tempStats.luk + lootBonuses.luk) * 0.7);
+    const tempEvasionChance = 4 + ((tempStats.agi + lootBonuses.agi) * 2);
+    const tempGoldBonus = 1 + ((tempStats.int + lootBonuses.int) * 0.02);
+    const tempBlackFlashChance = 0.008 + ((tempStats.fcs + lootBonuses.fcs) * 0.004);
     const currentMagicAmp = (player.mag * 1.5);
     const tempMagicAmp = (tempStats.mag * 1.5);
 
@@ -466,13 +483,22 @@ function renderLootInventory() {
         player.lootInventory.forEach((loot, index) => {
             const itemEl = document.createElement('div');
             itemEl.className = 'inventory-item';
-            const statInfoText = loot.type === 'permanent_stat' ? `${statInfo[loot.stat].name} +${loot.value}` : '특별 효과';
+            
+            let statInfoText = '특별 효과';
+            if (loot.type === 'permanent_stat') {
+                statInfoText = `${statInfo[loot.stat].name} +${loot.value}`;
+            } else if (loot.type === 'gold_bonus') {
+                statInfoText = `골드 획득량 +${loot.value * 100}%`;
+            } else if (loot.type === 'xp_bonus') {
+                statInfoText = `경험치 획득량 +${loot.value * 100}%`;
+            }
+
             itemEl.innerHTML = `
                 <div class="item-info">
-                    <h4>${loot.name}</h4>
-                    <p style="color: #f59e0b;">효과: ${statInfoText}</p>
+                    <h4>${loot.name} <span style="color: #f59e0b; font-size: 16px;">(${statInfoText})</span></h4>
+                    <p style="color: #ccc; font-size: 14px;">판매 가격: ${loot.sellPrice}G</p>
                 </div>
-                <button class="btn-use" onclick="useLootItem(${index})">사용</button>
+                <div class="item-passive-effect">보유 효과</div>
             `;
             listEl.appendChild(itemEl);
         });
@@ -691,8 +717,18 @@ function renderSellableLoot() {
     player.lootInventory.forEach((loot, index) => {
         const button = document.createElement('button');
         button.className = 'shop-btn';
+
+        let effectText = '특별 효과';
+        if (loot.type === 'permanent_stat') {
+            effectText = `${statInfo[loot.stat].name} +${loot.value}`;
+        } else if (loot.type === 'gold_bonus') {
+            effectText = `골드 획득량 +${loot.value * 100}%`;
+        } else if (loot.type === 'xp_bonus') {
+            effectText = `경험치 획득량 +${loot.value * 100}%`;
+        }
+
         button.innerHTML = `
-            ${loot.name}<br>
+            ${loot.name} <span style="font-size: 14px; color: #f59e0b;">(${effectText})</span><br>
             <span>판매 가격: ${loot.sellPrice} G</span>
         `;
         button.onclick = () => sellLootItem(index);

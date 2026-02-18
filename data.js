@@ -51,7 +51,7 @@ const midBossList = [
     // 30층 보스
     { name: "미노타우르스", emoji: "🐃", hp: 400, atk: 36, xp: 1100, dropCoins: 700, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 3, name: '미노타우르스의 심장', sellPrice: 1200 } },
     // 50층 보스
-    { name: "키메라", emoji: "🦁", hp: 680, atk: 56, xp: 2000, dropCoins: 1200, specialDrop: { type: 'permanent_stat', stat: 'luk', value: 3, name: '키메라의 눈', sellPrice: 2200 } },
+    { name: "키메라", emoji: "🦁", hp: 680, atk: 56, xp: 2000, dropCoins: 1200, specialDrop: { type: 'xp_bonus', value: 0.15, name: '성장의 룬', sellPrice: 2500 } },
     // 70층 보스
     { name: "나가 여왕", emoji: "🐍", hp: 950, atk: 68, xp: 3200, dropCoins: 2000, specialDrop: { type: 'permanent_stat', stat: 'mnd', value: 3, name: '여왕의 비늘', sellPrice: 3500 } },
     // 90층 보스
@@ -71,7 +71,7 @@ const midBossList = [
 //* 메인 보스 몬스터 도감: 20층, 40층, 60층 등 20층마다 등장하는 강력한 몬스터입니다.
 const bossList = [
     // 20층 보스
-    { name: "거대 고블린 왕", emoji: "👑", hp: 330, atk: 28, xp: 800, dropCoins: 500, skill: { type: 'stun', chance: 0.32, name: '왕의 철퇴' }, specialDrop: { type: 'permanent_stat', stat: 'int', value: 6, name: '탐욕의 왕관', sellPrice: 1000 } },
+    { name: "거대 고블린 왕", emoji: "👑", hp: 330, atk: 28, xp: 800, dropCoins: 500, skill: { type: 'stun', chance: 0.32, name: '왕의 철퇴' }, specialDrop: { type: 'gold_bonus', value: 0.2, name: '탐욕의 왕관', sellPrice: 1500 } },
     // 40층 보스
     { name: "어둠의 기사", emoji: "⚔️", hp: 580, atk: 44, xp: 1500, dropCoins: 900, skill: { type: 'charge_attack', chance: 0.4, power: 2.5, name: '어둠의 검격' }, specialDrop: { type: 'permanent_stat', stat: 'str', value: 6, name: '기사의 맹세', sellPrice: 2000 } },
     // 60층 보스

@@ -397,6 +397,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .inventory-item { background: #374151; padding: 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
 .item-info { font-size: 20px; }
 .btn-use { padding: 12px 24px; font-size: 18px; background: #10b981; box-shadow: 0 4px 0 #047857; }
+.item-passive-effect {
+    color: #f59e0b;
+    font-weight: bold;
+    font-size: 18px;
+    border: 2px solid #f59e0b;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
 
 /* 턴 행동 모달 */
 #item-select-modal {

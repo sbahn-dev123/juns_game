@@ -40,6 +40,8 @@ const player = {
     critChance: 11,     // 현재 치명타 확률 (%)
     critDamage: 2,      // 현재 치명타 배율
     goldBonus: 1,       // 골드 획득 보너스 배율
+    blackFlashChance: 0.008, // 흑섬 확률
+    magicMultiplier: 1, // 마력 증폭 배율
     // --- 재화 및 장비 ---
     coins: 0,           // 보유 골드
     baseEmoji: '🧙‍♂️',   // 기본 이모지
@@ -151,9 +153,8 @@ function executeNormalAttack() {
     const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
     const targetMonsterElement = monsterWrappers[player.targetIndex];
 
-    // --- 흑섬(Black Flash) 발동 체크 (기본 0.8% + 집중 스탯) ---
-    const blackFlashChance = 0.008 + (player.fcs * 0.004);
-    if (Math.random() < blackFlashChance) {
+    // --- 흑섬(Black Flash) 발동 체크 ---
+    if (Math.random() < player.blackFlashChance) {
         triggerBlackFlash();
         let dmg = Math.floor(player.atk * 6.25);
         log('⚫ 흑섬(黑閃) 발동!', 'log-player', { fontSize: '24px', color: 'white', textShadow: '0 0 5px black, 0 0 15px red' });
@@ -539,8 +540,7 @@ function executePowerAttack() {
         showFloatingText(dmg, targetMonsterElement, 'black-flash');
     } else {
         // --- 일반 강 공격 로직 ---
-        const magicMultiplier = 1 + (player.mag * 0.015); // 마력 증폭
-        let dmg = Math.floor(player.atk * 2.0 * magicMultiplier); // 200% 데미지 + 마력 증폭
+        let dmg = Math.floor(player.atk * 2.0 * player.magicMultiplier); // 200% 데미지 + 마력 증폭
 
         // 확정 치명타 체크
         if (player.guaranteedCrit) {
@@ -663,9 +663,8 @@ function executeSweepAttack() {
     livingMonsters.forEach((monster, index) => {
         // 각 몬스터에게 순차적으로 데미지를 줌
         setTimeout(() => {
-            const magicMultiplier = 1 + (player.mag * 0.015); // 마력 증폭
             const baseDmg = Math.floor(Math.random() * 5) + player.atk;
-            let dmg = Math.floor(baseDmg * 0.8 * magicMultiplier); // 기본 데미지의 80% + 마력 증폭
+            let dmg = Math.floor(baseDmg * 0.8 * player.magicMultiplier); // 기본 데미지의 80% + 마력 증폭
 
             const monsterIndexInAll = monsters.findIndex(m => m === monster);
             const targetElement = monsterElements[monsterIndexInAll];
@@ -820,8 +819,17 @@ function findNextTarget() {
  * @param {number} amount - 획득할 경험치 양
  */
 function gainXP(amount) {
-    player.xp += amount;
-    log(`${amount}의 경험치를 획득했다!`, 'log-system', { color: '#a78bfa' });
+    // 전리품으로 인한 경험치 보너스 계산
+    let lootXpBonus = 0;
+    player.lootInventory.forEach(loot => {
+        if (loot.type === 'xp_bonus') {
+            lootXpBonus += loot.value;
+        }
+    });
+    const finalAmount = Math.floor(amount * (1 + lootXpBonus));
+
+    player.xp += finalAmount;
+    log(`${finalAmount}의 경험치를 획득했다!`, 'log-system', { color: '#a78bfa' });
     updateUI();
     checkForLevelUp();
 }
@@ -1118,26 +1126,50 @@ function confirmStatUp() {
  * 스탯, 장비, 버프 등을 모두 고려하여 플레이어의 최종 능력치를 재계산합니다.
  */
 function recalculatePlayerStats() {
+    // 전리품 패시브 스탯 보너스 계산
+    const lootBonuses = { str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0 };
+    let lootGoldBonus = 0;
+    player.lootInventory.forEach(loot => {
+        if (loot.type === 'permanent_stat' && lootBonuses.hasOwnProperty(loot.stat)) {
+            lootBonuses[loot.stat] += loot.value;
+        } else if (loot.type === 'gold_bonus') {
+            lootGoldBonus += loot.value;
+        }
+    });
+
     const weaponBonus = player.equippedWeapon ? player.equippedWeapon.atkBonus : 0;
     const armorBonus = player.equippedArmor ? player.equippedArmor.maxHpBonus : 0;
     
-    player.atk = player.baseAtk + (player.str * 2) + weaponBonus;
-    player.maxHp = player.baseMaxHp + (player.vit * 5) + armorBonus;
-    player.maxMp = player.baseMaxMp + (player.mnd * 5); // 정신력 1당 5 증가
-    player.critChance = 11 + (player.luk * 0.7) + player.critBuff.bonus;
-    player.evasionChance = 4 + (player.agi * 2);
+    // 스탯 포인트와 전리품 보너스를 합산
+    const finalStr = player.str + lootBonuses.str;
+    const finalVit = player.vit + lootBonuses.vit;
+    const finalMag = player.mag + lootBonuses.mag;
+    const finalMnd = player.mnd + lootBonuses.mnd;
+    const finalAgi = player.agi + lootBonuses.agi;
+    const finalInt = player.int + lootBonuses.int;
+    const finalLuk = player.luk + lootBonuses.luk;
+    const finalFcs = player.fcs + lootBonuses.fcs;
+
+    player.atk = player.baseAtk + (finalStr * 2) + weaponBonus;
+    player.maxHp = player.baseMaxHp + (finalVit * 5) + armorBonus;
+    player.maxMp = player.baseMaxMp + (finalMnd * 5);
+    player.critChance = 11 + (finalLuk * 0.7) + player.critBuff.bonus;
+    player.evasionChance = 4 + (finalAgi * 2);
     player.critDamage = 2;
-    player.goldBonus = 1 + (player.int * 0.02);
+    player.goldBonus = 1 + (finalInt * 0.02) + lootGoldBonus;
+    player.blackFlashChance = 0.008 + (finalFcs * 0.004);
+    player.magicMultiplier = 1 + (finalMag * 0.015);
 
     // 흑섬 버프 적용
     if (player.blackFlashBuff.active) {
         player.atk = Math.floor(player.atk * 1.6);
         player.maxHp = Math.floor(player.maxHp * 1.6);
         player.maxMp = Math.floor(player.maxMp * 1.6);
-        player.critChance *= 1.6;
-        player.evasionChance *= 1.6;
-        player.critDamage *= 1.6;
-        player.goldBonus *= 1.6;
+        player.critChance = player.critChance * 1.6;
+        player.evasionChance = player.evasionChance * 1.6;
+        player.goldBonus = player.goldBonus * 1.6;
+        player.blackFlashChance = player.blackFlashChance * 1.6;
+        player.magicMultiplier = 1 + ((player.magicMultiplier - 1) * 1.6);
     }
 
     // 체력이 최대 체력을 초과하지 않도록 조정
@@ -1185,22 +1217,9 @@ function equipItem(type, index) {
  * @param {number} index - 사용할 전리품의 player.lootInventory 배열 인덱스
  */
 function useLootItem(index) {
-    const loot = player.lootInventory[index];
-    if (!loot) return;
-
-    if (loot.type === 'permanent_stat') {
-        player[loot.stat] += loot.value;
-        log(`🌟 [${loot.name}]을(를) 사용하여 ${statInfo[loot.stat].name} 스탯이 영구적으로 ${loot.value} 증가했습니다!`, 'log-system', { color: '#f59e0b', fontWeight: 'bold' });
-    }
-
-    player.lootInventory.splice(index, 1);
-
-    recalculatePlayerStats();
-    updateUI();
-    
-    // 모달 UI 새로고침
-    renderLootInventory();
-    renderStatUpModal();
+    // 전리품은 이제 소모하는 아이템이 아니라, 보유 시 지속 효과(패시브)를 제공합니다.
+    // 이 기능은 더 이상 사용되지 않으며, 인벤토리 UI에서 '사용' 버튼이 제거되었습니다.
+    log("전리품은 보유하는 것만으로 효과가 적용됩니다.", "log-system");
 }
 
 //! ============================================================
@@ -1219,11 +1238,16 @@ function sellLootItem(index) {
     player.coins += loot.sellPrice;
     player.lootInventory.splice(index, 1);
 
-    alert(`${loot.name}을(를) ${loot.sellPrice}G에 판매했습니다.`);
     log(`💰 ${loot.name}을(를) 판매하여 ${loot.sellPrice}G를 획득했습니다.`, 'log-system');
+    alert(`${loot.name}을(를) ${loot.sellPrice}G에 판매했습니다.`);
 
+    // 스탯 및 UI 즉시 갱신
+    recalculatePlayerStats();
+    updateUI();
+
+    // 상점 UI 갱신
     document.getElementById('shop-coins').innerText = player.coins;
-    renderSellableLoot(); // 판매 목록 새로고침
+    renderSellableLoot();
 }
 
 /**
