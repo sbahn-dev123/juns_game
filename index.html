@@ -7,7 +7,23 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="start-menu">
+        <h1 class="game-title">준혁의 동굴 RPG</h1>
+        <div id="guest-menu">
+            <button class="start-btn" onclick="startNewGame()">새 게임 시작</button>
+            <button class="start-btn" onclick="openLoginModal()">로그인 / 회원가입</button>
+            <button class="start-btn" onclick="fetchAndShowScores()">스코어보드</button>
+        </div>
+        <div id="logged-in-menu" style="display: none;">
+            <p class="welcome-msg"><span id="logged-in-user"></span>님, 환영합니다!</p>
+            <button class="start-btn" onclick="loadGame()">게임 이어하기</button>
+            <button class="start-btn" onclick="startNewGame(true)">새 게임 시작</button>
+            <button class="start-btn" onclick="fetchAndShowScores()">스코어보드</button>
+            <button class="start-btn" onclick="logout()">로그아웃</button>
+        </div>
+    </div>
 
+<div id="game-wrapper" style="display: none;">
     <div id="black-flash-overlay"></div>
     <div class="game-container">
         <div class="header">
@@ -170,6 +186,31 @@
             </div>
         </div>
         <button style="margin-top: 30px; background: #4b5563; box-shadow: 0 4px 0 #374151;" onclick="closeEquipment()">닫기</button>
+    </div>
+</div>
+
+    <!-- Login/Register Modal -->
+    <div id="login-modal" class="shop-modal" style="display: none; flex-direction: column;">
+        <div class="shop-title">로그인 / 회원가입</div>
+        <div id="login-form" style="display: flex; flex-direction: column; gap: 15px; width: 300px;">
+            <input type="text" id="username" placeholder="사용자 이름" required style="padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff;">
+            <input type="password" id="password" placeholder="비밀번호" required style="padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff;">
+            <div id="login-error-msg" style="color: #ef4444; text-align: center; display: none;"></div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn-attack" style="flex: 1;" onclick="handleLogin()">로그인</button>
+                <button type="button" class="btn-heal" style="flex: 1;" onclick="handleRegister()">회원가입</button>
+            </div>
+        </div>
+        <button style="margin-top: 20px; background: #4b5563; box-shadow: 0 4px 0 #374151;" onclick="closeLoginModal()">닫기</button>
+    </div>
+
+    <!-- Scoreboard Modal -->
+    <div id="scoreboard-modal" class="shop-modal" style="display: none; flex-direction: column;">
+        <div class="shop-title">🏆 스코어보드</div>
+        <div id="scoreboard-list" style="width: 80%; max-width: 600px; max-height: 60vh; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px;">
+            <!-- 점수 목록이 여기에 렌더링됩니다. -->
+        </div>
+        <button style="margin-top: 20px; background: #4b5563; box-shadow: 0 4px 0 #374151;" onclick="closeScoreboardModal()">닫기</button>
     </div>
 
     <script src="data.js"></script>

@@ -151,9 +151,11 @@ function showSkillSelection() {
 function showMainControls() {
     if (isGameOver) return;
     const controlsPanel = document.getElementById('controls-panel');
-    controlsPanel.style.gridTemplateColumns = '4fr 3fr 3fr'; // 원래 레이아웃으로 복원
+    controlsPanel.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+    const saveButton = isLoggedIn() ? `<button class="btn-buff" onclick="saveGame()">💾 게임 저장</button>` : `<button class="btn-buff" disabled title="로그인 시 사용 가능">💾 게임 저장</button>`;
     controlsPanel.innerHTML = `
-        <button class="btn-attack" onclick="showSkillSelection()">⚔️ 공격 / 스킬</button>
+        <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬</button>
+        ${saveButton}
         <button class="btn-heal" onclick="showAllPotions()">🧪 물약 사용</button>
         <button class="btn-armor" onclick="openInventoryModal()">🛡️ 인벤토리</button>
     `;
@@ -300,6 +302,95 @@ function renderStatUpModal() {
         치명타: ${currentCritChance.toFixed(1)}% → ${tempCritChance.toFixed(1)}% | 골드 보너스: ${((currentGoldBonus - 1) * 100).toFixed(0)}% → ${((tempGoldBonus - 1) * 100).toFixed(0)}%<br>
         흑섬 확률: ${(currentBlackFlashChance * 100).toFixed(1)}% → ${(tempBlackFlashChance * 100).toFixed(1)}%
     `;
+}
+
+/**
+ * 로그인 상태에 따라 시작 메뉴 UI를 업데이트하는 함수
+ * @param {string|null} username - 로그인한 사용자 이름, 비로그인 시 null
+ */
+function updateLoginStatus(username) {
+    const guestMenu = document.getElementById('guest-menu');
+    const loggedInMenu = document.getElementById('logged-in-menu');
+    const loggedInUserEl = document.getElementById('logged-in-user');
+
+    if (username) {
+        guestMenu.style.display = 'none';
+        loggedInMenu.style.display = 'flex';
+        loggedInUserEl.textContent = username;
+    } else {
+        guestMenu.style.display = 'flex';
+        loggedInMenu.style.display = 'none';
+        loggedInUserEl.textContent = '';
+    }
+}
+
+/**
+ * 시작 메뉴를 보여주는 함수
+ */
+function showStartMenu() {
+    document.getElementById('start-menu').style.display = 'block';
+    document.getElementById('game-wrapper').style.display = 'none';
+}
+
+/**
+ * 게임 화면을 보여주는 함수
+ */
+function showGameScreen() {
+    document.getElementById('start-menu').style.display = 'none';
+    document.getElementById('game-wrapper').style.display = 'block';
+}
+
+/**
+ * 로그인/회원가입 모달을 여는 함수
+ */
+function openLoginModal() {
+    document.getElementById('login-modal').style.display = 'flex';
+}
+
+/**
+ * 로그인/회원가입 모달을 닫는 함수
+ */
+function closeLoginModal() {
+    document.getElementById('login-modal').style.display = 'none';
+    document.getElementById('login-error-msg').style.display = 'none';
+}
+
+/**
+ * 스코어보드 모달을 여는 함수
+ */
+function openScoreboardModal() {
+    document.getElementById('scoreboard-modal').style.display = 'flex';
+}
+
+/**
+ * 스코어보드 모달을 닫는 함수
+ */
+function closeScoreboardModal() {
+    document.getElementById('scoreboard-modal').style.display = 'none';
+}
+
+/**
+ * 스코어보드 데이터를 받아 UI를 렌더링하는 함수
+ * @param {Array<object>} scores - { username: string, score: number } 형태의 배열
+ */
+function renderScoreboard(scores) {
+    const listEl = document.getElementById('scoreboard-list');
+    listEl.innerHTML = '';
+
+    if (!scores || scores.length === 0) {
+        listEl.innerHTML = '<div class="scoreboard-item" style="justify-content: center;">기록된 점수가 없습니다.</div>';
+        return;
+    }
+
+    scores.forEach((entry, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'scoreboard-item';
+        itemEl.innerHTML = `
+            <div><span class="rank">#${index + 1}</span> <span class="name">${entry.username}</span></div>
+            <div class="score">${entry.score} 층</div>
+        `;
+        listEl.appendChild(itemEl);
+    });
 }
 
 /**

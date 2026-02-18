@@ -1,6 +1,6 @@
 
 //! ============================================================
-//! 1. 게임 상태 변수 및 데이터 정의
+//! 1. 게임 상태 변수 정의
 //! 이 섹션에서는 게임의 모든 상태와 기본 데이터를 정의합니다.
 //! ============================================================
 
@@ -73,11 +73,6 @@ let isShopAutoOpened = false; // 5층마다 상점이 자동으로 열렸는지 
 //* 스탯 분배 모달에서 임시로 사용할 변수
 let tempStatPoints = 0; // 임시 스탯 포인트
 let tempStats = {};     // 임시 스탯 객체 (힘, 체력, 운 등)
-
-//! ============================================================
-//! 2. 유틸리티 함수
-//! 게임 전반에서 사용되는 보조 기능들을 정의합니다.
-//! ============================================================
 
 //! ============================================================
 //! 3. 전투 로직
@@ -457,139 +452,6 @@ function endMonstersTurn() {
 //! 3.5 스킬 시스템
 //! 플레이어가 사용하는 다양한 스킬의 로직을 정의합니다.
 //! ============================================================
-
-/**
- * 강 공격 (단일 대상, 높은 데미지, MP 소모, 낮은 확률로 흑섬 발동)
- */
-function executePowerAttack() {
-    if (isGameOver || !isPlayerTurn) return;
-
-    const targetMonster = monsters[player.targetIndex];
-    if (targetMonster.hp <= 0) {
-        log("이미 쓰러진 몬스터입니다.", 'log-system');
-        return;
-    }
-
-    // 방어 태세 여부에 따라 총 MP 소모량 계산
-    const mpCost = 15;
-    const defenseMpCost = player.defenseStance ? 10 : 0;
-    const totalMpCost = mpCost + defenseMpCost;
-
-    if (player.mp < totalMpCost) {
-        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
-        if (player.defenseStance) {
-            // MP 부족 시 방어 태세 자동 해제
-            player.defenseStance = false;
-            showSkillSelection();
-        }
-        return;
-    }
-
-    if (player.isStunned) {
-        log("플레이어가 기절해서 움직일 수 없습니다!", 'log-player');
-        player.isStunned = false; // 턴을 넘기면서 기절 해제
-        setTimeout(monstersAttack, 800);
-        return;
-    }
-
-    isPlayerTurn = false;
-    toggleControls(false);
-
-    // --- 방어 태세 로직 적용 ---
-    if (player.defenseStance) {
-        if (Math.random() < 0.78) {
-            player.defenseBuff.turns = 1;
-            log('🛡️ 방어 태세에 성공했습니다! 다음 몬스터 턴의 피해가 60% 감소합니다.', 'log-system');
-            showFloatingText('방어 성공!', document.getElementById('player-character'), 'buff');
-        } else {
-            log('방어에 집중했지만, 실패했습니다...', 'log-system');
-            showFloatingText('방어 실패', document.getElementById('player-character'), 'miss');
-        }
-        player.defenseStance = false; // 사용 후 해제
-    }
-
-    // --- MP 소모 및 공격 애니메이션 ---
-    player.mp -= totalMpCost;
-
-    // 강한 공격 애니메이션
-    const playerElement = document.getElementById('player-character');
-    playerElement.style.transform = 'translateX(50px) scale(1.1)'; // 일반 공격보다 조금 더 강하게
-    setTimeout(() => {
-        playerElement.style.transform = ''; // 원래 위치로
-    }, 150);
-    // --- 애니메이션 끝 ---
-
-    const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
-    const targetMonsterElement = monsterWrappers[player.targetIndex];
-
-    // --- 흑섬(Black Flash) 발동 체크 (강공격 시 3% 고정 확률) ---
-    if (Math.random() < 0.03) {
-        triggerBlackFlash();
-        let dmg = Math.floor(player.atk * 6.25);
-        log('⚫ 흑섬(黑閃) 발동!', 'log-player', { fontSize: '24px', color: 'white', textShadow: '0 0 5px black, 0 0 15px red' });
-        log(`용사가 ${targetMonster.name}에게 ${dmg}의 경이적인 피해를 입혔습니다!`, 'log-player');
-
-        if (!player.blackFlashBuff.active) {
-            player.blackFlashBuff.active = true;
-            recalculatePlayerStats(); // 스탯 즉시 적용
-            log('온 몸에 흑섬의 기운이 감돈다! (3층 동안 모든 능력치 1.6배)', 'log-system');
-        }
-        player.blackFlashBuff.duration = 3; // 흑섬이 터질 때마다 지속시간 갱신
-
-        player.guaranteedCrit = true; // 다음 공격 확정 치명타
-        log('흑섬의 여파로 다음 공격은 반드시 치명타가 됩니다!', 'log-system');
-
-        targetMonster.hp -= dmg;
-        showFloatingText(dmg, targetMonsterElement, 'black-flash');
-    } else {
-        // --- 일반 강 공격 로직 ---
-        let dmg = Math.floor(player.atk * 2.0); // 200% 데미지
-
-        // 확정 치명타 체크
-        if (player.guaranteedCrit) {
-            dmg = Math.floor(dmg * player.critDamage);
-            player.guaranteedCrit = false; // 사용 후 플래그 해제
-            log('⚡ 흑섬의 여파로 강 공격이 치명타로 적중했습니다!', 'log-player');
-        } else {
-            log(`💥 강 공격! ${targetMonster.name}에게 ${dmg}의 강력한 피해를 입혔습니다!`, 'log-player');
-        }
-        showFloatingText(dmg, targetMonsterElement, 'crit'); // 강공격은 항상 crit 스타일로 표시
-
-        targetMonster.hp -= dmg;
-
-        // 3% 확률로 몬스터 기절 (강공격은 2배 확률)
-        if (Math.random() < 0.06) {
-            targetMonster.isStunned = true;
-            log(`몬스터가 기절했습니다!`, 'log-system');
-            showFloatingText('STUN', targetMonsterElement, 'stun');
-        }
-    }
-
-    // --- 몬스터 피격 애니메이션 및 턴 종료 처리 ---
-    if (targetMonsterElement) {
-        const emojiElement = targetMonsterElement.querySelector('.emoji');
-        emojiElement.classList.add('hit');
-        setTimeout(() => emojiElement.classList.remove('hit'), 300);
-    }
-
-    updateUI();
-
-    const allDead = monsters.every(m => m.hp <= 0);
-    if (allDead) {
-        if (targetMonster.hp <= 0) {
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            gainXP(targetMonster.xp);
-        }
-        winBattle();
-    } else {
-        if (targetMonster.hp <= 0) {
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            gainXP(targetMonster.xp);
-            findNextTarget();
-        }
-        setTimeout(monstersAttack, 800);
-    }
-}
 
 /**
  * 휩쓸기 (모든 몬스터 대상 광역 공격, MP 소모)
@@ -1043,6 +905,8 @@ function createMonster(template, multiplier) {
 function gameOver() {
     isGameOver = true;
     log("체력이 0이 되었습니다. 게임 오버...", 'log-monster');
+    submitScore(); // 게임 오버 시 점수 제출
+
     // 게임 오버 시 버튼 비활성화 처리
     const btns = document.querySelectorAll('button');
     btns.forEach(btn => btn.disabled = true);
@@ -1268,11 +1132,11 @@ function buyItem(type, cost, data) {
 //! 9. 초기화 및 이벤트 리스너
 //! 게임 시작 및 사용자 입력(키보드)을 처리합니다.
 //! ============================================================
-
 /**
  * 게임을 시작하고 1층을 설정하는 함수
+ * @param {object|null} loadedState - 불러온 게임 상태. null이면 초기 상태로 시작.
  */
-function startGame() {
+function startGame(loadedState = null) {
     // 플레이어 스탯을 초기 계산하고, 체력/마나를 가득 채웁니다.
     recalculatePlayerStats();
     player.hp = player.maxHp;
@@ -1282,8 +1146,166 @@ function startGame() {
     toggleControls(true);
 }
 
-//* 게임 시작 시 UI를 한 번 업데이트하여 초기 상태를 표시
-startGame();
+/**
+ * 새로운 게임을 시작하는 함수
+ * @param {boolean} isNew - 새 게임 시작 여부 (불러오기와 구분)
+ */
+function startNewGame(isNew = false) {
+    if (isNew && isLoggedIn() && !confirm("정말로 새로운 게임을 시작하시겠습니까? 기존에 저장된 데이터는 덮어씌워집니다.")) {
+        return;
+    }
+    // 게임 상태 초기화
+    Object.assign(player, {
+        baseMaxHp: 35, maxHp: 35, hp: 35, baseMaxMp: 40, maxMp: 40, mp: 40,
+        baseAtk: 8, atk: 10, level: 1, xp: 0, xpToNextLevel: 100, statPoints: 0,
+        str: 0, vit: 0, luk: 0, agi: 0, int: 0, mnd: 0, fcs: 0,
+        blackFlashBuff: { active: false, duration: 0 }, critBuff: { turns: 0, bonus: 0 },
+        guaranteedCrit: false, defenseBuff: { turns: 0, reduction: 0.6 },
+        defenseStance: false, isStunned: false, evasionChance: 4, critChance: 11,
+        critDamage: 2, goldBonus: 1, coins: 0, baseEmoji: '🧙‍♂️', emoji: '🧙‍♂️',
+        equippedArmor: null, equippedWeapon: null, armorInventory: [],
+        weaponInventory: [], lootInventory: [], targetIndex: 0,
+        buff: { turns: 0, multiplier: 1.5 },
+        inventory: [
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+        ]
+    });
+    floor = 1;
+    turn = 1;
+    isPlayerTurn = true;
+    isGameOver = false;
+
+    showGameScreen();
+    startGame();
+}
+
+//* ============================================================
+//* 10. 서버 통신 (시뮬레이션)
+//* ============================================================
+
+const API_URL = 'http://localhost:3000/api'; // 실제 백엔드 주소
+
+/**
+ * 로그인 상태인지 확인하는 함수
+ * @returns {boolean}
+ */
+function isLoggedIn() {
+    return !!localStorage.getItem('jwt');
+}
+
+/**
+ * 인증 헤더를 반환하는 함수
+ * @returns {Headers}
+ */
+function getAuthHeaders() {
+    const headers = new Headers({ 'Content-Type': 'application/json' });
+    const token = localStorage.getItem('jwt');
+    if (token) {
+        headers.append('Authorization', `Bearer ${token}`);
+    }
+    return headers;
+}
+
+/**
+ * 회원가입을 처리하는 함수 (시뮬레이션)
+ */
+async function handleRegister() {
+    // 실제 구현에서는 fetch를 사용하여 서버에 요청합니다.
+    alert("회원가입 기능은 백엔드 구현이 필요합니다. (시뮬레이션)");
+}
+
+/**
+ * 로그인을 처리하는 함수 (시뮬레이션)
+ */
+async function handleLogin() {
+    // 실제 구현에서는 fetch를 사용하여 서버에 요청합니다.
+    const username = document.getElementById('username').value;
+    if (!username) {
+        alert("사용자 이름을 입력하세요.");
+        return;
+    }
+    alert(`${username}님으로 로그인했습니다. (시뮬레이션)`);
+    localStorage.setItem('jwt', 'dummy_token_for_' + username); // 더미 토큰 저장
+    localStorage.setItem('username', username);
+    updateLoginStatus(username);
+    closeLoginModal();
+}
+
+/**
+ * 로그아웃을 처리하는 함수
+ */
+function logout() {
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('username');
+    updateLoginStatus(null);
+    alert("로그아웃되었습니다.");
+}
+
+/**
+ * 게임 상태를 서버에 저장하는 함수 (시뮬레이션)
+ */
+async function saveGame() {
+    if (!isLoggedIn()) {
+        alert("로그인이 필요합니다.");
+        return;
+    }
+    // 실제 구현에서는 fetch를 사용하여 서버에 요청합니다.
+    alert("게임 상태가 저장되었습니다. (시뮬레이션)");
+    log("💾 게임 상태를 서버에 저장했습니다.", "log-system");
+}
+
+/**
+ * 서버에서 게임 상태를 불러오는 함수 (시뮬레이션)
+ */
+async function loadGame() {
+    if (!isLoggedIn()) {
+        alert("로그인이 필요합니다.");
+        return;
+    }
+    // 실제 구현에서는 fetch를 사용하여 서버에 요청합니다.
+    alert("저장된 게임을 불러옵니다. (시뮬레이션)");
+    // 여기서는 새 게임을 시작하는 것으로 대체합니다.
+    // 실제로는 서버에서 받은 데이터로 player 객체 등을 복원해야 합니다.
+    startNewGame();
+}
+
+/**
+ * 게임 점수를 서버에 제출하는 함수 (시뮬레이션)
+ */
+async function submitScore() {
+    if (!isLoggedIn()) return; // 로그인 상태가 아니면 점수 제출 안 함
+    
+    const score = floor;
+    // 실제 구현에서는 fetch를 사용하여 서버에 요청합니다.
+    console.log(`점수 제출 시도: ${score}층 (시뮬레이션)`);
+    log(`🏆 최종 점수 ${score}층을 서버에 기록합니다.`, "log-system");
+}
+
+/**
+ * 서버에서 스코어보드를 가져와 표시하는 함수 (시뮬레이션)
+ */
+async function fetchAndShowScores() {
+    // 실제 구현에서는 fetch를 사용하여 서버에 요청합니다.
+    // 여기서는 더미 데이터를 사용합니다.
+    const dummyScores = [
+        { username: '고인물', score: 150 },
+        { username: '준혁', score: 120 },
+        { username: '뉴비', score: 20 },
+    ];
+    renderScoreboard(dummyScores);
+    openScoreboardModal();
+}
+
+/**
+ * 페이지 로드 시 실행되는 초기화 함수
+ */
+function init() {
+    const username = localStorage.getItem('username');
+    updateLoginStatus(username);
+    showStartMenu();
+}
 
 //* 키보드 입력을 처리하기 위한 이벤트 리스너 추가
 document.addEventListener('keydown', handleKeydown);
@@ -1309,3 +1331,6 @@ function handleKeydown(e) {
         updateUI();
     }
 }
+
+//* 게임 시작
+init();
