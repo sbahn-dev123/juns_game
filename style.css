@@ -49,9 +49,9 @@ body {
 
 /* 게임 메인 창 */
 .game-container {
-    width: 95%;
-    height: 95vh;
-    max-width: 1200px;
+    width: 130%;
+    height: 98vh;
+    max-width: 1500px;
     background: rgba(30, 32, 50, 0.9);
     border: 2px solid #7c3aed;
     border-radius: 20px;
@@ -71,8 +71,8 @@ body {
 .floor-badge {
     background: #7c3aed;
     padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 18px;
+    border-radius: 22px;
+    font-size: 20px;
     font-weight: bold;
 }
 
@@ -127,19 +127,19 @@ body {
     transition: transform 0.15s ease-out, opacity 0.5s, filter 0.5s; /* 공격, 사망 등 애니메이션을 위함 */
 }
 
-.emoji { font-size: 150px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); transition: 0.2s; }
-.name { font-size: 24px; margin-top: 10px; color: #ccc; font-weight: bold; }
+.emoji { font-size: 160px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); transition: 0.2s; }
+.name { font-size: 26px; margin-top: 10px; color: #ccc; font-weight: bold; }
 
 /* 체력바 */
 .hp-bar-bg {
-    width: 180px; height: 20px; background: #333;
+    width: 200px; height: 22px; background: #333;
     border-radius: 10px; margin: 10px auto; overflow: hidden;
 }
 .hp-bar-fill {
     height: 100%; background: #ef4444; width: 100%;
     transition: width 0.3s ease;
 }
-.hp-text { font-size: 18px; color: #aaa; margin-top: 5px; }
+.hp-text { font-size: 20px; color: #aaa; margin-top: 5px; }
 
 /* 데미지 효과 애니메이션 */
 @keyframes shake {
@@ -167,7 +167,7 @@ body {
 /* 데미지 텍스트 애니메이션 */
 .floating-text {
     position: absolute;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: bold;
     text-shadow: 1px 1px 2px #000;
     pointer-events: none;
@@ -193,46 +193,46 @@ body {
 
 .floating-text.crit {
     color: #ffdd44; /* 금색 */
-    font-size: 38px;
+    font-size: 42px;
     font-weight: 900;
 }
 
 .floating-text.black-flash {
     color: red;
-    font-size: 42px;
+    font-size: 46px;
     font-weight: 900;
     text-shadow: 0 0 5px black, 0 0 10px red;
 }
 
 .floating-text.miss {
     color: #aaa;
-    font-size: 24px;
+    font-size: 28px;
 }
 
 .floating-text.stun {
     color: #fde047; /* 노란색 */
-    font-size: 36px;
+    font-size: 40px;
     font-weight: bold;
 }
 
 .floating-text.heal {
     color: #22c55e; /* 초록색 */
-    font-size: 32px;
+    font-size: 36px;
 }
 
 .floating-text.mp-heal {
     color: #60a5fa; /* 파란색 */
-    font-size: 32px;
+    font-size: 36px;
 }
 
 .floating-text.buff {
     color: #a855f7; /* 보라색 */
-    font-size: 28px;
+    font-size: 32px;
 }
 
 .floating-text.level-up {
     color: #fbbf24;
-    font-size: 48px;
+    font-size: 54px;
     font-weight: 900;
     text-shadow: 0 0 5px black, 0 0 10px #fbbf24;
 }
@@ -240,11 +240,11 @@ body {
 /* 로그 창 */
 .log-box {
     background: rgba(0,0,0,0.5);
-    height: 200px;
+    height: 220px;
     border-radius: 10px;
-    padding: 10px;
+    padding: 15px;
     overflow-y: auto;
-    font-size: 18px;
+    font-size: 20px;
     line-height: 1.6;
     border: 1px solid #444;
 }
@@ -258,7 +258,7 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
-    padding: 10px;
+    padding: 20px;
     background: rgba(0,0,0,0.3);
     border-radius: 10px;
     border: 1px solid #444;
@@ -276,19 +276,19 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
-    padding: 10px;
+    padding: 20px;
     background: rgba(0,0,0,0.3);
     border-radius: 10px;
     border: 1px solid #444;
 }
 .level-badge {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     color: #fbbf24;
 }
 .xp-bar-bg {
     flex-grow: 1;
-    height: 18px;
+    height: 20px;
     background: #333;
     border-radius: 8px;
     overflow: hidden;
@@ -300,7 +300,7 @@ body {
     width: 0%;
     transition: width 0.5s ease;
 }
-.xp-text { font-size: 16px; color: #ccc; min-width: 150px; text-align: right; }
+.xp-text { font-size: 18px; color: #ccc; min-width: 150px; text-align: right; }
 
 /* 컨트롤 패널 */
 .controls {
@@ -310,7 +310,7 @@ body {
 }
 
 button {
-    padding: 25px;
+    padding: 50px;
     border: none;
     border-radius: 12px;
     font-weight: bold;
@@ -318,7 +318,7 @@ button {
     cursor: pointer;
     transition: 0.2s;
     color: white;
-    font-size: 24px;
+    font-size: 40px;
 }
 
 button:active { transform: scale(0.95); }
@@ -412,7 +412,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     display: flex;
     gap: 15px;
     width: 90%;
-    max-width: 1400px;
+    max-width: 2300px;
     margin-bottom: 20px;
 }
 .potion-section {
@@ -486,8 +486,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
-    width: 90%;
-    max-width: 1500px; /* 모달 너비 확장 */
+    width: 130%;
+    max-width: 2300px; /* 모달 너비 확장 */
     justify-content: center;
 }
 .management-section {
