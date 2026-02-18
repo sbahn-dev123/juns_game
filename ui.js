@@ -96,12 +96,14 @@ function updateUI() {
 
     // 가호(전리품) 버프 상태 UI 업데이트
     const blessingBadge = document.getElementById('blessing-badge');
-    if (player.lootInventory.length > 0) {
-        blessingBadge.style.display = 'inline-block';
-        const blessingNames = player.lootInventory.map(loot => loot.name).join('\n');
-        blessingBadge.title = `보유 중인 가호:\n${blessingNames}`;
-    } else {
-        blessingBadge.style.display = 'none';
+    if (blessingBadge) { // 요소가 존재하는지 확인하는 방어 코드 추가
+        if (player.lootInventory.length > 0) {
+            blessingBadge.style.display = 'inline-block';
+            const blessingNames = player.lootInventory.map(loot => loot.name).join('\n');
+            blessingBadge.title = `보유 중인 가호:\n${blessingNames}`;
+        } else {
+            blessingBadge.style.display = 'none';
+        }
     }
 
     // 몬스터 UI 동적 생성 및 업데이트
