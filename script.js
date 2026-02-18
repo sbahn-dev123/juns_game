@@ -1035,14 +1035,24 @@ function createMonster(template, multiplier) {
 /**
  * 플레이어 사망 시 게임 오버를 처리하는 함수
  */
-function gameOver() {
+async function gameOver() {
     isGameOver = true;
     log("체력이 0이 되었습니다. 게임 오버...", 'log-monster');
-    submitScore(); // 게임 오버 시 점수 제출
+    toggleControls(false); // Disable game controls
 
-    // 게임 오버 시 버튼 비활성화 처리
-    const btns = document.querySelectorAll('button');
-    btns.forEach(btn => btn.disabled = true);
+    await submitScore(); // 점수 제출
+
+    if (isLoggedIn()) {
+        log("최종 게임 상태를 저장합니다...", "log-system");
+        await saveGame(true); // Silently save the game state
+    }
+
+    // Use a timeout to allow player to read final logs
+    setTimeout(() => {
+        alert("게임이 종료되었습니다. 시작 화면으로 돌아갑니다.");
+        showStartMenu();
+        // When a new game starts, controls will be re-enabled.
+    }, 2000); // 2 second delay
 }
 
 /**
@@ -1420,9 +1430,9 @@ function logout() {
 /**
  * 게임 상태를 서버에 저장하는 함수 (시뮬레이션)
  */
-async function saveGame() {
+async function saveGame(isSilent = false) {
     if (!isLoggedIn()) {
-        alert("로그인이 필요합니다.");
+        if (!isSilent) alert("로그인이 필요합니다.");
         return;
     }
     const gameState = {
@@ -1443,9 +1453,12 @@ async function saveGame() {
             throw new Error('게임 저장에 실패했습니다.');
         }
         log("💾 게임 상태를 서버에 저장했습니다.", "log-system");
-        alert("게임이 저장되었습니다.");
+        if (!isSilent) {
+            alert("게임이 저장되었습니다. 시작 화면으로 돌아갑니다.");
+            showStartMenu();
+        }
     } catch (error) {
-        alert(error.message);
+        if (!isSilent) alert(error.message);
     }
 }
 
@@ -1467,6 +1480,14 @@ async function loadGame() {
             return;
         }
         const loadedState = await response.json();
+
+        // Check for invalid game state (e.g., saved on game over)
+        if (loadedState && loadedState.player && loadedState.player.hp <= 0) {
+            alert("저장된 게임 데이터가 유효하지 않습니다. 새 게임을 시작합니다.");
+            startNewGame();
+            return;
+        }
+
         showGameScreen();
         startGame(loadedState);
     } catch (error) {
