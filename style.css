@@ -1,0 +1,513 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Serif KR', serif;
+    background-color: #0d0d1a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none; /* 드래그 방지 */
+}
+
+/* 게임 메인 창 */
+.game-container {
+    width: 95%;
+    height: 95vh;
+    max-width: 1200px;
+    background: rgba(30, 32, 50, 0.9);
+    border: 2px solid #7c3aed;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 상단 정보 (층수) */
+.header {
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+.floor-badge {
+    background: #7c3aed;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* 전투 화면 (몬스터 & 플레이어) */
+.battle-field {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 10px;
+    flex: 1;
+    gap: 50px;
+    position: relative; /* 데미지 텍스트 위치의 기준점 */
+}
+
+#monster-area {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end; /* 몬스터들을 하단에 정렬 */
+}
+
+.monster-wrapper {
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.monster-wrapper.targeted {
+    transform: translateY(-10px); /* 선택된 몬스터를 위로 살짝 이동 */
+}
+
+.target-indicator {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 30px;
+    color: #ef4444;
+    display: none;
+}
+
+.monster-wrapper.targeted .target-indicator {
+    display: block;
+}
+
+.monster-wrapper.dead .character {
+    opacity: 0.4;
+    filter: grayscale(1);
+}
+
+.character {
+    text-align: center;
+    position: relative;
+    transition: transform 0.15s ease-out, opacity 0.5s, filter 0.5s; /* 공격, 사망 등 애니메이션을 위함 */
+}
+
+.emoji { font-size: 150px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); transition: 0.2s; }
+.name { font-size: 24px; margin-top: 10px; color: #ccc; font-weight: bold; }
+
+/* 체력바 */
+.hp-bar-bg {
+    width: 180px; height: 20px; background: #333;
+    border-radius: 10px; margin: 10px auto; overflow: hidden;
+}
+.hp-bar-fill {
+    height: 100%; background: #ef4444; width: 100%;
+    transition: width 0.3s ease;
+}
+.hp-text { font-size: 18px; color: #aaa; margin-top: 5px; }
+
+/* 데미지 효과 애니메이션 */
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+.hit { animation: shake 0.3s; color: red !important; }
+
+/* 기절 효과 애니메이션 */
+@keyframes stun-effect {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+}
+.stunned .emoji {
+    animation: stun-effect 0.5s infinite;
+}
+.stunned .target-indicator {
+    display: none; /* 기절 시 타겟 표시 숨김 */
+}
+
+/* 데미지 텍스트 애니메이션 */
+.floating-text {
+    position: absolute;
+    font-size: 28px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+    pointer-events: none;
+    animation: float-up-and-fade 1.2s ease-out forwards;
+    z-index: 100;
+    white-space: nowrap;
+}
+
+@keyframes float-up-and-fade {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-70px);
+        opacity: 0;
+    }
+}
+
+.floating-text.damage {
+    color: #fff;
+}
+
+.floating-text.crit {
+    color: #ffdd44; /* 금색 */
+    font-size: 38px;
+    font-weight: 900;
+}
+
+.floating-text.black-flash {
+    color: red;
+    font-size: 42px;
+    font-weight: 900;
+    text-shadow: 0 0 5px black, 0 0 10px red;
+}
+
+.floating-text.miss {
+    color: #aaa;
+    font-size: 24px;
+}
+
+.floating-text.stun {
+    color: #fde047; /* 노란색 */
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.floating-text.heal {
+    color: #22c55e; /* 초록색 */
+    font-size: 32px;
+}
+
+.floating-text.mp-heal {
+    color: #60a5fa; /* 파란색 */
+    font-size: 32px;
+}
+
+.floating-text.buff {
+    color: #a855f7; /* 보라색 */
+    font-size: 28px;
+}
+
+.floating-text.level-up {
+    color: #fbbf24;
+    font-size: 48px;
+    font-weight: 900;
+    text-shadow: 0 0 5px black, 0 0 10px #fbbf24;
+}
+
+/* 로그 창 */
+.log-box {
+    background: rgba(0,0,0,0.5);
+    height: 200px;
+    border-radius: 10px;
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 18px;
+    line-height: 1.6;
+    border: 1px solid #444;
+}
+.log-msg { margin-bottom: 4px; }
+.log-player { color: #60a5fa; }
+.log-monster { color: #f87171; }
+.log-system { color: #fbbf24; font-weight: bold; }
+
+/* MP 바 */
+.mp-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    border: 1px solid #444;
+}
+
+.mp-bar-fill {
+    height: 100%;
+    background: #60a5fa; /* 파란색 */
+    width: 100%;
+    transition: width 0.5s ease;
+}
+
+/* 경험치 바 */
+.xp-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    border: 1px solid #444;
+}
+.level-badge {
+    font-size: 16px;
+    font-weight: bold;
+    color: #fbbf24;
+}
+.xp-bar-bg {
+    flex-grow: 1;
+    height: 18px;
+    background: #333;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #555;
+}
+.xp-bar-fill {
+    height: 100%;
+    background: #8b5cf6;
+    width: 0%;
+    transition: width 0.5s ease;
+}
+.xp-text { font-size: 16px; color: #ccc; min-width: 150px; text-align: right; }
+
+/* 컨트롤 패널 */
+.controls {
+    display: grid;
+    grid-template-columns: 4fr 3fr 3fr; /* 3-button layout */
+    gap: 10px;
+}
+
+button {
+    padding: 25px;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.2s;
+    color: white;
+    font-size: 24px;
+}
+
+button:active { transform: scale(0.95); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-inventory { background: #3b82f6; box-shadow: 0 4px 0 #1d4ed8; }
+.btn-attack { background: #ef4444; box-shadow: 0 4px 0 #991b1b; }
+.btn-buff { background: #8b5cf6; box-shadow: 0 4px 0 #5b21b6; }
+.btn-heal { background: #10b981; box-shadow: 0 4px 0 #047857; }
+.btn-armor { background: #a16207; box-shadow: 0 4px 0 #713f12; } /* 방어구 버튼 */
+.btn-defend { background: #06b6d4; box-shadow: 0 4px 0 #0891b2; } /* 방어 버튼 */
+.btn-defend-active {
+    background: #22d3ee; /* 더 밝은 청록색 */
+    box-shadow: 0 4px 0 #06b6d4;
+}
+
+/* 레벨업 모달 (숨김 상태) */
+#levelup-modal {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    justify-content: center; align-items: center; flex-direction: column; text-align: center;
+    z-index: 10;
+}
+.levelup-text { font-size: 30px; color: #fbbf24; margin-bottom: 20px; font-weight: bold; }
+
+@keyframes level-up-effect {
+    0% { transform: scale(1) translateY(20px); opacity: 0; }
+    50% { transform: scale(1.5) rotate(-5deg); opacity: 1; text-shadow: 0 0 20px #fff, 0 0 30px #fbbf24; }
+    100% { transform: scale(1.2); opacity: 1; }
+}
+
+.levelup-text.animated {
+    animation: level-up-effect 0.8s ease-out forwards;
+}
+
+/* 상점 모달 */
+#shop-modal {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+.shop-title { font-size: 40px; color: #fbbf24; margin-bottom: 20px; }
+.shop-container { display: flex; flex-direction: column; gap: 20px; width: 90%; max-width: 1400px; max-height: 80vh; overflow-y: auto; }
+.shop-row {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+.shop-section { flex: 1; background: rgba(255,255,255,0.1); padding: 15px; margin-bottom: 20px; border-radius: 10px; }
+.shop-section h3 { text-align: center; color: #ddd; margin-bottom: 15px; font-size: 22px; border-bottom: 1px solid #555; padding-bottom: 10px; }
+.shop-items { display: flex; flex-direction: column; gap: 10px; }
+.shop-btn {
+    background: #4b5563; padding: 15px; font-size: 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.shop-btn span { color: #fbbf24; }
+.shop-btn .armor-emoji { font-size: 32px; line-height: 1; }
+.shop-btn:hover { background: #6b7280; }
+
+/* 인벤토리 모달 */
+#inventory-modal {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+.inventory-list { width: 80%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
+.inventory-item { background: #374151; padding: 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+.item-info { font-size: 20px; }
+.btn-use { padding: 12px 24px; font-size: 18px; background: #10b981; box-shadow: 0 4px 0 #047857; }
+
+/* 턴 행동 모달 */
+#item-select-modal {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 15;
+}
+.potion-container {
+    display: flex;
+    gap: 15px;
+    width: 90%;
+    max-width: 1400px;
+    margin-bottom: 20px;
+}
+.potion-section {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #444;
+}
+.potion-section h3 {
+    text-align: center;
+    color: #ddd;
+    margin-bottom: 15px;
+    font-size: 22px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 10px;
+}
+.potion-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+/* 장비 모달 */
+#equipment-modal {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+#current-equipment-display {
+    background: rgba(0,0,0,0.3);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #444;
+    text-align: center;
+}
+.current-equipment-item {
+    font-size: 18px;
+    color: #fbbf24;
+}
+.current-equipment-item:not(:last-child) {
+    margin-bottom: 10px;
+}
+.equipment-container {
+    display: flex;
+    gap: 20px;
+    width: 80%;
+    max-width: 900px;
+}
+.equipment-section {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 10px;
+}
+.equipment-section h3 {
+    text-align: center; color: #ddd; margin-bottom: 15px; font-size: 20px;
+    border-bottom: 1px solid #555; padding-bottom: 10px;
+}
+.equipment-list { display: flex; flex-direction: column; gap: 10px; max-height: 40vh; overflow-y: auto; }
+
+/* 장비 및 스탯 모달 통합 */
+.management-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    width: 90%;
+    max-width: 1500px; /* 모달 너비 확장 */
+    justify-content: center;
+}
+.management-section {
+    flex: 1;
+    background: rgba(0,0,0,0.2);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 스탯 분배 관련 스타일 */
+#stat-points-display {
+    font-size: 20px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+#stat-points-display span {
+    color: #fbbf24;
+    font-size: 24px;
+}
+.stat-up-list {
+    width: 100%;
+    max-height: 35vh;
+    overflow-y: auto;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.stat-up-item {
+    background: #374151; padding: 15px; border-radius: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    text-align: left;
+}
+.stat-info h4 { font-size: 18px; margin-bottom: 5px; }
+.stat-info p { font-size: 14px; color: #ccc; }
+#stat-current-values { text-align: center; margin-bottom: 15px; font-size: 16px; color: #ddd; }
+
+/* 흑섬 효과 */
+#black-flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    opacity: 0;
+    z-index: 9999;
+    pointer-events: none; /* 이벤트를 통과시켜 클릭 방해 안함 */
+}
+
+@keyframes black-flash-animation {
+    0% { opacity: 0.9; background-color: red; }
+    50% { opacity: 1; background-color: black; }
+    100% { opacity: 0; }
+}
