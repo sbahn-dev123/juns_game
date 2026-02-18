@@ -136,16 +136,16 @@ const mpPotionList = [
 
 //* 상점에서 판매하는 공격력 강화(버프) 물약 목록
 const buffPotionList = [
-    { name: '흐릿한 힘의 물약', turns: 6, mult: 1.15, cost: 120 },
-    { name: '하급 힘의 물약', turns: 6, mult: 1.2, cost: 200 },
-    { name: '중급 힘의 물약', turns: 5, mult: 1.3, cost: 350 },
-    { name: '상급 힘의 물약', turns: 5, mult: 1.4, cost: 550 },
-    { name: '괴력의 비약', turns: 4, mult: 1.6, cost: 900 },
-    { name: '용사의 영약', turns: 4, mult: 1.7, cost: 1300 },
-    { name: '거인의 심장', turns: 3, mult: 2.0, cost: 2000 },
-    { name: '신의 분노', turns: 3, mult: 2.5, cost: 3000 },
-    { name: '혼돈의 비약', turns: 3, mult: 3.0, cost: 4400 },
-    { name: '종언의 영약', turns: 2, mult: 3.8, cost: 6400 },
+    { name: '흐릿한 힘의 물약', turns: 6, mult: 1.3, cost: 120 },
+    { name: '하급 힘의 물약', turns: 6, mult: 1.4, cost: 200 },
+    { name: '중급 힘의 물약', turns: 5, mult: 1.6, cost: 450 },
+    { name: '상급 힘의 물약', turns: 5, mult: 1.8, cost: 750 },
+    { name: '괴력의 비약', turns: 5, mult: 2.5, cost: 1200 },
+    { name: '용사의 영약', turns: 5, mult: 3.0, cost: 2000 },
+    { name: '거인의 심장', turns: 5, mult: 3.5, cost: 3500 },
+    { name: '신의 분노', turns: 4, mult: 4.0, cost: 5500 },
+    { name: '혼돈의 비약', turns: 4, mult: 5.0, cost: 8000 },
+    { name: '종언의 영약', turns: 4, mult: 6.0, cost: 12000 },
 ];
 
 //* 상점에서 판매하는 무기 목록
@@ -173,7 +173,7 @@ const critPotionList = [
     { name: '절대집중', bonus: 55, turns: 3, cost: 2200 },
     { name: '신의 시야', bonus: 70, turns: 2, cost: 3200 },
     { name: '시간의 눈', bonus: 80, turns: 3, cost: 4800 },
-    { name: '운명의 실', bonus: 120, turns: 2, cost: 6800 },
+    { name: '운명의 실', bonus: 100, turns: 2, cost: 6800 },
 ];
 
 //* 각 스탯의 이름과 설명을 정의한 객체 (스탯 분배 창에서 사용)
