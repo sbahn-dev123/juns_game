@@ -876,7 +876,7 @@ function winBattle() {
     
     // --- 보스 특별 전리품 처리 ---
     monsters.forEach(monster => {
-        if (monster.specialDrop && Math.random() < 0.62) { // 62% 확률로 드랍
+        if (monster.specialDrop && Math.random() < 0.85) { // 85% 확률로 드랍
             const drop = monster.specialDrop;
             player.lootInventory.push(drop);
             log(`🌟 특별한 전리품! [${drop.name}]을(를) 획득했습니다! 인벤토리에서 확인하세요.`, 'log-system', { color: '#f59e0b', fontWeight: 'bold' });
