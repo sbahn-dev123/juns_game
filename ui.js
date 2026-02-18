@@ -1,0 +1,649 @@
+//! ============================================================
+//! UI 함수
+//! 게임의 UI 렌더링 및 조작과 관련된 모든 함수를 정의합니다.
+//! ============================================================
+
+/**
+ * 로그 창에 메시지를 출력하는 함수
+ * @param {string} msg - 출력할 메시지 내용
+ * @param {string} [type=''] - 메시지 종류 ('log-player', 'log-monster', 'log-system')
+ * @param {object} [styles={}] - 적용할 추가 CSS 스타일
+ */
+function log(msg, type = '', styles = {}) {
+    const box = document.getElementById('log-box');
+    const p = document.createElement('div');
+    p.className = `log-msg ${type}`;
+    p.innerText = msg;
+    Object.assign(p.style, styles);
+    box.appendChild(p);
+    box.scrollTop = box.scrollHeight; // 자동 스크롤
+}
+
+/**
+ * 캐릭터 위에 떠오르는 텍스트(데미지, MISS 등)를 표시하는 함수
+ * @param {string|number} text - 표시할 텍스트
+ * @param {HTMLElement} targetElement - 텍스트가 표시될 대상 DOM 요소
+ * @param {string} type - 텍스트 종류 ('damage', 'crit', 'miss', 'heal', 'black-flash' 등)
+ */
+function showFloatingText(text, targetElement, type) {
+    if (!targetElement) return;
+
+    const textEl = document.createElement('div');
+    textEl.className = `floating-text ${type}`;
+    textEl.innerText = text;
+
+    // 전투 필드를 기준으로 위치를 잡음
+    const battleField = document.getElementById('battle-field');
+    battleField.appendChild(textEl);
+
+    const targetRect = targetElement.getBoundingClientRect();
+    const battleFieldRect = battleField.getBoundingClientRect();
+
+    // 텍스트 위치 계산 (캐릭터 중앙 상단에서 약간 랜덤)
+    const x = targetRect.left - battleFieldRect.left + (targetRect.width / 2) - (textEl.offsetWidth / 2) + (Math.random() * 20 - 10);
+    const y = targetRect.top - battleFieldRect.top - 30 + (Math.random() * 10 - 5);
+
+    textEl.style.left = `${x}px`;
+    textEl.style.top = `${y}px`;
+
+    // 애니메이션이 끝난 후 요소 제거
+    setTimeout(() => textEl.remove(), 1200); // 애니메이션 시간과 동일하게 설정
+}
+
+/**
+ * 게임의 모든 UI를 현재 게임 상태에 맞게 업데이트하는 함수
+ */
+function updateUI() {
+    // 플레이어 정보 UI 업데이트 (체력, 골드, 이모지 등)
+    document.getElementById('player-hp').innerText = player.hp;
+    document.getElementById('player-max-hp').innerText = player.maxHp;
+    document.getElementById('player-coins').innerText = player.coins;
+    document.getElementById('player-emoji').innerText = player.emoji;
+    document.getElementById('player-hp-bar').style.width = (player.hp / player.maxHp * 100) + '%';
+
+    // 경험치 바 UI 업데이트
+    document.getElementById('player-level').innerText = player.level;
+    document.getElementById('player-xp').innerText = player.xp;
+    document.getElementById('player-xp-next').innerText = player.xpToNextLevel;
+    document.getElementById('player-xp-bar').style.width = (player.xp / player.xpToNextLevel * 100) + '%';
+
+    // MP 바 UI 업데이트
+    document.getElementById('player-mp').innerText = player.mp;
+    document.getElementById('player-max-mp').innerText = player.maxMp;
+    document.getElementById('player-mp-bar').style.width = (player.mp / player.maxMp * 100) + '%';
+
+    // 버프 상태 UI 업데이트 (공격력, 치명타, 흑섬)
+    if (player.buff.turns > 0) {
+        document.getElementById('buff-badge').style.display = 'inline-block';
+        document.getElementById('buff-turns').innerText = player.buff.turns;
+    } else {
+        document.getElementById('buff-badge').style.display = 'none';
+    }
+
+    if (player.critBuff.turns > 0) {
+        document.getElementById('crit-buff-badge').style.display = 'inline-block';
+        document.getElementById('crit-buff-turns').innerText = player.critBuff.turns;
+    } else {
+        document.getElementById('crit-buff-badge').style.display = 'none';
+    }
+
+    if (player.blackFlashBuff.active) {
+        document.getElementById('black-flash-badge').style.display = 'inline-block';
+        document.getElementById('black-flash-turns').innerText = player.blackFlashBuff.duration;
+    } else {
+        document.getElementById('black-flash-badge').style.display = 'none';
+    }
+
+    // 몬스터 UI 동적 생성 및 업데이트
+    const monsterArea = document.getElementById('monster-area');
+    monsterArea.innerHTML = '';
+    monsters.forEach((monster, index) => {
+        const isTargeted = index === player.targetIndex;
+        const isDead = monster.hp <= 0;
+        const isStunned = monster.isStunned;
+
+        const monsterWrapper = document.createElement('div');
+        monsterWrapper.className = 'monster-wrapper';
+        if (isTargeted) monsterWrapper.classList.add('targeted');
+        if (isDead) monsterWrapper.classList.add('dead');
+
+        monsterWrapper.innerHTML = `
+            <div class="stun-indicator" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 30px; display: ${isStunned ? 'block' : 'none'};">💫</div>
+            <div class="target-indicator">🔻</div>
+            <div class="character">
+                <div class="emoji">${isDead ? '💀' : monster.emoji}</div>
+                <div class="name">${monster.name}</div>
+                <div class="hp-bar-bg">
+                    <div class="hp-bar-fill" style="width: ${Math.max(0, monster.hp) / monster.maxHp * 100}%"></div>
+                </div>
+                <div class="hp-text">${Math.max(0, monster.hp)} / ${monster.maxHp}</div>
+            </div>
+        `;
+        monsterArea.appendChild(monsterWrapper);
+    });
+
+    // 현재 층, 턴 정보 업데이트
+    document.getElementById('floor-num').innerText = floor;
+    document.getElementById('turn-num').innerText = turn;
+}
+
+/**
+ * 스킬 선택 버튼들을 보여주는 함수
+ */
+function showSkillSelection() {
+    // 플레이어 턴이 아니거나 게임오버 상태면 실행하지 않음
+    if (isGameOver || !isPlayerTurn) return;
+    const controlsPanel = document.getElementById('controls-panel');
+    const defenseBtnClass = player.defenseStance ? 'btn-defend-active' : 'btn-defend';
+    controlsPanel.style.gridTemplateColumns = '1fr 1fr 1fr 1fr'; // 4개의 스킬 버튼을 위한 레이아웃
+    controlsPanel.innerHTML = `
+        <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span style="font-size: 16px;">(MP 0)</span></button>
+        <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span style="font-size: 16px;">(MP 15)</span></button>
+        <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span style="font-size: 16px;">(MP 25)</span></button>
+        <button class="${defenseBtnClass}" onclick="toggleDefenseStance()">🛡️ 방어 태세<br><span style="font-size: 16px;">(MP 10)</span></button>
+        <button class="btn-inventory" style="grid-column: 1 / 5; font-size: 20px;" onclick="showMainControls()">↩️ 뒤로가기</button>
+    `;
+}
+
+/**
+ * 메인 컨트롤 버튼(공격/스킬, 물약, 인벤토리)들을 보여주는 함수
+ */
+function showMainControls() {
+    if (isGameOver) return;
+    const controlsPanel = document.getElementById('controls-panel');
+    controlsPanel.style.gridTemplateColumns = '4fr 3fr 3fr'; // 원래 레이아웃으로 복원
+    controlsPanel.innerHTML = `
+        <button class="btn-attack" onclick="showSkillSelection()">⚔️ 공격 / 스킬</button>
+        <button class="btn-heal" onclick="showAllPotions()">🧪 물약 사용</button>
+        <button class="btn-armor" onclick="openInventoryModal()">🛡️ 인벤토리</button>
+    `;
+}
+
+/**
+ * 사용 가능한 모든 물약 목록을 보여주는 모달을 여는 함수
+ * 인벤토리의 소비 아이템을 종류별로 묶어서 보여줍니다.
+ */
+function showAllPotions() {
+    const modal = document.getElementById('item-select-modal');
+    document.getElementById('item-select-title').innerText = "물약 사용";
+
+    const allPotions = player.inventory.filter(item => item.type === 'heal' || item.type === 'mpPotion' || item.type === 'buff' || item.type === 'critBuff');
+
+    if (allPotions.length === 0) {
+        alert("사용 가능한 물약이 없습니다.");
+        return;
+    }
+
+    // 각 카테고리별 리스트 컨테이너 가져오기
+    const healList = document.getElementById('potion-list-heal');
+    const mpList = document.getElementById('potion-list-mp');
+    const buffList = document.getElementById('potion-list-buff');
+    const critBuffList = document.getElementById('potion-list-critBuff');
+
+    // 리스트 초기화
+    healList.innerHTML = '';
+    mpList.innerHTML = '';
+    buffList.innerHTML = '';
+    critBuffList.innerHTML = '';
+
+    // 같은 이름의 아이템을 그룹화하여 개수를 셉니다.
+    const groupedHeal = {};
+    const groupedMp = {};
+    const groupedBuff = {};
+    const groupedCritBuff = {};
+
+    player.inventory.forEach((item, index) => {
+        let targetGroup;
+        if (item.type === 'heal') targetGroup = groupedHeal;
+        else if (item.type === 'buff') targetGroup = groupedBuff;
+        else if (item.type === 'critBuff') targetGroup = groupedCritBuff;
+        else if (item.type === 'mpPotion') targetGroup = groupedMp;
+        else return;
+
+        if (!targetGroup[item.name]) {
+            targetGroup[item.name] = { ...item, count: 0, originalIndexes: [] };
+        }
+        targetGroup[item.name].count++;
+        targetGroup[item.name].originalIndexes.push(index);
+    });
+
+    // 그룹화된 아이템을 UI에 렌더링하는 헬퍼 함수
+    const renderPotionGroup = (group, container) => {
+        if (Object.keys(group).length === 0) {
+            container.innerHTML = '<div class="inventory-item" style="justify-content: center; color: #888;">없음</div>';
+            return;
+        }
+        for (const name in group) {
+            const itemGroup = group[name];
+            const itemEl = document.createElement('div'); // '사용' 버튼은 항상 첫 번째 아이템의 인덱스를 사용
+            itemEl.className = 'inventory-item';
+            const useIndex = itemGroup.originalIndexes[0];
+            
+            let emoji = '';
+            if (itemGroup.type === 'heal') emoji = '💊';
+            else if (itemGroup.type === 'buff') emoji = '🧪';
+            else if (itemGroup.type === 'critBuff') emoji = '🔮';
+            else if (itemGroup.type === 'mpPotion') emoji = '💧';
+
+            itemEl.innerHTML = `
+                <div class="item-info">${emoji} ${itemGroup.name} (보유: ${itemGroup.count}개)</div>
+                <button class="btn-use" onclick="useInventoryItem(${useIndex})">사용</button>
+            `;
+            container.appendChild(itemEl);
+        }
+    };
+
+    // 각 카테고리 렌더링
+    renderPotionGroup(groupedHeal, healList);
+    renderPotionGroup(groupedMp, mpList);
+    renderPotionGroup(groupedBuff, buffList);
+    renderPotionGroup(groupedCritBuff, critBuffList);
+    
+    modal.style.display = 'flex';
+}
+
+/**
+ * 아이템 선택 모달을 닫는 함수
+ */
+function closeItemSelect() {
+    document.getElementById('item-select-modal').style.display = 'none';
+}
+
+/**
+ * 스탯 분배 모달의 내용을 렌더링하는 함수
+ */
+function renderStatUpModal() {
+    document.querySelector('#stat-points-display span').innerText = tempStatPoints;
+    const list = document.querySelector('.stat-up-list');
+    list.innerHTML = '';
+
+    for (const key in statInfo) {
+        const info = statInfo[key];
+        const itemEl = document.createElement('div');
+        itemEl.className = 'stat-up-item';
+        itemEl.innerHTML = `
+            <div class="stat-info">
+                <h4>${info.name}: ${tempStats[key]}</h4>
+                <p>${info.description}</p>
+            </div>
+            <button class="btn-use" onclick="addStat('${key}')">+</button>
+        `;
+        list.appendChild(itemEl);
+    }
+
+    // --- 스탯 분배 시 변경될 능력치를 미리 보여주는 로직 ---
+    const currentValuesEl = document.getElementById('stat-current-values');
+    const weaponBonus = player.equippedWeapon ? player.equippedWeapon.atkBonus : 0;
+    const armorBonus = player.equippedArmor ? player.equippedArmor.maxHpBonus : 0;
+
+    // "현재" 값 (버프 제외, 순수 스탯/장비 효과만)
+    const currentAtk = player.baseAtk + (player.str * 2) + weaponBonus;
+    const currentMaxHp = player.baseMaxHp + (player.vit * 5) + armorBonus;
+    const currentMaxMp = player.baseMaxMp + (player.mnd * 5);
+    const currentCritChance = 11 + (player.luk * 0.7);
+    const currentEvasionChance = 4 + (player.agi * 2);
+    const currentGoldBonus = 1 + (player.int * 0.02);
+    const currentBlackFlashChance = 0.008 + (player.fcs * 0.004);
+
+    // "임시" 값 (스탯 분배 후)
+    const tempAtk = player.baseAtk + (tempStats.str * 2) + weaponBonus;
+    const tempMaxHp = player.baseMaxHp + (tempStats.vit * 5) + armorBonus;
+    const tempMaxMp = player.baseMaxMp + (tempStats.mnd * 5);
+    const tempCritChance = 11 + (tempStats.luk * 0.7);
+    const tempEvasionChance = 4 + (tempStats.agi * 2);
+    const tempGoldBonus = 1 + (tempStats.int * 0.02);
+    const tempBlackFlashChance = 0.008 + (tempStats.fcs * 0.004);
+
+    currentValuesEl.innerHTML = `
+        공격력: ${currentAtk} → ${tempAtk} | 최대체력: ${currentMaxHp} → ${tempMaxHp}<br>
+        최대MP: ${currentMaxMp} → ${tempMaxMp} | 회피: ${currentEvasionChance.toFixed(1)}% → ${tempEvasionChance.toFixed(1)}%<br>
+        치명타: ${currentCritChance.toFixed(1)}% → ${tempCritChance.toFixed(1)}% | 골드 보너스: ${((currentGoldBonus - 1) * 100).toFixed(0)}% → ${((tempGoldBonus - 1) * 100).toFixed(0)}%<br>
+        흑섬 확률: ${(currentBlackFlashChance * 100).toFixed(1)}% → ${(tempBlackFlashChance * 100).toFixed(1)}%
+    `;
+}
+
+/**
+ * 인벤토리(장비, 전리품, 스탯) 관리 모달을 여는 함수
+ */
+function openInventoryModal() {
+    // 스탯 분배를 위한 임시 변수 초기화
+    tempStatPoints = player.statPoints;
+    tempStats = { str: player.str, vit: player.vit, luk: player.luk, agi: player.agi, int: player.int, mnd: player.mnd, fcs: player.fcs };
+
+    const modal = document.getElementById('equipment-modal');
+    modal.style.display = 'flex';
+    
+    // 전리품 섹션이 없으면 동적으로 생성
+    const container = modal.querySelector('.management-container');
+    let lootSection = document.getElementById('loot-management-section');
+    if (!lootSection) {
+        lootSection = document.createElement('div');
+        lootSection.id = 'loot-management-section';
+        lootSection.className = 'management-section';
+        lootSection.innerHTML = `
+            <h3>전리품</h3>
+            <div id="loot-inventory-list" class="equipment-list" style="max-height: 45vh; overflow-y: auto;"></div>
+        `;
+        // 스탯 섹션 앞에 전리품 섹션 삽입
+        const statSection = container.querySelector('.stat-up-list').closest('.management-section');
+        if (statSection) {
+            container.insertBefore(lootSection, statSection);
+        } else {
+            container.appendChild(lootSection);
+        }
+    }
+    
+    // 모달 내용 렌더링
+    renderStatUpModal();
+    renderEquipment();
+    renderLootInventory(); // 전리품 인벤토리 렌더링
+}
+
+/**
+ * 인벤토리(장비/스탯) 모달을 닫는 함수
+ */
+function closeInventoryModal() {
+    document.getElementById('equipment-modal').style.display = 'none';
+}
+
+/**
+ * 장비 관리 모달을 닫는 함수 (HTML과의 호환성을 위해 유지)
+ * HTML 파일에 onclick="closeEquipment()"가 남아있을 수 있어 추가합니다.
+ */
+function closeEquipment() {
+    closeInventoryModal();
+}
+
+/**
+ * 전리품 인벤토리 UI를 렌더링하는 함수
+ */
+function renderLootInventory() {
+    const listEl = document.getElementById('loot-inventory-list');
+    listEl.innerHTML = '';
+    if (player.lootInventory.length === 0) {
+        listEl.innerHTML = '<div class="inventory-item" style="justify-content: center;">보유한 전리품이 없습니다.</div>';
+    } else {
+        player.lootInventory.forEach((loot, index) => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'inventory-item';
+            const statInfoText = loot.type === 'permanent_stat' ? `${statInfo[loot.stat].name} +${loot.value}` : '특별 효과';
+            itemEl.innerHTML = `
+                <div class="item-info">
+                    <h4>${loot.name}</h4>
+                    <p style="color: #f59e0b;">효과: ${statInfoText}</p>
+                </div>
+                <button class="btn-use" onclick="useLootItem(${index})">사용</button>
+            `;
+            listEl.appendChild(itemEl);
+        });
+    }
+}
+
+/**
+ * 장비 관리 UI(현재 착용 장비, 보유 장비 목록)를 렌더링하는 함수
+ */
+function renderEquipment() {
+    // 현재 착용 장비 표시
+    const currentDisplay = document.getElementById('current-equipment-display');
+    const currentArmorName = player.equippedArmor ? player.equippedArmor.name : '없음';
+    const currentWeaponName = player.equippedWeapon ? player.equippedWeapon.name : '없음';
+    currentDisplay.innerHTML = `
+        <div class="current-equipment-item">현재 방어구: ${currentArmorName}</div>
+        <div class="current-equipment-item">현재 무기: ${currentWeaponName}</div>
+    `;
+
+    // 보유 방어구 목록 렌더링
+    const armorListEl = document.getElementById('equipment-armor-list');
+    armorListEl.innerHTML = '';
+    if (player.armorInventory.length === 0) {
+        armorListEl.innerHTML = '<div class="inventory-item">보유한 방어구가 없습니다.</div>';
+    } else {
+        player.armorInventory.forEach((armor, index) => {
+            const isEquipped = player.equippedArmor && player.equippedArmor.name === armor.name;
+            const itemEl = document.createElement('div');
+            itemEl.className = 'inventory-item';
+            itemEl.innerHTML = `
+                <div class="item-info">${armor.emoji} ${armor.name} (+체력 ${armor.maxHpBonus})</div>
+                <button class="btn-use" onclick="equipItem('armor', ${index})" ${isEquipped ? 'disabled' : ''}>
+                    ${isEquipped ? '착용중' : '착용'}
+                </button>
+            `;
+            armorListEl.appendChild(itemEl);
+        });
+    }
+
+    // 보유 무기 목록 렌더링
+    const weaponListEl = document.getElementById('equipment-weapon-list');
+    weaponListEl.innerHTML = '';
+    if (player.weaponInventory.length === 0) {
+        weaponListEl.innerHTML = '<div class="inventory-item">보유한 무기가 없습니다.</div>';
+    } else {
+        player.weaponInventory.forEach((weapon, index) => {
+            const isEquipped = player.equippedWeapon && player.equippedWeapon.name === weapon.name;
+            const itemEl = document.createElement('div');
+            itemEl.className = 'inventory-item';
+            itemEl.innerHTML = `
+                <div class="item-info">${weapon.emoji} ${weapon.name} (+공격력 ${weapon.atkBonus})</div>
+                <button class="btn-use" onclick="equipItem('weapon', ${index})" ${isEquipped ? 'disabled' : ''}>
+                    ${isEquipped ? '착용중' : '착용'}
+                </button>
+            `;
+            weaponListEl.appendChild(itemEl);
+        });
+    }
+}
+
+/**
+ * 상점 모달을 여는 함수
+ * @param {boolean} [auto=false] - 5층마다 자동으로 열렸는지 여부.
+ *                         true이면 상점을 닫을 때 자동으로 다음 층으로 이동.
+ */
+function openShop(auto = false) {
+    isShopAutoOpened = auto;
+    const modal = document.getElementById('shop-modal');
+    modal.style.display = 'flex';
+    document.getElementById('shop-coins').innerText = player.coins;
+
+    // 전리품 판매 섹션이 없으면 동적으로 생성
+    const shopContainer = modal.querySelector('.shop-container');
+    let sellRow = document.getElementById('sell-loot-row');
+    if (!sellRow) {
+        sellRow = document.createElement('div');
+        sellRow.id = 'sell-loot-row';
+        sellRow.className = 'shop-row';
+        sellRow.innerHTML = `
+            <div class="shop-section" style="flex: 1 1 100%;">
+                <h3>전리품 판매</h3>
+                <div id="sell-loot-items" class="shop-items"></div>
+            </div>
+        `;
+        shopContainer.appendChild(sellRow);
+    }
+
+    renderShopItems();
+    log("떠돌이 상인을 만났습니다.", 'log-system');
+}
+
+/**
+ * 상점 모달을 닫는 함수
+ */
+function closeShop() {
+    document.getElementById('shop-modal').style.display = 'none';
+    updateUI(); // 상점에서 나온 후 UI 갱신
+    if (isShopAutoOpened) {
+        isShopAutoOpened = false;
+        nextFloor();
+    }
+}
+
+/**
+ * 상점에서 판매하는 모든 아이템 목록을 UI에 렌더링하는 함수
+ */
+function renderShopItems() {
+    const armorContainer = document.getElementById('armor-shop-items');
+    armorContainer.innerHTML = '';
+    armorList.forEach(armor => {
+        const isEquipped = player.equippedArmor && player.equippedArmor.name === armor.name;
+        const button = document.createElement('button');
+        button.className = 'shop-btn';
+        button.disabled = isEquipped;
+        button.innerHTML = `
+            <div class="armor-emoji">${armor.emoji}</div>
+            ${armor.name}<br>
+            (최대체력 +${armor.maxHpBonus})<br>
+            <span>${isEquipped ? '착용중' : armor.cost + ' G'}</span>
+        `;
+        button.onclick = () => buyItem('armor', armor.cost, armor);
+        armorContainer.appendChild(button);
+    });
+
+    const healContainer = document.getElementById('heal-potion-shop-items');
+    healContainer.innerHTML = '';
+    healPotionList.forEach(potion => {
+        const button = document.createElement('button');
+        button.className = 'shop-btn';
+        const healText = potion.healAmount === 9999 ? 'MAX' : `+${potion.healAmount}`;
+        button.innerHTML = `
+            ${potion.name}<br>
+            (체력 ${healText} 회복)<br>
+            <span>${potion.cost} G</span>
+        `;
+        button.onclick = () => buyItem('heal', potion.cost, potion);
+        healContainer.appendChild(button);
+    });
+
+    const mpContainer = document.getElementById('mp-potion-shop-items');
+    mpContainer.innerHTML = '';
+    mpPotionList.forEach(potion => {
+        const button = document.createElement('button');
+        button.className = 'shop-btn';
+        const mpText = potion.mpAmount === 9999 ? 'MAX' : `+${potion.mpAmount}`;
+        button.innerHTML = `
+            ${potion.name}<br>
+            (마나 ${mpText} 회복)<br>
+            <span>${potion.cost} G</span>
+        `;
+        button.onclick = () => buyItem('mpPotion', potion.cost, potion);
+        mpContainer.appendChild(button);
+    });
+
+    const buffContainer = document.getElementById('buff-potion-shop-items');
+    buffContainer.innerHTML = '';
+    buffPotionList.forEach(potion => {
+        const button = document.createElement('button');
+        button.className = 'shop-btn';
+        button.innerHTML = `
+            ${potion.name}<br>
+            (${potion.mult}배 / ${potion.turns}턴)<br>
+            <span>${potion.cost} G</span>
+        `;
+        button.onclick = () => buyItem('buff', potion.cost, potion);
+        buffContainer.appendChild(button);
+    });
+    
+    const critContainer = document.getElementById('crit-potion-shop-items');
+    critContainer.innerHTML = '';
+    critPotionList.forEach(potion => {
+        const button = document.createElement('button');
+        button.className = 'shop-btn';
+        button.innerHTML = `
+            ${potion.name}<br>
+            (치명타 +${potion.bonus}% / ${potion.turns}턴)<br>
+            <span>${potion.cost} G</span>
+        `;
+        button.onclick = () => buyItem('critBuff', potion.cost, potion);
+        critContainer.appendChild(button);
+    });
+
+    const weaponContainer = document.getElementById('weapon-shop-items');
+    weaponContainer.innerHTML = '';
+    weaponList.forEach(weapon => {
+        const isEquipped = player.equippedWeapon && player.equippedWeapon.name === weapon.name;
+        const button = document.createElement('button');
+        button.className = 'shop-btn';
+        button.disabled = isEquipped;
+        button.innerHTML = `
+            <div class="armor-emoji">${weapon.emoji}</div>
+            ${weapon.name}<br>
+            (공격력 +${weapon.atkBonus})<br>
+            <span>${isEquipped ? '착용중' : weapon.cost + ' G'}</span>
+        `;
+        button.onclick = () => buyItem('weapon', weapon.cost, weapon);
+        weaponContainer.appendChild(button);
+    });
+
+    // 전리품 판매 목록 렌더링
+    renderSellableLoot();
+}
+
+/**
+ * 판매 가능한 전리품 목록을 상점 UI에 렌더링하는 함수
+ */
+function renderSellableLoot() {
+    const sellContainer = document.getElementById('sell-loot-items');
+    sellContainer.innerHTML = '';
+
+    if (player.lootInventory.length === 0) {
+        sellContainer.innerHTML = '<div class="shop-btn" style="justify-content: center; color: #888;">판매할 전리품이 없습니다.</div>';
+        return;
+    }
+
+    player.lootInventory.forEach((loot, index) => {
+        const button = document.createElement('button');
+        button.className = 'shop-btn';
+        button.innerHTML = `
+            ${loot.name}<br>
+            <span>판매 가격: ${loot.sellPrice} G</span>
+        `;
+        button.onclick = () => sellLootItem(index);
+        sellContainer.appendChild(button);
+    });
+}
+
+/**
+ * 인벤토리 모달을 여는 함수 (현재는 사용되지 않음)
+ */
+function openInventory() {
+    document.getElementById('inventory-modal').style.display = 'flex';
+    renderInventory();
+}
+
+/**
+ * 인벤토리 모달을 닫는 함수 (현재는 사용되지 않음)
+ */
+function closeInventory() {
+    document.getElementById('inventory-modal').style.display = 'none';
+}
+
+/**
+ * 인벤토리 모달의 내용을 렌더링하는 함수 (현재는 사용되지 않음)
+ */
+function renderInventory() {
+    const list = document.getElementById('inventory-list');
+    list.innerHTML = '';
+    const groupedInventory = {};
+    player.inventory.forEach(item => {
+        if (!groupedInventory[item.name]) {
+            groupedInventory[item.name] = { ...item, count: 0 };
+        }
+        groupedInventory[item.name].count++;
+    });
+
+    for (const name in groupedInventory) {
+        const itemGroup = groupedInventory[name];
+        const itemEl = document.createElement('div');
+        itemEl.className = 'inventory-item';
+        
+        let emoji = '';
+        if (itemGroup.type === 'heal') emoji = '💊';
+        else if (itemGroup.type === 'buff') emoji = '🧪';
+        else if (itemGroup.type === 'mpPotion') emoji = '💧';
+
+        itemEl.innerHTML = `<div class="item-info">${emoji} ${itemGroup.name} (보유: ${itemGroup.count}개)</div>`;
+        list.appendChild(itemEl);
+    }
+
+    if (list.innerHTML === '') {
+        list.innerHTML = '<div class="inventory-item">인벤토리가 비어있습니다.</div>';
+    }
+}
