@@ -26,6 +26,7 @@ const player = {
     fcs: 0,             // 고도의 집중 스탯 (흑섬 확률에 영향)
     blackFlashBuff: { active: false, duration: 0 }, // 흑섬 버프 상태 (활성화 여부, 남은 층)
     critBuff: { turns: 0, bonus: 0 }, // 치명타 확률 버프 상태 (남은 턴, 추가 확률)
+    guaranteedCrit: false, // 다음 공격 확정 치명타 여부
     defenseBuff: { turns: 0, reduction: 0.6 }, // 방어 버프 (60% 감소)
     defenseStance: false, // 방어 태세 여부
     evasionChance: 4,   // 현재 회피 확률 (%)
@@ -444,6 +445,9 @@ function executeNormalAttack() {
         }
         player.blackFlashBuff.duration = 3; // 흑섬이 터질 때마다 지속시간 갱신
 
+        player.guaranteedCrit = true; // 다음 공격 확정 치명타
+        log('흑섬의 여파로 다음 공격은 반드시 치명타가 됩니다!', 'log-system');
+
         targetMonster.hp -= dmg;
         showFloatingText(dmg, targetMonsterElement, 'black-flash');
     } else {
@@ -476,10 +480,19 @@ function executeNormalAttack() {
             }
         }
 
-                // 플레이어 치명타 발동 체크
-        if (Math.random() < player.critChance / 100) {
-            dmg = Math.floor(dmg * player.critDamage);
+        // 플레이어 치명타 발동 체크
+        let isCrit = false;
+        if (player.guaranteedCrit) {
+            isCrit = true;
+            player.guaranteedCrit = false; // 사용 후 플래그 해제
+            log('⚡ 흑섬의 여파로 확정 치명타가 발동됩니다!', 'log-player');
+        } else if (Math.random() < player.critChance / 100) {
+            isCrit = true;
             log(`⚡ 치명타! 용사가 ${targetMonster.name}에게 ${dmg}의 폭발적인 피해를 입혔습니다!`, 'log-player');
+        }
+
+        if (isCrit) {
+            dmg = Math.floor(dmg * player.critDamage);
             showFloatingText(dmg, targetMonsterElement, 'crit');
         } else {
             log(`용사가 ${targetMonster.name}에게 ${dmg}의 피해를 입혔습니다!`, 'log-player');
@@ -806,8 +819,16 @@ function executePowerAttack() {
     const targetMonsterElement = monsterWrappers[player.targetIndex];
 
     let dmg = Math.floor(player.atk * 2.0); // 200% 데미지
-    log(`💥 강 공격! ${targetMonster.name}에게 ${dmg}의 강력한 피해를 입혔습니다!`, 'log-player');
-    showFloatingText(dmg, targetMonsterElement, 'crit'); // 치명타 효과로 보여주기
+
+    // 확정 치명타 체크
+    if (player.guaranteedCrit) {
+        dmg = Math.floor(dmg * player.critDamage);
+        player.guaranteedCrit = false; // 사용 후 플래그 해제
+        log('⚡ 흑섬의 여파로 강 공격이 치명타로 적중했습니다!', 'log-player');
+    } else {
+        log(`💥 강 공격! ${targetMonster.name}에게 ${dmg}의 강력한 피해를 입혔습니다!`, 'log-player');
+    }
+    showFloatingText(dmg, targetMonsterElement, 'crit'); // 강공격은 항상 crit 스타일로 표시
 
     targetMonster.hp -= dmg;
 
@@ -906,17 +927,30 @@ function executeSweepAttack() {
     const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
     let totalXpGained = 0;
 
+    // 확정 치명타 체크
+    const isCrit = player.guaranteedCrit;
+    if (isCrit) {
+        player.guaranteedCrit = false; // 사용 후 플래그 해제
+        log('⚡ 흑섬의 여파로 휩쓸기가 치명타로 적중합니다!', 'log-player');
+    }
+
     livingMonsters.forEach((monster, index) => {
         setTimeout(() => {
             const baseDmg = Math.floor(Math.random() * 5) + player.atk;
             let dmg = Math.floor(baseDmg * 0.8); // 기본 데미지의 80%
-            monster.hp -= dmg;
 
             const monsterIndexInAll = monsters.findIndex(m => m === monster);
             const targetElement = monsterElements[monsterIndexInAll];
             
-            showFloatingText(dmg, targetElement, 'damage');
+            if (isCrit) {
+                dmg = Math.floor(dmg * player.critDamage);
+                showFloatingText(dmg, targetElement, 'crit');
+            } else {
+                showFloatingText(dmg, targetElement, 'damage');
+            }
             
+            monster.hp -= dmg;
+
             if (targetElement) {
                 const emojiElement = targetElement.querySelector('.emoji');
                 emojiElement.classList.add('hit');
