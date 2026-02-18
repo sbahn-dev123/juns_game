@@ -152,7 +152,7 @@ function showMainControls() {
     if (isGameOver) return;
     const controlsPanel = document.getElementById('controls-panel');
     controlsPanel.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
-    const saveButton = isLoggedIn() ? `<button class="btn-buff" onclick="saveGame()">💾 게임 저장</button>` : `<button class="btn-buff" disabled title="로그인 시 사용 가능">💾 게임 저장</button>`;
+    const saveButton = isLoggedIn() ? `<button class="btn-buff" onclick="saveGame()">💾 저장</button>` : `<button class="btn-buff" disabled title="로그인 시 사용 가능">💾 저장</button>`;
     controlsPanel.innerHTML = `
         <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬</button>
         ${saveButton}
