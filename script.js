@@ -14,7 +14,7 @@ const player = {
     maxMp: 40,          // 현재 최대 마나
     mp: 40,             // 현재 마나
     baseAtk: 8,        // 기본 공격력 (스탯, 장비 미적용)
-    atk: 10,            // 현재 공격력 (스탯, 장비 적용)
+    atk: 8,            // 현재 공격력 (스탯, 장비 적용)
     level: 1,           // 현재 레벨
     xp: 0,              // 현재 경험치
     xpToNextLevel: 100, // 다음 레벨까지 필요한 경험치
@@ -37,7 +37,7 @@ const player = {
     isStunned: false,   // 기절 상태 여부
     // --- 계산된 스탯 ---
     evasionChance: 4,   // 현재 회피 확률 (%)
-    critChance: 11,     // 현재 치명타 확률 (%)
+    critChance: 10,     // 현재 치명타 확률 (%)
     critDamage: 2,      // 현재 치명타 배율
     goldBonus: 1,       // 골드 획득 보너스 배율
     blackFlashChance: 0.008, // 흑섬 확률
