@@ -1,10 +1,12 @@
 
 //! ============================================================
 //! 1. 게임 상태 변수 및 데이터 정의
+//! 이 섹션에서는 게임의 모든 상태와 기본 데이터를 정의합니다.
 //! ============================================================
 
 //* 플레이어의 모든 상태를 담고 있는 객체
 const player = {
+    // --- 기본 스탯 ---
     baseMaxHp: 35,      // 기본 최대 체력 (스탯, 장비 미적용)
     maxHp: 35,          // 현재 최대 체력 (스탯, 장비 적용)
     hp: 35,             // 현재 체력
@@ -17,6 +19,7 @@ const player = {
     xp: 0,              // 현재 경험치
     xpToNextLevel: 100, // 다음 레벨까지 필요한 경험치
     statPoints: 0,      // 분배 가능한 스탯 포인트
+    // --- 분배 가능 스탯 ---
     str: 0,             // 힘 스탯 (공격력에 영향)
     vit: 0,             // 체력 스탯 (최대 체력에 영향)
     luk: 0,             // 운 스탯 (치명타 확률에 영향)
@@ -24,19 +27,23 @@ const player = {
     int: 0,             // 지혜 스탯 (골드 획득량에 영향)
     mnd: 0,             // 정신력 스탯 (최대 MP에 영향)
     fcs: 0,             // 고도의 집중 스탯 (흑섬 확률에 영향)
+    // --- 버프 및 상태 ---
     blackFlashBuff: { active: false, duration: 0 }, // 흑섬 버프 상태 (활성화 여부, 남은 층)
     critBuff: { turns: 0, bonus: 0 }, // 치명타 확률 버프 상태 (남은 턴, 추가 확률)
     guaranteedCrit: false, // 다음 공격 확정 치명타 여부
     defenseBuff: { turns: 0, reduction: 0.6 }, // 방어 버프 (60% 감소)
     defenseStance: false, // 방어 태세 여부
+    isStunned: false,   // 기절 상태 여부
+    // --- 계산된 스탯 ---
     evasionChance: 4,   // 현재 회피 확률 (%)
     critChance: 11,     // 현재 치명타 확률 (%)
     critDamage: 2,      // 현재 치명타 배율
     goldBonus: 1,       // 골드 획득 보너스 배율
-    isStunned: false,   // 기절 상태 여부
+    // --- 재화 및 장비 ---
     coins: 0,           // 보유 골드
     baseEmoji: '🧙‍♂️',   // 기본 이모지
     emoji: '🧙‍♂️',       // 현재 이모지 (장비에 따라 변경)
+    // --- 인벤토리 ---
     equippedArmor: null, // 현재 착용한 방어구
     equippedWeapon: null,// 현재 착용한 무기
     armorInventory: [], // 보유한 방어구 목록
@@ -44,6 +51,7 @@ const player = {
     lootInventory: [], // 보스 전리품 보관
     targetIndex: 0,     // 현재 공격 목표 몬스터의 인덱스
     buff: { turns: 0, multiplier: 1.5 }, // 공격력 강화 버프 상태 (남은 턴, 공격력 배율)
+    // --- 소비 아이템 인벤토리 ---
     inventory: [        // 보유한 소비 아이템 목록
         // 게임 시작 시 기본 회복 물약 3개 지급
         { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
@@ -52,7 +60,7 @@ const player = {
     ]
 };
 
-//* 현재 전투 중인 몬스터 목록을 담는 배열
+//* 현재 전투 중인 몬스터 객체들을 담는 배열
 let monsters = [];
 
 //* 게임의 주요 상태 변수
@@ -62,7 +70,7 @@ let isPlayerTurn = true;    // 플레이어 턴 여부
 let isGameOver = false;     // 게임 오버 여부
 let isShopAutoOpened = false; // 5층마다 상점이 자동으로 열렸는지 여부
 
-//* 몬스터 도감: 층이 올라갈수록 이 목록에서 순서대로 더 강한 몬스터가 등장
+//* 일반 몬스터 도감: 층이 올라갈수록 이 목록에서 순서대로 더 강한 몬스터가 등장합니다.
 const monsterList = [
     { name: "박쥐", emoji: "🦇", hp: 30, atk: 3 },
     { name: "시궁창 쥐", emoji: "🐀", hp: 32, atk: 3 },
@@ -98,7 +106,7 @@ const monsterList = [
     { name: "심연의 마왕", emoji: "😈", hp: 150, atk: 20 }
 ];
 
-//* 중간 보스 몬스터 도감: 10층, 30층, 50층... 에 등장
+//* 중간 보스 몬스터 도감: 10층, 30층, 50층 등 20층 간격으로 등장하는 특별한 몬스터입니다.
 const midBossList = [
     // 10층 보스
     { name: "오크 족장", emoji: "🗿", hp: 100, atk: 15, xp: 300, dropCoins: 150, specialDrop: { type: 'permanent_stat', stat: 'str', value: 1, name: '족장의 징표', sellPrice: 500 } },
@@ -122,7 +130,7 @@ const midBossList = [
     { name: "차원의 방랑자", emoji: "💠", hp: 8500, atk: 330, xp: 40000, dropCoins: 27000, specialDrop: { type: 'permanent_stat', stat: 'luk', value: 2, name: '차원의 균열', sellPrice: 45000 } },
 ];
 
-//* 보스 몬스터 도감: 20층마다 등장하는 특별한 몬스터
+//* 메인 보스 몬스터 도감: 20층, 40층, 60층 등 20층마다 등장하는 강력한 몬스터입니다.
 const bossList = [
     // 20층 보스
     { name: "거대 고블린 왕", emoji: "👑", hp: 280, atk: 22, xp: 800, dropCoins: 500, skill: { type: 'stun', chance: 0.32, name: '왕의 철퇴' }, specialDrop: { type: 'permanent_stat', stat: 'int', value: 2, name: '탐욕의 왕관', sellPrice: 1000 } },
@@ -146,7 +154,7 @@ const bossList = [
     { name: "종언의 창조주", emoji: "🌌", hp: 14000, atk: 350, xp: 50000, dropCoins: 35000, skill: { type: 'charge_attack', chance: 0.7, power: 4.5, name: '빅뱅' }, specialDrop: { type: 'permanent_stat', stat: 'fcs', value: 8, name: '창조주의 권능', sellPrice: 65000 } },
 ];
 
-//* 상점에서 판매하는 방어구 목록
+//* 상점에서 판매하는 방어구 목록: 티어가 높아질수록 성능과 가격이 증가합니다.
 const armorList = [
     { name: '누더기 가죽 갑옷', emoji: '🧑‍🌾', maxHpBonus: 20, cost: 120 },
     { name: '견고한 나무 갑옷', emoji: '🪖', maxHpBonus: 40, cost: 320 },
@@ -158,7 +166,7 @@ const armorList = [
     { name: '천상의 수호자 갑옷', emoji: '😇', maxHpBonus: 400, cost: 24000 },
 ];
 
-//* 상점에서 판매하는 회복 물약 목록
+//* 상점에서 판매하는 HP 회복 물약 목록
 const healPotionList = [
     { name: '낡은 물약', healAmount: 15, cost: 70 },
     { name: '소형 물약', healAmount: 25, cost: 130 },
@@ -182,7 +190,7 @@ const mpPotionList = [
     { name: '세계수의 눈물', mpAmount: 9999, cost: 2200 },
 ];
 
-//* 상점에서 판매하는 공격력 강화 물약 목록
+//* 상점에서 판매하는 공격력 강화(버프) 물약 목록
 const buffPotionList = [
     { name: '흐릿한 힘의 물약', turns: 6, mult: 1.2, cost: 150 },
     { name: '하급 힘의 물약', turns: 6, mult: 1.3, cost: 260 },
@@ -206,7 +214,7 @@ const weaponList = [
     { name: '신검 엑스칼리버', emoji: '✨', atkBonus: 130, cost: 30000 },
 ];
 
-//* 상점에서 판매하는 치명타 확률 증가 물약 목록
+//* 상점에서 판매하는 치명타 확률 증가(버프) 물약 목록
 const critPotionList = [
     { name: '약한 집중의 물약', bonus: 9, turns: 5, cost: 170 },
     { name: '집중의 물약', bonus: 14, turns: 5, cost: 360 },
@@ -222,7 +230,7 @@ const critPotionList = [
 let tempStatPoints = 0; // 임시 스탯 포인트
 let tempStats = {};     // 임시 스탯 객체 (힘, 체력, 운 등)
 
-//* 각 스탯의 이름과 설명을 정의한 객체
+//* 각 스탯의 이름과 설명을 정의한 객체 (스탯 분배 창에서 사용)
 const statInfo = {
     str: { name: '힘', description: '공격력을 2 증가시킵니다.' },
     vit: { name: '체력', description: '최대 체력을 5 증가시킵니다.' },
@@ -235,10 +243,14 @@ const statInfo = {
 
 //! ============================================================
 //! 2. 유틸리티 함수
+//! 게임 전반에서 사용되는 보조 기능들을 정의합니다.
 //! ============================================================
 
 /**
  * 로그 창에 메시지를 출력하는 함수
+ * @param {string} msg - 출력할 메시지 내용
+ * @param {string} [type=''] - 메시지 종류 ('log-player', 'log-monster', 'log-system')
+ * @param {object} [styles={}] - 적용할 추가 CSS 스타일
  */
 function log(msg, type = '', styles = {}) {
     const box = document.getElementById('log-box');
@@ -264,7 +276,7 @@ function triggerBlackFlash() {
  * 캐릭터 위에 떠오르는 텍스트(데미지, MISS 등)를 표시하는 함수
  * @param {string|number} text - 표시할 텍스트
  * @param {HTMLElement} targetElement - 텍스트가 표시될 대상 DOM 요소
- * @param {string} type - 텍스트 종류 ('damage', 'crit', 'miss', 'heal', 'black-flash')
+ * @param {string} type - 텍스트 종류 ('damage', 'crit', 'miss', 'heal', 'black-flash' 등)
  */
 function showFloatingText(text, targetElement, type) {
     if (!targetElement) return;
@@ -370,12 +382,14 @@ function updateUI() {
 
 //! ============================================================
 //! 3. 전투 로직
+//! 플레이어와 몬스터가 턴을 주고받는 핵심 전투 로직을 다룹니다.
 //! ============================================================
 
 /**
  * 플레이어의 일반 공격을 처리하는 함수
  */
 function executeNormalAttack() {
+    // --- 턴 시작 조건 검사 ---
     if (isGameOver || !isPlayerTurn) return;
 
     const targetMonster = monsters[player.targetIndex];
@@ -384,6 +398,7 @@ function executeNormalAttack() {
         return;
     }
 
+    // 방어 태세 여부에 따라 총 MP 소모량 계산
     const mpCost = 0;
     const defenseMpCost = player.defenseStance ? 10 : 0;
     const totalMpCost = mpCost + defenseMpCost;
@@ -393,6 +408,7 @@ function executeNormalAttack() {
         return;
     }
 
+    // 기절 상태 검사
     if (player.isStunned) {
         log("플레이어가 기절해서 움직일 수 없습니다!", 'log-player');
         player.isStunned = false; // 턴을 넘기면서 기절 해제
@@ -403,7 +419,7 @@ function executeNormalAttack() {
     isPlayerTurn = false;
     toggleControls(false); // 플레이어 턴이 아니므로 컨트롤 버튼 비활성화
 
-    // 방어 태세 로직 적용
+    // --- 방어 태세 로직 적용 ---
     if (player.defenseStance) {
         if (Math.random() < 0.78) {
             player.defenseBuff.turns = 1;
@@ -416,10 +432,10 @@ function executeNormalAttack() {
         player.defenseStance = false; // 사용 후 해제
     }
 
-    // 총 MP 소모
+    // --- MP 소모 및 공격 애니메이션 ---
     player.mp -= totalMpCost;
 
-    // --- 공격 애니메이션 ---
+    // 플레이어 공격 애니메이션
     const playerElement = document.getElementById('player-character');
     playerElement.style.transform = 'translateX(40px) scale(1.05)';
     setTimeout(() => {
@@ -430,7 +446,7 @@ function executeNormalAttack() {
     const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
     const targetMonsterElement = monsterWrappers[player.targetIndex];
 
-    // 흑섬(Black Flash) 발동 체크 (기본 0.8% + 집중 스탯)
+    // --- 흑섬(Black Flash) 발동 체크 (기본 0.8% + 집중 스탯) ---
     const blackFlashChance = 0.008 + (player.fcs * 0.004);
     if (Math.random() < blackFlashChance) {
         triggerBlackFlash();
@@ -451,7 +467,7 @@ function executeNormalAttack() {
         targetMonster.hp -= dmg;
         showFloatingText(dmg, targetMonsterElement, 'black-flash');
     } else {
-        // 일반 공격 로직
+        // --- 일반 공격 로직 ---
         // 몬스터 회피 체크 (5% 확률)
         if (Math.random() < 0.05) {
             log(`${targetMonster.name}이(가) 공격을 회피했다! (MISS)`, 'log-monster');
@@ -463,7 +479,7 @@ function executeNormalAttack() {
         // 플레이어 기본 공격 데미지 계산 (기본 공격력 + 0~4 랜덤 데미지)
         let dmg = Math.floor(Math.random() * 5) + player.atk;
 
-        // 공격력 버프 적용
+        // 공격력 버프 턴 감소 및 적용
         if (player.buff.turns > 0) {
             dmg = Math.floor(dmg * player.buff.multiplier);
             player.buff.turns--;
@@ -480,7 +496,7 @@ function executeNormalAttack() {
             }
         }
 
-        // 플레이어 치명타 발동 체크
+        // --- 플레이어 치명타 발동 체크 ---
         let isCrit = false;
         if (player.guaranteedCrit) {
             isCrit = true;
@@ -501,7 +517,7 @@ function executeNormalAttack() {
 
         targetMonster.hp -= dmg;
 
-        // 3% 확률로 몬스터 기절
+        // 3% 확률로 몬스터에게 기절 효과 부여
         if (Math.random() < 0.03) {
             targetMonster.isStunned = true;
             log(`몬스터가 기절했습니다!`, 'log-system');
@@ -509,7 +525,7 @@ function executeNormalAttack() {
         }
     }
 
-    // 몬스터 피격 시 흔들리는 애니메이션 효과
+    // --- 몬스터 피격 애니메이션 ---
     if (monsterWrappers[player.targetIndex]) {
         const emojiElement = monsterWrappers[player.targetIndex].querySelector('.emoji');
         if (emojiElement) {
@@ -520,7 +536,7 @@ function executeNormalAttack() {
 
     updateUI();
 
-    // 모든 몬스터가 죽었는지 확인
+    // --- 전투 종료 또는 턴 전환 처리 ---
     const allDead = monsters.every(m => m.hp <= 0);
     if (allDead) {
         if (targetMonster.hp <= 0) {
@@ -541,6 +557,7 @@ function executeNormalAttack() {
 
 /**
  * 몬스터들의 공격을 처리하는 함수
+ * 살아있는 모든 몬스터가 순서대로 플레이어를 공격합니다.
  */
 function monstersAttack() {
     if (isGameOver) return;
@@ -548,7 +565,7 @@ function monstersAttack() {
     const playerElement = document.getElementById('player-character');
     const livingMonsters = monsters.filter(m => m.hp > 0);
 
-    let defenseBuffUsedThisTurn = false;
+    let defenseBuffUsedThisTurn = false; // 이번 턴에 방어 성공 로그가 출력되었는지 확인하는 플래그
 
     livingMonsters.forEach((monster, i) => {
         setTimeout(() => { // 몬스터 공격 간 딜레이
@@ -557,10 +574,11 @@ function monstersAttack() {
             const monsterIndex = monsters.findIndex(m => m === monster);
             const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
 
-            // 보스 궁극기 발동 (이전 턴에 충전한 경우)
+            // --- 보스 궁극기(Charge Attack) 발동 ---
             if (monster.isCharging) {
                 const skill = monster.skill;
                 let dmg = Math.floor(monster.atk * skill.power);
+                // 방어 버프가 활성화된 경우 데미지 감소
                 if (player.defenseBuff.turns > 0) {
                     dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
                     if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
@@ -581,6 +599,7 @@ function monstersAttack() {
                 return; // 공격했으므로 이 몬스터의 턴 종료
             }
 
+            // --- 몬스터 기절 상태 처리 ---
             if (monster.isStunned) {
                 log(`${monster.name}은(는) 기절해서 움직일 수 없습니다!`, 'log-monster');
                 monster.isStunned = false; // 턴을 넘기면서 기절 해제
@@ -591,7 +610,7 @@ function monstersAttack() {
                 return;
             }
 
-            // --- 몬스터 공격 애니메이션 ---
+            // 몬스터 공격 애니메이션
             if (monsterElement) {
                 monsterElement.style.transform = 'translateX(-40px) scale(1.05)';
                 setTimeout(() => {
@@ -605,13 +624,13 @@ function monstersAttack() {
             }
             // --- 애니메이션 끝 ---
 
-            // 플레이어 회피 확률 체크
+            // --- 플레이어 회피 체크 ---
             if (Math.random() < player.evasionChance / 100) {
                 log(`용사가 ${monster.name}의 공격을 회피했다! (MISS)`, 'log-player');
                 showFloatingText('MISS', playerElement, 'miss');
             } else {
                 let usedSkill = false;
-                // 몬스터 스킬 사용 시도
+                // --- 몬스터 스킬 사용 시도 ---
                 if (monster.skill && Math.random() < monster.skill.chance) {
                     const skill = monster.skill;
                     usedSkill = true;
@@ -624,6 +643,7 @@ function monstersAttack() {
                             break;
                         case 'stun': {
                             let dmg = Math.floor(monster.atk * 1.2); // 스킬은 약간 더 강하게
+                            // 방어 버프 적용
                             if (player.defenseBuff.turns > 0) {
                                 dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
                                 if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
@@ -638,6 +658,7 @@ function monstersAttack() {
                         }
                         case 'drain': {
                             let dmg = monster.atk;
+                            // 방어 버프 적용
                             if (player.defenseBuff.turns > 0) {
                                 dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
                                 if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
@@ -664,11 +685,10 @@ function monstersAttack() {
                     }
                 }
 
-                // 스킬을 사용하지 않았으면 일반 공격
+                // --- 몬스터 일반 공격 ---
                 if (!usedSkill) {
                     let dmg = Math.floor(Math.random() * 3) + monster.atk;
                     // 몬스터 치명타 (17% 확률, 1.6배 데미지)
-
                     if (Math.random() < 0.17) {
                         dmg = Math.floor(dmg * 1.6);
                         log(`⚡ 치명타! ${monster.name}의 강력한 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
@@ -678,6 +698,7 @@ function monstersAttack() {
                         showFloatingText(dmg, playerElement, 'damage');
                     }
 
+                    // 방어 버프 적용
                     if (player.defenseBuff.turns > 0) {
                         dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
                         if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
@@ -686,7 +707,7 @@ function monstersAttack() {
                     player.hp -= dmg;
                 }
 
-                // 플레이어 피격 시 흔들리는 애니메이션 효과
+                // 플레이어 피격 애니메이션
                 const pEmoji = document.getElementById('player-emoji');
                 pEmoji.classList.add('hit');
                 setTimeout(() => pEmoji.classList.remove('hit'), 300);
@@ -694,7 +715,7 @@ function monstersAttack() {
 
             updateUI();
 
-            // 모든 살아있는 몬스터의 공격이 끝났을 때
+            // 모든 살아있는 몬스터의 공격이 끝났을 때 턴 종료 처리
             if (i === livingMonsters.length - 1) {
                 endMonstersTurn();
             }
@@ -703,14 +724,16 @@ function monstersAttack() {
 }
 
 /**
- * 몬스터 턴 종료 후 플레이어 턴으로 전환하는 로직
+ * 몬스터 턴 종료 후 플레이어 턴으로 전환하거나 게임오버를 처리합니다.
  */
 function endMonstersTurn() {
+    // 플레이어 사망 체크
     if (player.hp <= 0) {
         player.hp = 0;
         updateUI();
         gameOver();
     } else {
+        // 방어 버프 턴 감소
         if (player.defenseBuff.turns > 0) {
             player.defenseBuff.turns--;
         }
@@ -723,12 +746,14 @@ function endMonstersTurn() {
 
 //! ============================================================
 //! 3.5 스킬 시스템
+//! 플레이어가 사용하는 다양한 스킬의 로직을 정의합니다.
 //! ============================================================
 
 /**
  * 스킬 선택 버튼들을 보여주는 함수
  */
 function showSkillSelection() {
+    // 플레이어 턴이 아니거나 게임오버 상태면 실행하지 않음
     if (isGameOver || !isPlayerTurn) return;
     const controlsPanel = document.getElementById('controls-panel');
     const defenseBtnClass = player.defenseStance ? 'btn-defend-active' : 'btn-defend';
@@ -743,7 +768,7 @@ function showSkillSelection() {
 }
 
 /**
- * 메인 컨트롤 버튼들을 보여주는 함수
+ * 메인 컨트롤 버튼(공격/스킬, 물약, 인벤토리)들을 보여주는 함수
  */
 function showMainControls() {
     if (isGameOver) return;
@@ -757,7 +782,7 @@ function showMainControls() {
 }
 
 /**
- * 강 공격 (단일 대상, MP 소모)
+ * 강 공격 (단일 대상, 높은 데미지, MP 소모, 낮은 확률로 흑섬 발동)
  */
 function executePowerAttack() {
     if (isGameOver || !isPlayerTurn) return;
@@ -768,6 +793,7 @@ function executePowerAttack() {
         return;
     }
 
+    // 방어 태세 여부에 따라 총 MP 소모량 계산
     const mpCost = 15;
     const defenseMpCost = player.defenseStance ? 10 : 0;
     const totalMpCost = mpCost + defenseMpCost;
@@ -775,6 +801,7 @@ function executePowerAttack() {
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         if (player.defenseStance) {
+            // MP 부족 시 방어 태세 자동 해제
             player.defenseStance = false;
             showSkillSelection();
         }
@@ -791,7 +818,7 @@ function executePowerAttack() {
     isPlayerTurn = false;
     toggleControls(false);
 
-    // 방어 태세 로직 적용
+    // --- 방어 태세 로직 적용 ---
     if (player.defenseStance) {
         if (Math.random() < 0.78) {
             player.defenseBuff.turns = 1;
@@ -804,10 +831,10 @@ function executePowerAttack() {
         player.defenseStance = false; // 사용 후 해제
     }
 
-    // 총 MP 소모
+    // --- MP 소모 및 공격 애니메이션 ---
     player.mp -= totalMpCost;
 
-    // --- 강한 공격 애니메이션 ---
+    // 강한 공격 애니메이션
     const playerElement = document.getElementById('player-character');
     playerElement.style.transform = 'translateX(50px) scale(1.1)'; // 일반 공격보다 조금 더 강하게
     setTimeout(() => {
@@ -818,27 +845,50 @@ function executePowerAttack() {
     const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
     const targetMonsterElement = monsterWrappers[player.targetIndex];
 
-    let dmg = Math.floor(player.atk * 2.0); // 200% 데미지
+    // --- 흑섬(Black Flash) 발동 체크 (강공격 시 3% 고정 확률) ---
+    if (Math.random() < 0.03) {
+        triggerBlackFlash();
+        let dmg = Math.floor(player.atk * 6.25);
+        log('⚫ 흑섬(黑閃) 발동!', 'log-player', { fontSize: '24px', color: 'white', textShadow: '0 0 5px black, 0 0 15px red' });
+        log(`용사가 ${targetMonster.name}에게 ${dmg}의 경이적인 피해를 입혔습니다!`, 'log-player');
 
-    // 확정 치명타 체크
-    if (player.guaranteedCrit) {
-        dmg = Math.floor(dmg * player.critDamage);
-        player.guaranteedCrit = false; // 사용 후 플래그 해제
-        log('⚡ 흑섬의 여파로 강 공격이 치명타로 적중했습니다!', 'log-player');
+        if (!player.blackFlashBuff.active) {
+            player.blackFlashBuff.active = true;
+            recalculatePlayerStats(); // 스탯 즉시 적용
+            log('온 몸에 흑섬의 기운이 감돈다! (3층 동안 모든 능력치 1.6배)', 'log-system');
+        }
+        player.blackFlashBuff.duration = 3; // 흑섬이 터질 때마다 지속시간 갱신
+
+        player.guaranteedCrit = true; // 다음 공격 확정 치명타
+        log('흑섬의 여파로 다음 공격은 반드시 치명타가 됩니다!', 'log-system');
+
+        targetMonster.hp -= dmg;
+        showFloatingText(dmg, targetMonsterElement, 'black-flash');
     } else {
-        log(`💥 강 공격! ${targetMonster.name}에게 ${dmg}의 강력한 피해를 입혔습니다!`, 'log-player');
+        // --- 일반 강 공격 로직 ---
+        let dmg = Math.floor(player.atk * 2.0); // 200% 데미지
+
+        // 확정 치명타 체크
+        if (player.guaranteedCrit) {
+            dmg = Math.floor(dmg * player.critDamage);
+            player.guaranteedCrit = false; // 사용 후 플래그 해제
+            log('⚡ 흑섬의 여파로 강 공격이 치명타로 적중했습니다!', 'log-player');
+        } else {
+            log(`💥 강 공격! ${targetMonster.name}에게 ${dmg}의 강력한 피해를 입혔습니다!`, 'log-player');
+        }
+        showFloatingText(dmg, targetMonsterElement, 'crit'); // 강공격은 항상 crit 스타일로 표시
+
+        targetMonster.hp -= dmg;
+
+        // 3% 확률로 몬스터 기절 (강공격은 2배 확률)
+        if (Math.random() < 0.06) {
+            targetMonster.isStunned = true;
+            log(`몬스터가 기절했습니다!`, 'log-system');
+            showFloatingText('STUN', targetMonsterElement, 'stun');
+        }
     }
-    showFloatingText(dmg, targetMonsterElement, 'crit'); // 강공격은 항상 crit 스타일로 표시
 
-    targetMonster.hp -= dmg;
-
-    // 3% 확률로 몬스터 기절 (강공격은 2배 확률)
-    if (Math.random() < 0.06) {
-        targetMonster.isStunned = true;
-        log(`몬스터가 기절했습니다!`, 'log-system');
-        showFloatingText('STUN', targetMonsterElement, 'stun');
-    }
-
+    // --- 몬스터 피격 애니메이션 및 턴 종료 처리 ---
     if (targetMonsterElement) {
         const emojiElement = targetMonsterElement.querySelector('.emoji');
         emojiElement.classList.add('hit');
@@ -865,11 +915,12 @@ function executePowerAttack() {
 }
 
 /**
- * 휩쓸기 (광역 공격, MP 소모)
+ * 휩쓸기 (모든 몬스터 대상 광역 공격, MP 소모)
  */
 function executeSweepAttack() {
     if (isGameOver || !isPlayerTurn) return;
 
+    // 방어 태세 여부에 따라 총 MP 소모량 계산
     const mpCost = 25;
     const defenseMpCost = player.defenseStance ? 10 : 0;
     const totalMpCost = mpCost + defenseMpCost;
@@ -877,6 +928,7 @@ function executeSweepAttack() {
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         if (player.defenseStance) {
+            // MP 부족 시 방어 태세 자동 해제
             player.defenseStance = false;
             showSkillSelection();
         }
@@ -893,7 +945,7 @@ function executeSweepAttack() {
     isPlayerTurn = false;
     toggleControls(false);
 
-    // 방어 태세 로직 적용
+    // --- 방어 태세 로직 적용 ---
     if (player.defenseStance) {
         if (Math.random() < 0.78) {
             player.defenseBuff.turns = 1;
@@ -906,10 +958,10 @@ function executeSweepAttack() {
         player.defenseStance = false; // 사용 후 해제
     }
 
-    // 총 MP 소모
+    // --- MP 소모 및 공격 애니메이션 ---
     player.mp -= totalMpCost;
 
-    // --- 휩쓸기 애니메이션 ---
+    // 휩쓸기 애니메이션
     const playerElement = document.getElementById('player-character');
     // transition을 임시로 변경하여 회전 효과를 줌
     playerElement.style.transition = 'transform 0.3s ease';
@@ -927,7 +979,7 @@ function executeSweepAttack() {
     const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
     let totalXpGained = 0;
 
-    // 확정 치명타 체크
+    // --- 확정 치명타 체크 ---
     const isCrit = player.guaranteedCrit;
     if (isCrit) {
         player.guaranteedCrit = false; // 사용 후 플래그 해제
@@ -935,6 +987,7 @@ function executeSweepAttack() {
     }
 
     livingMonsters.forEach((monster, index) => {
+        // 각 몬스터에게 순차적으로 데미지를 줌
         setTimeout(() => {
             const baseDmg = Math.floor(Math.random() * 5) + player.atk;
             let dmg = Math.floor(baseDmg * 0.8); // 기본 데미지의 80%
@@ -942,6 +995,7 @@ function executeSweepAttack() {
             const monsterIndexInAll = monsters.findIndex(m => m === monster);
             const targetElement = monsterElements[monsterIndexInAll];
             
+            // 치명타 여부에 따라 데미지 및 효과 적용
             if (isCrit) {
                 dmg = Math.floor(dmg * player.critDamage);
                 showFloatingText(dmg, targetElement, 'crit');
@@ -951,12 +1005,14 @@ function executeSweepAttack() {
             
             monster.hp -= dmg;
 
+            // 몬스터 피격 애니메이션
             if (targetElement) {
                 const emojiElement = targetElement.querySelector('.emoji');
                 emojiElement.classList.add('hit');
                 setTimeout(() => emojiElement.classList.remove('hit'), 300);
             }
 
+            // 몬스터 사망 처리 및 경험치 합산
             if (monster.hp <= 0) {
                 log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
                 totalXpGained += monster.xp;
@@ -969,7 +1025,7 @@ function executeSweepAttack() {
                 }
             }
 
-            // 마지막 몬스터 공격 후 처리
+            // --- 마지막 몬스터 공격 후 턴 종료 처리 ---
             if (index === livingMonsters.length - 1) {
                 if (totalXpGained > 0) {
                     gainXP(totalXpGained);
@@ -991,7 +1047,7 @@ function executeSweepAttack() {
 
 /**
  * 방어 태세를 켜고 끄는 함수 (토글)
- * 이 행동은 턴을 소모하지 않습니다.
+ * 이 행동 자체는 턴을 소모하지 않으며, 다음 공격 스킬 사용 시 MP를 추가로 소모하여 방어 효과를 발동시킵니다.
  */
 function toggleDefenseStance() {
     if (isGameOver || !isPlayerTurn) return;
@@ -1004,11 +1060,12 @@ function toggleDefenseStance() {
         log('방어 태세를 해제합니다.', 'log-player');
     }
 
-    showSkillSelection(); // UI 갱신
+    showSkillSelection(); // 버튼 색상 등 UI 갱신
 }
 
 /**
  * 사용 가능한 모든 물약 목록을 보여주는 모달을 여는 함수
+ * 인벤토리의 소비 아이템을 종류별로 묶어서 보여줍니다.
  */
 function showAllPotions() {
     const modal = document.getElementById('item-select-modal');
@@ -1033,7 +1090,7 @@ function showAllPotions() {
     buffList.innerHTML = '';
     critBuffList.innerHTML = '';
 
-    // 카테고리별로 아이템 그룹화
+    // 같은 이름의 아이템을 그룹화하여 개수를 셉니다.
     const groupedHeal = {};
     const groupedMp = {};
     const groupedBuff = {};
@@ -1054,7 +1111,7 @@ function showAllPotions() {
         targetGroup[item.name].originalIndexes.push(index);
     });
 
-    // 그룹화된 아이템을 렌더링하는 헬퍼 함수
+    // 그룹화된 아이템을 UI에 렌더링하는 헬퍼 함수
     const renderPotionGroup = (group, container) => {
         if (Object.keys(group).length === 0) {
             container.innerHTML = '<div class="inventory-item" style="justify-content: center; color: #888;">없음</div>';
@@ -1062,7 +1119,7 @@ function showAllPotions() {
         }
         for (const name in group) {
             const itemGroup = group[name];
-            const itemEl = document.createElement('div');
+            const itemEl = document.createElement('div'); // '사용' 버튼은 항상 첫 번째 아이템의 인덱스를 사용
             itemEl.className = 'inventory-item';
             const useIndex = itemGroup.originalIndexes[0];
             
@@ -1097,7 +1154,7 @@ function closeItemSelect() {
 }
 
 /**
- * 인벤토리의 아이템을 사용하는 함수
+ * 인벤토리의 소비 아이템을 사용하는 함수
  * @param {number} index - 사용할 아이템의 player.inventory 배열 인덱스
  */
 function useInventoryItem(index) {
@@ -1108,6 +1165,7 @@ function useInventoryItem(index) {
     const emojiElement = document.getElementById('player-emoji');
     let flashColor = '';
     
+    // 아이템 타입에 따라 다른 효과 적용
     if (item.type === 'buff') {
         player.buff.turns = item.turns;
         player.buff.multiplier = item.mult;
@@ -1139,7 +1197,7 @@ function useInventoryItem(index) {
         flashColor = '#ffdd44'; // 금색
     }
 
-    // --- 아이템 사용 애니메이션 (이모지 반짝임) ---
+    // 아이템 사용 시각 효과 (이모지 반짝임)
     if (flashColor) {
         const originalFilter = emojiElement.style.filter;
         emojiElement.style.filter = `drop-shadow(0 0 25px ${flashColor})`;
@@ -1148,7 +1206,7 @@ function useInventoryItem(index) {
         }, 400);
     }
 
-    // 아이템 제거
+    // 사용한 아이템을 인벤토리에서 제거
     player.inventory.splice(index, 1);
     
     updateUI();
@@ -1163,7 +1221,7 @@ function useInventoryItem(index) {
 }
 
 /**
- * 현재 타겟 몬스터가 죽었을 경우, 다음 살아있는 몬스터를 타겟으로 지정하는 함수
+ * 현재 타겟 몬스터가 죽었을 경우, 다음 살아있는 몬스터를 자동으로 타겟으로 지정합니다.
  */
 function findNextTarget() {
     const livingMonsterIndex = monsters.findIndex(m => m.hp > 0);
@@ -1173,7 +1231,7 @@ function findNextTarget() {
 }
 
 /**
- * 플레이어가 경험치를 획득하고 레벨업을 체크하는 함수
+ * 플레이어가 경험치를 획득하고, 레벨업 조건을 확인합니다.
  * @param {number} amount - 획득할 경험치 양
  */
 function gainXP(amount) {
@@ -1184,16 +1242,17 @@ function gainXP(amount) {
 }
 
 /**
- * 플레이어의 경험치가 레벨업 조건을 만족하는지 확인하고 처리하는 함수
+ * 플레이어의 경험치가 레벨업 조건을 만족하는지 확인하고, 레벨업을 처리합니다.
  */
 function checkForLevelUp() {
+    // 현재 경험치가 필요 경험치보다 많거나 같으면 레벨업
     if (player.xp >= player.xpToNextLevel) {
         player.level++;
         player.xp -= player.xpToNextLevel;
         player.statPoints += 3;
         player.xpToNextLevel = Math.floor(100 * Math.pow(1.3, player.level - 1)); // 다음 레벨업에 필요한 경험치 증가
 
-        // --- 레벨업 애니메이션 ---
+        // 레벨업 시각 효과 및 애니메이션
         const playerElement = document.getElementById('player-character');
         showFloatingText('LEVEL UP!', playerElement, 'level-up');
 
@@ -1221,10 +1280,12 @@ function checkForLevelUp() {
 
 //! ============================================================
 //! 4. 게임 진행 로직 (승리, 패배, 다음 층)
+//! 전투 종료 후의 흐름과 다음 단계로의 진행을 관리합니다.
 //! ============================================================
 
 /**
  * 전투에서 승리했을 때 호출되는 함수
+ * 골드와 경험치를 정산하고, 보스 전리품 드랍을 처리합니다.
  */
 function winBattle() {
     const totalCoins = Math.floor(monsters.reduce((sum, m) => sum + m.dropCoins, 0) * player.goldBonus);
@@ -1248,7 +1309,7 @@ function winBattle() {
 }
 
 /**
- * 전투 승리 후 다음 단계(상점 또는 다음 층)로 진행하는 함수
+ * 전투 승리 후 다음 단계(상점 또는 다음 층)로 진행합니다.
  */
 function proceedToNextStage() {
     if (floor % 5 === 0) {
@@ -1259,7 +1320,7 @@ function proceedToNextStage() {
 }
 
 /**
- * 다음 층으로 이동하고 게임 상태를 초기화하는 함수
+ * 다음 층으로 이동하고, 플레이어 상태를 일부 회복하며, 새로운 몬스터를 생성합니다.
  */
 function nextFloor() {
     floor++;
@@ -1268,13 +1329,13 @@ function nextFloor() {
     monsters = [];
     player.targetIndex = 0;
     
-    // 플레이어 스펙업
+    // --- 플레이어 상태 회복 및 버프 턴 감소 ---
     player.hp = player.maxHp; // 다음 층 이동 시 체력은 완전 회복
     const mpRecovery = 20;
     player.mp = Math.min(player.maxMp, player.mp + mpRecovery); // 남은 마나 + 20 회복
     log(`다음 층으로 이동하며 마나가 ${mpRecovery}만큼 회복되었습니다.`, 'log-system');
 
-    // 흑섬 버프 지속시간 감소
+    // 흑섬 버프 지속 층 감소
     if (player.blackFlashBuff.active) {
         player.blackFlashBuff.duration--;
         if (player.blackFlashBuff.duration <= 0) {
@@ -1284,14 +1345,15 @@ function nextFloor() {
         }
     }
 
-    // 55% 확률로 기본 회복 물약 획득
+    // --- 랜덤 아이템 획득 ---
+    // 55% 확률로 기본 HP 물약 획득
     if (Math.random() < 0.55) {
         const potion = healPotionList[0]; // 제일 안좋은 회복 물약
         player.inventory.push({ ...potion, type: 'heal' });
         log(`바닥에서 ${potion.name}을(를) 주웠다!`, 'log-system', { fontSize: '20px' });
     }
 
-    // 30% 확률로 힘, 집중, MP 물약 중 하나 획득
+    // 30% 확률로 하급 버프/MP 물약 중 하나 획득
     if (Math.random() < 0.3) {
         const possiblePotions = [
             { potion: buffPotionList[0], type: 'buff' },       // 제일 약한 힘 물약
@@ -1306,6 +1368,7 @@ function nextFloor() {
         log(`바닥에서 ${potion.name}을(를) 주웠다!`, 'log-system', { fontSize: '20px' });
     }
     
+    // --- 새로운 층의 몬스터 생성 및 UI 업데이트 ---
     monsters = generateMonstersForFloor(floor);
 
     updateUI();
@@ -1314,6 +1377,7 @@ function nextFloor() {
 
 /**
  * 특정 층에 맞는 몬스터들을 생성하고 로그를 출력하는 함수
+ * 보스 층, 중간 보스 층, 일반 층을 구분하여 몬스터를 생성합니다.
  * @param {number} floorNumber - 생성할 층 번호
  * @returns {Array<object>} - 생성된 몬스터 객체 배열
  */
@@ -1367,7 +1431,7 @@ function generateMonstersForFloor(floorNumber) {
 
 /**
  * 몬스터 템플릿과 난이도 배율을 기반으로 실제 몬스터 객체를 생성하는 함수
- * @param {object} template - 몬스터 도감(monsterList)에 있는 몬스터 템플릿
+ * @param {object} template - 몬스터 도감에 있는 몬스터 템플릿
  * @param {number} multiplier - 난이도 배율
  */
 function createMonster(template, multiplier) {
@@ -1387,7 +1451,7 @@ function createMonster(template, multiplier) {
 }
 
 /**
- * 게임 오버를 처리하는 함수
+ * 플레이어 사망 시 게임 오버를 처리하는 함수
  */
 function gameOver() {
     isGameOver = true;
@@ -1398,7 +1462,7 @@ function gameOver() {
 }
 
 /**
- * 컨트롤 버튼(공격, 물약 등)의 활성화/비활성화 상태를 조절하는 함수
+ * 컨트롤 버튼(공격, 물약 등)의 활성화/비활성화 상태를 조절합니다.
  * @param {boolean} enable - true면 활성화, false면 비활성화
  */
 function toggleControls(enable) {
@@ -1412,6 +1476,7 @@ function toggleControls(enable) {
 
 //! ============================================================
 //! 5. 스탯 분배 시스템 (장비 모달에 통합됨)
+//! 레벨업으로 얻은 스탯 포인트를 분배하는 UI와 로직을 관리합니다.
 //! ============================================================
 
 /**
@@ -1436,7 +1501,7 @@ function renderStatUpModal() {
         list.appendChild(itemEl);
     }
 
-    // 스탯 분배 시 변경될 능력치를 미리 보여줌
+    // --- 스탯 분배 시 변경될 능력치를 미리 보여주는 로직 ---
     const currentValuesEl = document.getElementById('stat-current-values');
     const weaponBonus = player.equippedWeapon ? player.equippedWeapon.atkBonus : 0;
     const armorBonus = player.equippedArmor ? player.equippedArmor.maxHpBonus : 0;
@@ -1468,7 +1533,7 @@ function renderStatUpModal() {
 }
 
 /**
- * 특정 스탯을 1 증가시키는 함수 (임시)
+ * 특정 스탯을 1 증가시키는 임시 함수 (분배 확정 전)
  * @param {string} statKey - 증가시킬 스탯의 키 ('str', 'vit' 등)
  */
 function addStat(statKey) {
@@ -1480,72 +1545,16 @@ function addStat(statKey) {
 }
 
 /**
- * 임시로 분배한 스탯을 초기화하는 함수
+ * 임시로 분배한 스탯을 원래대로 초기화하는 함수
  */
 function resetTempStats() {
     tempStatPoints = player.statPoints;
-// script.js 中
-function nextFloor() {
-    // ... (다른 코드)
-    
-    // 플레이어 스펙업
-    player.hp = player.maxHp; // 체력은 모두 회복
-    const mpRecovery = 20;
-    player.mp = Math.min(player.maxMp, player.mp + mpRecovery); // 남은 마나 + 20 회복
-    log(`다음 층으로 이동하며 마나가 ${mpRecovery}만큼 회복되었습니다.`, 'log-system');
-
-    // ... (다른 코드)
-}
-// script.js 中
-function checkForLevelUp() {
-    if (player.xp >= player.xpToNextLevel) {
-        player.level++;
-        player.xp -= player.xpToNextLevel;
-        player.statPoints += 3; // 스탯 포인트 3만 지급됩니다.
-        player.xpToNextLevel = Math.floor(100 * Math.pow(1.3, player.level - 1));
-        // ... (애니메이션 및 로그 출력 코드)
-    }
-}
-// script.js 中
-function nextFloor() {
-    // ... (다른 코드)
-    
-    // 플레이어 스펙업
-    player.hp = player.maxHp; // 체력은 모두 회복
-    const mpRecovery = 20;
-    player.mp = Math.min(player.maxMp, player.mp + mpRecovery); // 남은 마나 + 20 회복
-    log(`다음 층으로 이동하며 마나가 ${mpRecovery}만큼 회복되었습니다.`, 'log-system');
-
-    // ... (다른 코드)
-}
-// script.js 中
-function nextFloor() {
-    // ... (다른 코드)
-    
-    // 플레이어 스펙업
-    player.hp = player.maxHp; // 체력은 모두 회복
-    const mpRecovery = 20;
-    player.mp = Math.min(player.maxMp, player.mp + mpRecovery); // 남은 마나 + 20 회복
-    log(`다음 층으로 이동하며 마나가 ${mpRecovery}만큼 회복되었습니다.`, 'log-system');
-
-    // ... (다른 코드)
-}
-// script.js 中
-function checkForLevelUp() {
-    if (player.xp >= player.xpToNextLevel) {
-        player.level++;
-        player.xp -= player.xpToNextLevel;
-        player.statPoints += 3; // 스탯 포인트 3만 지급됩니다.
-        player.xpToNextLevel = Math.floor(100 * Math.pow(1.3, player.level - 1));
-        // ... (애니메이션 및 로그 출력 코드)
-    }
-}
     tempStats = { str: player.str, vit: player.vit, luk: player.luk, agi: player.agi, int: player.int, mnd: player.mnd, fcs: player.fcs };
     renderStatUpModal();
 }
 
 /**
- * 스탯 분배를 확정하고 실제 플레이어 능력치에 적용하는 함수
+ * 스탯 분배를 확정하고 실제 플레이어 능력치에 적용합니다.
  */
 function confirmStatUp() {
     player.statPoints = tempStatPoints;
@@ -1562,7 +1571,7 @@ function confirmStatUp() {
 }
 
 /**
- * 스탯, 장비, 버프 등을 모두 고려하여 플레이어의 최종 능력치를 재계산하는 함수
+ * 스탯, 장비, 버프 등을 모두 고려하여 플레이어의 최종 능력치를 재계산합니다.
  */
 function recalculatePlayerStats() {
     const weaponBonus = player.equippedWeapon ? player.equippedWeapon.atkBonus : 0;
@@ -1594,6 +1603,7 @@ function recalculatePlayerStats() {
 
 //! ============================================================
 //! 6. 장비 및 스탯 모달
+//! 인벤토리(장비, 전리품)와 스탯 분배 창을 관리하는 로직입니다.
 //! ============================================================
 
 /**
@@ -1607,7 +1617,7 @@ function openInventoryModal() {
     const modal = document.getElementById('equipment-modal');
     modal.style.display = 'flex';
     
-    // --- 전리품 섹션 동적 추가 ---
+    // 전리품 섹션이 없으면 동적으로 생성
     const container = modal.querySelector('.management-container');
     let lootSection = document.getElementById('loot-management-section');
     if (!lootSection) {
@@ -1626,7 +1636,6 @@ function openInventoryModal() {
             container.appendChild(lootSection);
         }
     }
-    // --- 섹션 추가 끝 ---
     
     // 모달 내용 렌더링
     renderStatUpModal();
@@ -1635,14 +1644,14 @@ function openInventoryModal() {
 }
 
 /**
- * 인벤토리 모달을 닫는 함수
+ * 인벤토리(장비/스탯) 모달을 닫는 함수
  */
 function closeInventoryModal() {
     document.getElementById('equipment-modal').style.display = 'none';
 }
 
 /**
- * 장비 관리 모달을 닫는 함수 (이전 버전 호환용)
+ * 장비 관리 모달을 닫는 함수 (HTML과의 호환성을 위해 유지)
  * HTML 파일에 onclick="closeEquipment()"가 남아있을 수 있어 추가합니다.
  */
 function closeEquipment() {
@@ -1650,7 +1659,7 @@ function closeEquipment() {
 }
 
 /**
- * 전리품 인벤토리 섹션을 렌더링하는 함수
+ * 전리품 인벤토리 UI를 렌더링하는 함수
  */
 function renderLootInventory() {
     const listEl = document.getElementById('loot-inventory-list');
@@ -1675,16 +1684,7 @@ function renderLootInventory() {
 }
 
 /**
- * 임시로 분배한 스탯을 초기화하는 함수
- */
-function resetTempStats() {
-    tempStatPoints = player.statPoints;
-    tempStats = { str: player.str, vit: player.vit, luk: player.luk, agi: player.agi, int: player.int, mnd: player.mnd, fcs: player.fcs };
-    renderStatUpModal();
-}
-
-/**
- * 장비 관리 모달의 내용을 렌더링하는 함수
+ * 장비 관리 UI(현재 착용 장비, 보유 장비 목록)를 렌더링하는 함수
  */
 function renderEquipment() {
     // 현재 착용 장비 표시
@@ -1738,7 +1738,7 @@ function renderEquipment() {
 }
 
 /**
- * 아이템을 착용하는 함수
+ * 장비 아이템을 착용하는 함수
  * @param {string} type - 착용할 아이템 타입 ('armor' 또는 'weapon')
  * @param {number} index - 해당 타입의 인벤토리 배열 인덱스
  */
@@ -1747,7 +1747,7 @@ function equipItem(type, index) {
 
     if (type === 'armor') {
         const armor = player.armorInventory[index];
-        // 장비 변경 전 체력 비율 저장
+        // 방어구 교체 시 현재 체력 비율을 유지하기 위해 비율을 저장
         if (player.maxHp > 0) {
             hpPercentage = player.hp / player.maxHp;
         }
@@ -1768,7 +1768,7 @@ function equipItem(type, index) {
 }
 
 /**
- * 전리품 아이템을 사용하는 함수
+ * 전리품 아이템을 사용하여 영구 스탯을 얻는 함수
  * @param {number} index - 사용할 전리품의 player.lootInventory 배열 인덱스
  */
 function useLootItem(index) {
@@ -1792,11 +1792,12 @@ function useLootItem(index) {
 
 //! ============================================================
 //! 7. 상점 시스템
+//! 아이템 구매 및 전리품 판매를 담당하는 상점 로직입니다.
 //! ============================================================
 
 /**
  * 상점 모달을 여는 함수
- * @param {boolean} auto - 5층마다 자동으로 열렸는지 여부.
+ * @param {boolean} [auto=false] - 5층마다 자동으로 열렸는지 여부.
  *                         true이면 상점을 닫을 때 자동으로 다음 층으로 이동.
  */
 function openShop(auto = false) {
@@ -1805,7 +1806,7 @@ function openShop(auto = false) {
     modal.style.display = 'flex';
     document.getElementById('shop-coins').innerText = player.coins;
 
-    // --- 전리품 판매 섹션 동적 추가 ---
+    // 전리품 판매 섹션이 없으면 동적으로 생성
     const shopContainer = modal.querySelector('.shop-container');
     let sellRow = document.getElementById('sell-loot-row');
     if (!sellRow) {
@@ -1820,7 +1821,6 @@ function openShop(auto = false) {
         `;
         shopContainer.appendChild(sellRow);
     }
-    // --- 섹션 추가 끝 ---
 
     renderShopItems();
     log("떠돌이 상인을 만났습니다.", 'log-system');
@@ -1839,7 +1839,7 @@ function closeShop() {
 }
 
 /**
- * 상점에서 판매하는 아이템 목록을 렌더링하는 함수
+ * 상점에서 판매하는 모든 아이템 목록을 UI에 렌더링하는 함수
  */
 function renderShopItems() {
     const armorContainer = document.getElementById('armor-shop-items');
@@ -1939,7 +1939,7 @@ function renderShopItems() {
 }
 
 /**
- * 판매 가능한 전리품 목록을 렌더링하는 함수
+ * 판매 가능한 전리품 목록을 상점 UI에 렌더링하는 함수
  */
 function renderSellableLoot() {
     const sellContainer = document.getElementById('sell-loot-items');
@@ -1963,7 +1963,7 @@ function renderSellableLoot() {
 }
 
 /**
- * 전리품을 판매하는 함수
+ * 전리품을 판매하여 골드를 획득하는 함수
  * @param {number} index - 판매할 전리품의 player.lootInventory 배열 인덱스
  */
 function sellLootItem(index) {
@@ -1981,7 +1981,7 @@ function sellLootItem(index) {
 }
 
 /**
- * 상점에서 아이템을 구매하는 함수
+ * 상점에서 아이템을 구매하고 골드를 차감하는 함수
  * @param {string} type - 구매할 아이템 타입 ('armor', 'weapon', 'heal' 등)
  * @param {number} cost - 아이템 가격
  * @param {object} data - 구매할 아이템의 데이터
@@ -2025,10 +2025,11 @@ function buyItem(type, cost, data) {
 
 //! ============================================================
 //! 8. 인벤토리 시스템
+//! 소비 아이템 인벤토리를 관리하는 로직입니다. (현재는 물약 사용 모달로 대체됨)
 //! ============================================================
 
 /**
- * 인벤토리 모달을 여는 함수 (현재는 사용되지 않음, 컨트롤 패널에 버튼 없음)
+ * 인벤토리 모달을 여는 함수 (현재는 사용되지 않음)
  */
 function openInventory() {
     document.getElementById('inventory-modal').style.display = 'flex';
@@ -2036,14 +2037,14 @@ function openInventory() {
 }
 
 /**
- * 인벤토리 모달을 닫는 함수
+ * 인벤토리 모달을 닫는 함수 (현재는 사용되지 않음)
  */
 function closeInventory() {
     document.getElementById('inventory-modal').style.display = 'none';
 }
 
 /**
- * 인벤토리 모달의 내용을 렌더링하는 함수
+ * 인벤토리 모달의 내용을 렌더링하는 함수 (현재는 사용되지 않음)
  */
 function renderInventory() {
     const list = document.getElementById('inventory-list');
@@ -2077,12 +2078,14 @@ function renderInventory() {
 
 //! ============================================================
 //! 9. 초기화 및 이벤트 리스너
+//! 게임 시작 및 사용자 입력(키보드)을 처리합니다.
 //! ============================================================
 
 /**
  * 게임을 시작하고 1층을 설정하는 함수
  */
 function startGame() {
+    // 플레이어 스탯을 초기 계산하고, 체력/마나를 가득 채웁니다.
     recalculatePlayerStats();
     player.hp = player.maxHp;
     player.mp = player.maxMp;
@@ -2098,7 +2101,7 @@ startGame();
 document.addEventListener('keydown', handleKeydown);
 
 /**
- * 키보드 입력(좌우 방향키)을 처리하여 몬스터 타겟을 변경하는 함수
+ * 키보드 입력(좌우 방향키)을 감지하여 몬스터 타겟을 변경합니다.
  */
 function handleKeydown(e) {
     if (!isPlayerTurn || isGameOver || monsters.length <= 1) return;
