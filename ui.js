@@ -149,8 +149,8 @@ function showSkillSelection() {
     const defenseBtnClass = player.defenseStance ? 'btn-defend-active' : 'btn-defend';
 
     // 스킬 데미지 계산 (마력 스탯 적용)
-    const powerAttackDmg = Math.floor(player.atk * 2.0 * player.magicMultiplier);
-    const sweepAttackDmg = Math.floor(player.atk * 0.8 * player.magicMultiplier); // 휩쓸기는 광역이라 기본 공격력의 80%로 표시
+    const powerAttackDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
+    const sweepAttackDmg = Math.floor(player.atk * 0.8 + player.magicDamageBonus); // 휩쓸기는 광역이라 기본 공격력의 80%로 표시
 
     controlsPanel.style.gridTemplateColumns = '1fr 1fr 1fr 1fr'; // 4개의 스킬 버튼을 위한 레이아웃
     controlsPanel.innerHTML = `
@@ -305,13 +305,13 @@ function renderStatUpModal() {
     });
 
     // "현재" 값 (버프 제외, 순수 스탯/장비 효과만)
-    const currentAtk = player.baseAtk + (player.str * 2) + weaponBonus;
-    const currentMaxHp = player.baseMaxHp + (player.vit * 5) + armorBonus;
-    const currentMaxMp = player.baseMaxMp + (player.mnd * 5);
-    const currentCritChance = 11 + (player.luk * 0.7);
-    const currentEvasionChance = 4 + (player.agi * 2);
-    const currentGoldBonus = 1 + (player.int * 0.02);
-    const currentBlackFlashChance = 0.008 + (player.fcs * 0.004);
+    const currentAtk = player.baseAtk + ((player.str + lootBonuses.str) * 2) + weaponBonus;
+    const currentMaxHp = player.baseMaxHp + ((player.vit + lootBonuses.vit) * 5) + armorBonus;
+    const currentMaxMp = player.baseMaxMp + ((player.mnd + lootBonuses.mnd) * 5);
+    const currentCritChance = 11 + ((player.luk + lootBonuses.luk) * 0.7);
+    const currentEvasionChance = 4 + ((player.agi + lootBonuses.agi) * 2);
+    const currentGoldBonus = 1 + ((player.int + lootBonuses.int) * 0.02);
+    const currentBlackFlashChance = 0.008 + ((player.fcs + lootBonuses.fcs) * 0.004);
 
     // "임시" 값 (스탯 분배 후 + 전리품 효과 포함)
     const tempAtk = player.baseAtk + ((tempStats.str + lootBonuses.str) * 2) + weaponBonus;
@@ -321,14 +321,16 @@ function renderStatUpModal() {
     const tempEvasionChance = 4 + ((tempStats.agi + lootBonuses.agi) * 2);
     const tempGoldBonus = 1 + ((tempStats.int + lootBonuses.int) * 0.02);
     const tempBlackFlashChance = 0.008 + ((tempStats.fcs + lootBonuses.fcs) * 0.004);
-    const currentMagicAmp = (player.mag * 1.5);
-    const tempMagicAmp = (tempStats.mag * 1.5);
+
+    // --- 스킬 추가 피해 미리보기 계산 ---
+    const currentMagicDamageBonus = ((player.mag + lootBonuses.mag) * 3.5);
+    const tempMagicDamageBonus = ((tempStats.mag + lootBonuses.mag) * 3.5);
 
     currentValuesEl.innerHTML = `
         공격력: ${currentAtk} → ${tempAtk} | 최대체력: ${currentMaxHp} → ${tempMaxHp}<br>
         최대MP: ${currentMaxMp} → ${tempMaxMp} | 회피: ${currentEvasionChance.toFixed(1)}% → ${tempEvasionChance.toFixed(1)}%<br>
         치명타: ${currentCritChance.toFixed(1)}% → ${tempCritChance.toFixed(1)}% | 골드 보너스: ${((currentGoldBonus - 1) * 100).toFixed(0)}% → ${((tempGoldBonus - 1) * 100).toFixed(0)}%<br>
-        흑섬 확률: ${(currentBlackFlashChance * 100).toFixed(1)}% → ${(tempBlackFlashChance * 100).toFixed(1)}% | 스킬 증폭: ${currentMagicAmp.toFixed(1)}% → ${tempMagicAmp.toFixed(1)}%
+        흑섬 확률: ${(currentBlackFlashChance * 100).toFixed(1)}% → ${(tempBlackFlashChance * 100).toFixed(1)}% | 스킬 추가 피해: ${currentMagicDamageBonus.toFixed(1)} → <span style="color: #f87171; font-weight: bold;">${tempMagicDamageBonus.toFixed(1)}</span>
     `;
 }
 

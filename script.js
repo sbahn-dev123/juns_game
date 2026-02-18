@@ -41,7 +41,7 @@ const player = {
     critDamage: 2,      // 현재 치명타 배율
     goldBonus: 1,       // 골드 획득 보너스 배율
     blackFlashChance: 0.008, // 흑섬 확률
-    magicMultiplier: 1, // 마력 증폭 배율
+    magicDamageBonus: 0, // 마력 추가 피해량
     // --- 재화 및 장비 ---
     coins: 0,           // 보유 골드
     baseEmoji: '🧙‍♂️',   // 기본 이모지
@@ -540,11 +540,11 @@ function executePowerAttack() {
         showFloatingText(dmg, targetMonsterElement, 'black-flash');
     } else {
         // --- 일반 강 공격 로직 ---
-        let dmg = Math.floor(player.atk * 2.0 * player.magicMultiplier); // 200% 데미지 + 마력 증폭
+        let dmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus); // 200% 데미지 + 마력 추가 피해
 
         // 확정 치명타 체크
         if (player.guaranteedCrit) {
-            dmg = Math.floor(dmg * player.critDamage); // 마력 증폭은 치명타 전에 적용
+            dmg = Math.floor((player.atk * 2.0) * player.critDamage + player.magicDamageBonus); // 치명타는 기본 공격력에만 적용 후 마력 피해 추가
             player.guaranteedCrit = false; // 사용 후 플래그 해제
             log('⚡ 흑섬의 여파로 강 공격이 치명타로 적중했습니다!', 'log-player');
         } else {
@@ -663,15 +663,15 @@ function executeSweepAttack() {
     livingMonsters.forEach((monster, index) => {
         // 각 몬스터에게 순차적으로 데미지를 줌
         setTimeout(() => {
-            const baseDmg = Math.floor(Math.random() * 5) + player.atk;
-            let dmg = Math.floor(baseDmg * 0.8 * player.magicMultiplier); // 기본 데미지의 80% + 마력 증폭
+            let baseDmg = Math.floor(Math.random() * 5) + player.atk;
+            let dmg = Math.floor(baseDmg * 0.8 + player.magicDamageBonus); // 기본 데미지의 80% + 마력 추가 피해
 
             const monsterIndexInAll = monsters.findIndex(m => m === monster);
             const targetElement = monsterElements[monsterIndexInAll];
             
             // 치명타 여부에 따라 데미지 및 효과 적용
             if (isCrit) {
-                dmg = Math.floor(dmg * player.critDamage);
+                dmg = Math.floor((baseDmg * 0.8) * player.critDamage + player.magicDamageBonus);
                 showFloatingText(dmg, targetElement, 'crit');
             } else {
                 showFloatingText(dmg, targetElement, 'damage');
@@ -924,9 +924,14 @@ function nextFloor() {
     
     // --- 플레이어 상태 회복 및 버프 턴 감소 ---
     player.hp = player.maxHp; // 다음 층 이동 시 체력은 완전 회복
-    const mpRecovery = 20;
-    player.mp = Math.min(player.maxMp, player.mp + mpRecovery); // 남은 마나 + 20 회복
-    log(`다음 층으로 이동하며 마나가 ${mpRecovery}만큼 회복되었습니다.`, 'log-system');
+    const baseMpRecovery = 20;
+    const lootMagBonus = player.lootInventory
+        .filter(loot => loot.type === 'permanent_stat' && loot.stat === 'mag')
+        .reduce((sum, loot) => sum + loot.value, 0);
+    const finalMag = player.mag + lootMagBonus;
+    const totalMpRecovery = baseMpRecovery + finalMag; // 마력 1당 1 MP 추가 회복
+    player.mp = Math.min(player.maxMp, player.mp + totalMpRecovery);
+    log(`다음 층으로 이동하며 마나가 ${totalMpRecovery}만큼 회복되었습니다.`, 'log-system');
 
     // 흑섬 버프 지속 층 감소
     if (player.blackFlashBuff.active) {
@@ -1158,7 +1163,7 @@ function recalculatePlayerStats() {
     player.critDamage = 2;
     player.goldBonus = 1 + (finalInt * 0.02) + lootGoldBonus;
     player.blackFlashChance = 0.008 + (finalFcs * 0.004);
-    player.magicMultiplier = 1 + (finalMag * 0.015);
+    player.magicDamageBonus = finalMag * 3.5;
 
     // 흑섬 버프 적용
     if (player.blackFlashBuff.active) {
@@ -1169,7 +1174,7 @@ function recalculatePlayerStats() {
         player.evasionChance = player.evasionChance * 1.6;
         player.goldBonus = player.goldBonus * 1.6;
         player.blackFlashChance = player.blackFlashChance * 1.6;
-        player.magicMultiplier = 1 + ((player.magicMultiplier - 1) * 1.6);
+        player.magicDamageBonus = player.magicDamageBonus * 1.6;
     }
 
     // 체력이 최대 체력을 초과하지 않도록 조정
