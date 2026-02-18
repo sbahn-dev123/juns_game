@@ -974,7 +974,7 @@ function generateMonstersForFloor(floorNumber) {
     if (floorNumber % 20 === 0) {
         const bossIndex = (floorNumber / 20) - 1;
         const bossTemplate = bossList[Math.min(bossIndex, bossList.length - 1)];
-        const bossMultiplier = 1 + (bossIndex * 0.8); // 보스 능력치 증가폭 상향
+        const bossMultiplier = 1; // 스펙업 배율 삭제
         const boss = createMonster(bossTemplate, bossMultiplier);
         generatedMonsters.push(boss);
         log(`============ 지하 ${floorNumber}층: 보스전! ============`, 'log-system', { fontSize: '28px', color: '#ef4444', textShadow: '0 0 10px #ef4444' });
@@ -982,7 +982,7 @@ function generateMonstersForFloor(floorNumber) {
     } else if (floorNumber % 20 === 10) { // 중간 보스 몬스터 등장 로직 (10, 30, 50...)
         const bossIndex = Math.floor(floorNumber / 20);
         const bossTemplate = midBossList[Math.min(bossIndex, midBossList.length - 1)];
-        const bossMultiplier = 1 + (bossIndex * 0.7); // 중간 보스 능력치 증가폭 상향
+        const bossMultiplier = 1; // 스펙업 배율 삭제
         const boss = createMonster(bossTemplate, bossMultiplier);
         generatedMonsters.push(boss);
         log(`============ 지하 ${floorNumber}층: 보스전! ============`, 'log-system', { fontSize: '28px', color: '#ef4444', textShadow: '0 0 10px #ef4444' });
@@ -990,7 +990,7 @@ function generateMonstersForFloor(floorNumber) {
     } else {
         // 일반 몬스터 생성 로직
         const mainMonsterTemplate = monsterList[Math.min(floorNumber - 1, monsterList.length - 1)];
-        const difficultyMultiplier = 1 + (Math.floor((floorNumber - 1) / 10) * 0.3);
+        const difficultyMultiplier = 1; // 스펙업 배율 삭제
         const mainMonster = createMonster(mainMonsterTemplate, difficultyMultiplier);
 
         // 17층 이상일 경우 추가 몬스터 생성
