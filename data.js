@@ -94,50 +94,58 @@ const bossList = [
 
 //* 상점에서 판매하는 방어구 목록: 티어가 높아질수록 성능과 가격이 증가합니다.
 const armorList = [
-    { name: '누더기 가죽 갑옷', emoji: '🧑‍🌾', maxHpBonus: 20, cost: 120 },
-    { name: '견고한 나무 갑옷', emoji: '🪖', maxHpBonus: 40, cost: 320 },
-    { name: '강철 사슬 갑옷', emoji: '🛡️', maxHpBonus: 70, cost: 680 },
-    { name: '기사의 판금 갑옷', emoji: '🤺', maxHpBonus: 110, cost: 1400 },
-    { name: '백은 갑옷', emoji: '🤴', maxHpBonus: 160, cost: 2900 },
-    { name: '용비늘 갑옷', emoji: '🐉', maxHpBonus: 220, cost: 6800 },
-    { name: '지옥불 갑옷', emoji: '😈', maxHpBonus: 300, cost: 12500 },
-    { name: '천상의 수호자 갑옷', emoji: '😇', maxHpBonus: 400, cost: 24000 },
+    { name: '누더기 가죽 갑옷', emoji: '🧑‍🌾', maxHpBonus: 25, cost: 120 },
+    { name: '견고한 나무 갑옷', emoji: '🪖', maxHpBonus: 50, cost: 320 },
+    { name: '강철 사슬 갑옷', emoji: '🛡️', maxHpBonus: 90, cost: 680 },
+    { name: '기사의 판금 갑옷', emoji: '🤺', maxHpBonus: 140, cost: 1400 },
+    { name: '백은 갑옷', emoji: '🤴', maxHpBonus: 200, cost: 2900 },
+    { name: '용비늘 갑옷', emoji: '🐉', maxHpBonus: 280, cost: 6800 },
+    { name: '지옥불 갑옷', emoji: '😈', maxHpBonus: 380, cost: 12500 },
+    { name: '천상의 수호자 갑옷', emoji: '😇', maxHpBonus: 500, cost: 24000 },
+    { name: '심연의 군주 갑옷', emoji: '😈', maxHpBonus: 650, cost: 45000 },
+    { name: '창조주의 성의', emoji: '🌌', maxHpBonus: 820, cost: 80000 },
 ];
 
 //* 상점에서 판매하는 HP 회복 물약 목록
 const healPotionList = [
-    { name: '낡은 물약', healAmount: 15, cost: 70 },
-    { name: '소형 물약', healAmount: 25, cost: 130 },
-    { name: '중형 물약', healAmount: 45, cost: 220 },
-    { name: '대형 물약', healAmount: 70, cost: 340 },
-    { name: '특제 물약', healAmount: 100, cost: 480 },
-    { name: '정제된 성수', healAmount: 140, cost: 700 },
-    { name: '엘릭서', healAmount: 200, cost: 1000 },
-    { name: '생명의 샘물', healAmount: 9999, cost: 1600 },
+    { name: '낡은 물약', healAmount: 12, cost: 55 },
+    { name: '소형 물약', healAmount: 20, cost: 100 },
+    { name: '중형 물약', healAmount: 35, cost: 170 },
+    { name: '대형 물약', healAmount: 55, cost: 260 },
+    { name: '특제 물약', healAmount: 80, cost: 380 },
+    { name: '정제된 성수', healAmount: 110, cost: 550 },
+    { name: '엘릭서', healAmount: 160, cost: 800 },
+    { name: '이그드라실의 수액', healAmount: 220, cost: 1000 },
+    { name: '피닉스의 눈물', healAmount: 320, cost: 1200 },
+    { name: '생명의 샘물', healAmount: 9999, cost: 1300 },
 ];
 
 //* 상점에서 판매하는 MP 회복 물약 목록
 const mpPotionList = [
-    { name: '마나의 이슬', mpAmount: 20, cost: 80 },
-    { name: '소형 마나 물약', mpAmount: 40, cost: 180 },
-    { name: '중형 마나 물약', mpAmount: 70, cost: 320 },
-    { name: '대형 마나 물약', mpAmount: 110, cost: 520 },
-    { name: '정신의 비약', mpAmount: 160, cost: 760 },
-    { name: '현자의 돌', mpAmount: 220, cost: 1150 },
-    { name: '마력의 샘', mpAmount: 300, cost: 1650 },
-    { name: '세계수의 눈물', mpAmount: 9999, cost: 2200 },
+    { name: '마나의 이슬', mpAmount: 15, cost: 60 },
+    { name: '소형 마나 물약', mpAmount: 30, cost: 140 },
+    { name: '중형 마나 물약', mpAmount: 55, cost: 250 },
+    { name: '대형 마나 물약', mpAmount: 85, cost: 400 },
+    { name: '정신의 비약', mpAmount: 120, cost: 600 },
+    { name: '현자의 돌', mpAmount: 170, cost: 900 },
+    { name: '마력의 샘', mpAmount: 240, cost: 1300 },
+    { name: '아카식 레코드의 파편', mpAmount: 320, cost: 1600 },
+    { name: '공허의 정수', mpAmount: 440, cost: 1700 },
+    { name: '세계수의 눈물', mpAmount: 9999, cost: 1800 },
 ];
 
 //* 상점에서 판매하는 공격력 강화(버프) 물약 목록
 const buffPotionList = [
-    { name: '흐릿한 힘의 물약', turns: 6, mult: 1.2, cost: 150 },
-    { name: '하급 힘의 물약', turns: 6, mult: 1.3, cost: 260 },
-    { name: '중급 힘의 물약', turns: 5, mult: 1.45, cost: 440 },
-    { name: '상급 힘의 물약', turns: 5, mult: 1.6, cost: 700 },
-    { name: '괴력의 비약', turns: 4, mult: 1.8, cost: 1150 },
-    { name: '용사의 영약', turns: 4, mult: 2.0, cost: 1700 },
-    { name: '거인의 심장', turns: 3, mult: 2.5, cost: 2500 },
-    { name: '신의 분노', turns: 3, mult: 3.2, cost: 3800 },
+    { name: '흐릿한 힘의 물약', turns: 6, mult: 1.15, cost: 120 },
+    { name: '하급 힘의 물약', turns: 6, mult: 1.2, cost: 200 },
+    { name: '중급 힘의 물약', turns: 5, mult: 1.3, cost: 350 },
+    { name: '상급 힘의 물약', turns: 5, mult: 1.4, cost: 550 },
+    { name: '괴력의 비약', turns: 4, mult: 1.6, cost: 900 },
+    { name: '용사의 영약', turns: 4, mult: 1.7, cost: 1300 },
+    { name: '거인의 심장', turns: 3, mult: 2.0, cost: 2000 },
+    { name: '신의 분노', turns: 3, mult: 2.5, cost: 3000 },
+    { name: '혼돈의 비약', turns: 3, mult: 3.0, cost: 4400 },
+    { name: '종언의 영약', turns: 2, mult: 3.8, cost: 6400 },
 ];
 
 //* 상점에서 판매하는 무기 목록
@@ -150,18 +158,22 @@ const weaponList = [
     { name: '요도 무라마사', emoji: '👹', atkBonus: 75, cost: 8500 },
     { name: '용살자의 검', emoji: '🐲', atkBonus: 100, cost: 16000 },
     { name: '신검 엑스칼리버', emoji: '✨', atkBonus: 130, cost: 30000 },
+    { name: '마검 롱기누스', emoji: '🔱', atkBonus: 170, cost: 52000 },
+    { name: '창조주의 검', emoji: '☄️', atkBonus: 220, cost: 95000 },
 ];
 
 //* 상점에서 판매하는 치명타 확률 증가(버프) 물약 목록
 const critPotionList = [
-    { name: '약한 집중의 물약', bonus: 9, turns: 5, cost: 170 },
-    { name: '집중의 물약', bonus: 14, turns: 5, cost: 360 },
-    { name: '강한 집중의 물약', bonus: 27, turns: 5, cost: 600 },
-    { name: '예리함의 비약', bonus: 29, turns: 4, cost: 900 },
-    { name: '통찰의 영약', bonus: 36, turns: 4, cost: 1100 },
-    { name: '매의 눈', bonus: 54, turns: 3, cost: 1900 },
-    { name: '절대집중', bonus: 70, turns: 3, cost: 2800 },
-    { name: '신의 시야', bonus: 90, turns: 2, cost: 4000 },
+    { name: '약한 집중의 물약', bonus: 7, turns: 5, cost: 130 },
+    { name: '집중의 물약', bonus: 11, turns: 5, cost: 280 },
+    { name: '강한 집중의 물약', bonus: 20, turns: 5, cost: 480 },
+    { name: '예리함의 비약', bonus: 22, turns: 4, cost: 700 },
+    { name: '통찰의 영약', bonus: 28, turns: 4, cost: 850 },
+    { name: '매의 눈', bonus: 40, turns: 3, cost: 1500 },
+    { name: '절대집중', bonus: 55, turns: 3, cost: 2200 },
+    { name: '신의 시야', bonus: 70, turns: 2, cost: 3200 },
+    { name: '시간의 눈', bonus: 80, turns: 3, cost: 4800 },
+    { name: '운명의 실', bonus: 120, turns: 2, cost: 6800 },
 ];
 
 //* 각 스탯의 이름과 설명을 정의한 객체 (스탯 분배 창에서 사용)

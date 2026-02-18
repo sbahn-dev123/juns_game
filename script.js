@@ -985,36 +985,47 @@ function generateMonstersForFloor(floorNumber) {
     if (floorNumber % 20 === 0) {
         const bossIndex = (floorNumber / 20) - 1;
         const bossTemplate = bossList[Math.min(bossIndex, bossList.length - 1)];
-        const bossMultiplier = 1; // 스펙업 배율 삭제
-        const boss = createMonster(bossTemplate, bossMultiplier);
+        const boss = createMonster(bossTemplate, 1);
         generatedMonsters.push(boss);
         log(`============ 지하 ${floorNumber}층: 보스전! ============`, 'log-system', { fontSize: '28px', color: '#ef4444', textShadow: '0 0 10px #ef4444' });
         log(`🚨 강력한 ${boss.name}이(가) 나타났습니다!`, 'log-monster', { fontSize: '24px', color: '#ef4444' });
     } else if (floorNumber % 20 === 10) { // 중간 보스 몬스터 등장 로직 (10, 30, 50...)
         const bossIndex = Math.floor(floorNumber / 20);
         const bossTemplate = midBossList[Math.min(bossIndex, midBossList.length - 1)];
-        const bossMultiplier = 1; // 스펙업 배율 삭제
-        const boss = createMonster(bossTemplate, bossMultiplier);
+        const boss = createMonster(bossTemplate, 1);
         generatedMonsters.push(boss);
         log(`============ 지하 ${floorNumber}층: 보스전! ============`, 'log-system', { fontSize: '28px', color: '#ef4444', textShadow: '0 0 10px #ef4444' });
         log(`🚨 강력한 ${boss.name}이(가) 나타났습니다!`, 'log-monster', { fontSize: '24px', color: '#ef4444' });
     } else {
         // 일반 몬스터 생성 로직
-        const mainMonsterTemplate = monsterList[Math.min(floorNumber - 1, monsterList.length - 1)];
-        const difficultyMultiplier = 1; // 스펙업 배율 삭제
-        const mainMonster = createMonster(mainMonsterTemplate, difficultyMultiplier);
 
-        // 17층 이상일 경우 추가 몬스터 생성
-        if (floorNumber >= 17) {
+        // 110층부터 일반 몬스터 스펙업 배율 계산
+        const difficultyMultiplier = (floorNumber >= 110) ? (1 + (floorNumber - 110) * 0.037) : 1;
+
+        // --- 추가 몬스터 생성 로직 ---
+        // 51층부터 30층마다 1마리씩, 순차적으로 강해지는 몬스터 추가
+        if (floorNumber > 50) {
+            const progressiveExtraMobsCount = Math.floor((floorNumber - 51) / 30) + 1;
+            for (let i = 0; i < progressiveExtraMobsCount; i++) {
+                const startFloorForSlot = 51 + i * 30;
+                const monsterIndex = (floorNumber - startFloorForSlot) % monsterList.length;
+                const mobTemplate = monsterList[monsterIndex];
+                const mob = createMonster(mobTemplate, difficultyMultiplier);
+                generatedMonsters.push(mob);
+            }
+        } else if (floorNumber >= 17) { // 17~50층 사이의 기존 추가 몬스터 로직
             const extraMobsCount = floorNumber >= 22 ? 2 : 1;
             for (let i = 0; i < extraMobsCount; i++) {
                 const mobTemplateIndex = Math.floor(Math.random() * Math.min(floorNumber, 10));
                 const mobTemplate = monsterList[mobTemplateIndex];
-                const mob = createMonster(mobTemplate, 1);
+                const mob = createMonster(mobTemplate, 1); // 이 구간 몬스터는 스펙업 배율(difficultyMultiplier)이 1이므로 그대로 1을 사용
                 generatedMonsters.push(mob);
             }
         }
 
+        // --- 메인 몬스터 생성 ---
+        const mainMonsterTemplate = monsterList[Math.min(floorNumber - 1, monsterList.length - 1)];
+        const mainMonster = createMonster(mainMonsterTemplate, difficultyMultiplier);
         generatedMonsters.push(mainMonster); // 메인 몬스터를 마지막에 추가
 
         log(`============ 지하 ${floorNumber}층 ============`, 'log-system');
