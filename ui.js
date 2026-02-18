@@ -135,11 +135,17 @@ function showSkillSelection() {
     if (isGameOver || !isPlayerTurn) return;
     const controlsPanel = document.getElementById('controls-panel');
     const defenseBtnClass = player.defenseStance ? 'btn-defend-active' : 'btn-defend';
+
+    // 스킬 데미지 계산 (마력 스탯 적용)
+    const magicMultiplier = 1 + (player.mag * 0.015);
+    const powerAttackDmg = Math.floor(player.atk * 2.0 * magicMultiplier);
+    const sweepAttackDmg = Math.floor(player.atk * 0.8 * magicMultiplier); // 휩쓸기는 광역이라 기본 공격력의 80%로 표시
+
     controlsPanel.style.gridTemplateColumns = '1fr 1fr 1fr 1fr'; // 4개의 스킬 버튼을 위한 레이아웃
     controlsPanel.innerHTML = `
-        <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span style="font-size: 16px;">(MP 0)</span></button>
-        <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span style="font-size: 16px;">(MP 15)</span></button>
-        <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span style="font-size: 16px;">(MP 25)</span></button>
+        <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span style="font-size: 16px;">(피해량: ${player.atk})</span></button>
+        <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span style="font-size: 16px;">(MP 15 / 피해량: ${powerAttackDmg})</span></button>
+        <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span style="font-size: 16px;">(MP 25 / 피해량: ${sweepAttackDmg})</span></button>
         <button class="${defenseBtnClass}" onclick="toggleDefenseStance()">🛡️ 방어 태세<br><span style="font-size: 16px;">(MP 10)</span></button>
         <button class="btn-inventory" style="grid-column: 1 / 5; font-size: 20px;" onclick="showMainControls()">↩️ 뒤로가기</button>
     `;
@@ -260,6 +266,7 @@ function renderStatUpModal() {
     list.innerHTML = '';
 
     for (const key in statInfo) {
+        if (!statInfo.hasOwnProperty(key)) continue; // 객체 자체의 속성인지 확인
         const info = statInfo[key];
         const itemEl = document.createElement('div');
         itemEl.className = 'stat-up-item';
@@ -295,12 +302,14 @@ function renderStatUpModal() {
     const tempEvasionChance = 4 + (tempStats.agi * 2);
     const tempGoldBonus = 1 + (tempStats.int * 0.02);
     const tempBlackFlashChance = 0.008 + (tempStats.fcs * 0.004);
+    const currentMagicAmp = (player.mag * 1.5);
+    const tempMagicAmp = (tempStats.mag * 1.5);
 
     currentValuesEl.innerHTML = `
         공격력: ${currentAtk} → ${tempAtk} | 최대체력: ${currentMaxHp} → ${tempMaxHp}<br>
         최대MP: ${currentMaxMp} → ${tempMaxMp} | 회피: ${currentEvasionChance.toFixed(1)}% → ${tempEvasionChance.toFixed(1)}%<br>
         치명타: ${currentCritChance.toFixed(1)}% → ${tempCritChance.toFixed(1)}% | 골드 보너스: ${((currentGoldBonus - 1) * 100).toFixed(0)}% → ${((tempGoldBonus - 1) * 100).toFixed(0)}%<br>
-        흑섬 확률: ${(currentBlackFlashChance * 100).toFixed(1)}% → ${(tempBlackFlashChance * 100).toFixed(1)}%
+        흑섬 확률: ${(currentBlackFlashChance * 100).toFixed(1)}% → ${(tempBlackFlashChance * 100).toFixed(1)}% | 스킬 증폭: ${currentMagicAmp.toFixed(1)}% → ${tempMagicAmp.toFixed(1)}%
     `;
 }
 
@@ -399,7 +408,7 @@ function renderScoreboard(scores) {
 function openInventoryModal() {
     // 스탯 분배를 위한 임시 변수 초기화
     tempStatPoints = player.statPoints;
-    tempStats = { str: player.str, vit: player.vit, luk: player.luk, agi: player.agi, int: player.int, mnd: player.mnd, fcs: player.fcs };
+    tempStats = { str: player.str, vit: player.vit, mag: player.mag, mnd: player.mnd, agi: player.agi, int: player.int, luk: player.luk, fcs: player.fcs };
 
     const modal = document.getElementById('equipment-modal');
     modal.style.display = 'flex';

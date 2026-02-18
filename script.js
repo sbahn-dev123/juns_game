@@ -22,10 +22,11 @@ const player = {
     // --- 분배 가능 스탯 ---
     str: 0,             // 힘 스탯 (공격력에 영향)
     vit: 0,             // 체력 스탯 (최대 체력에 영향)
-    luk: 0,             // 운 스탯 (치명타 확률에 영향)
+    mag: 0,             // 마력 스탯 (스킬 피해량 증폭)
+    mnd: 0,             // 정신력 스탯 (최대 MP에 영향)
     agi: 0,             // 민첩 스탯 (회피 확률에 영향)
     int: 0,             // 지혜 스탯 (골드 획득량에 영향)
-    mnd: 0,             // 정신력 스탯 (최대 MP에 영향)
+    luk: 0,             // 운 스탯 (치명타 확률에 영향)
     fcs: 0,             // 고도의 집중 스탯 (흑섬 확률에 영향)
     // --- 버프 및 상태 ---
     blackFlashBuff: { active: false, duration: 0 }, // 흑섬 버프 상태 (활성화 여부, 남은 층)
@@ -538,11 +539,12 @@ function executePowerAttack() {
         showFloatingText(dmg, targetMonsterElement, 'black-flash');
     } else {
         // --- 일반 강 공격 로직 ---
-        let dmg = Math.floor(player.atk * 2.0); // 200% 데미지
+        const magicMultiplier = 1 + (player.mag * 0.015); // 마력 증폭
+        let dmg = Math.floor(player.atk * 2.0 * magicMultiplier); // 200% 데미지 + 마력 증폭
 
         // 확정 치명타 체크
         if (player.guaranteedCrit) {
-            dmg = Math.floor(dmg * player.critDamage);
+            dmg = Math.floor(dmg * player.critDamage); // 마력 증폭은 치명타 전에 적용
             player.guaranteedCrit = false; // 사용 후 플래그 해제
             log('⚡ 흑섬의 여파로 강 공격이 치명타로 적중했습니다!', 'log-player');
         } else {
@@ -661,8 +663,9 @@ function executeSweepAttack() {
     livingMonsters.forEach((monster, index) => {
         // 각 몬스터에게 순차적으로 데미지를 줌
         setTimeout(() => {
+            const magicMultiplier = 1 + (player.mag * 0.015); // 마력 증폭
             const baseDmg = Math.floor(Math.random() * 5) + player.atk;
-            let dmg = Math.floor(baseDmg * 0.8); // 기본 데미지의 80%
+            let dmg = Math.floor(baseDmg * 0.8 * magicMultiplier); // 기본 데미지의 80% + 마력 증폭
 
             const monsterIndexInAll = monsters.findIndex(m => m === monster);
             const targetElement = monsterElements[monsterIndexInAll];
@@ -1090,7 +1093,7 @@ function addStat(statKey) {
  */
 function resetTempStats() {
     tempStatPoints = player.statPoints;
-    tempStats = { str: player.str, vit: player.vit, luk: player.luk, agi: player.agi, int: player.int, mnd: player.mnd, fcs: player.fcs };
+    tempStats = { str: player.str, vit: player.vit, mag: player.mag, mnd: player.mnd, agi: player.agi, int: player.int, luk: player.luk, fcs: player.fcs };
     renderStatUpModal();
 }
 
@@ -1313,7 +1316,7 @@ function startNewGame(isNew = false) {
     const initialPlayerState = {
         baseMaxHp: 35, maxHp: 35, hp: 35, baseMaxMp: 40, maxMp: 40, mp: 40,
         baseAtk: 8, atk: 10, level: 1, xp: 0, xpToNextLevel: 100, statPoints: 0,
-        str: 0, vit: 0, luk: 0, agi: 0, int: 0, mnd: 0, fcs: 0,
+        str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0,
         blackFlashBuff: { active: false, duration: 0 }, critBuff: { turns: 0, bonus: 0 },
         guaranteedCrit: false, defenseBuff: { turns: 0, reduction: 0.6 },
         defenseStance: false, isStunned: false, evasionChance: 4, critChance: 11,
