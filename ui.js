@@ -392,14 +392,24 @@ function closeLoginModal() {
  * 스코어보드 모달을 여는 함수
  */
 function openScoreboardModal() {
-    document.getElementById('scoreboard-modal').style.display = 'flex';
+    const modal = document.getElementById('scoreboard-modal');
+    modal.style.display = 'flex';
+    // 브라우저가 display 변경을 인지하고 transition을 적용할 수 있도록 짧은 지연을 줍니다.
+    setTimeout(() => {
+        modal.classList.add('visible');
+    }, 10);
 }
 
 /**
  * 스코어보드 모달을 닫는 함수
  */
 function closeScoreboardModal() {
-    document.getElementById('scoreboard-modal').style.display = 'none';
+    const modal = document.getElementById('scoreboard-modal');
+    modal.classList.remove('visible');
+    // transition 애니메이션이 끝난 후 display를 none으로 변경합니다.
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300); // CSS의 transition 시간과 일치해야 합니다.
 }
 
 /**
