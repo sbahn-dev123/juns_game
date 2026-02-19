@@ -377,15 +377,25 @@ function showGameScreen() {
  * 로그인/회원가입 모달을 여는 함수
  */
 function openLoginModal() {
-    document.getElementById('login-modal').style.display = 'flex';
+    const modal = document.getElementById('login-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.add('visible');
+    }, 10);
 }
 
 /**
  * 로그인/회원가입 모달을 닫는 함수
  */
 function closeLoginModal() {
-    document.getElementById('login-modal').style.display = 'none';
-    document.getElementById('login-error-msg').style.display = 'none';
+    const modal = document.getElementById('login-modal');
+    modal.classList.remove('visible');
+    // transition 애니메이션이 끝난 후 display를 none으로 변경합니다.
+    setTimeout(() => {
+        modal.style.display = 'none';
+        // 모달이 닫힐 때 에러 메시지도 숨김
+        document.getElementById('login-error-msg').style.display = 'none';
+    }, 300); // CSS의 transition 시간과 일치해야 합니다.
 }
 
 /**
