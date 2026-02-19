@@ -196,6 +196,17 @@
         <div id="login-form" style="display: flex; flex-direction: column; gap: 15px; width: 300px;">
             <input type="text" id="username" placeholder="사용자 이름" required style="padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff;">
             <input type="password" id="password" placeholder="비밀번호" required style="padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff;">
+            <input type="email" id="email" placeholder="이메일 (회원가입 시 필수)" required style="padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff;">
+            <input type="date" id="birthdate" title="생년월일 (회원가입 시 필수)" required style="padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff; color-scheme: dark;">
+            <select id="country" title="국가 (회원가입 시 필수)" required style="padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background: #333; color: #fff;">
+                <option value="" disabled selected>국가 선택</option>
+                <option value="KR">대한민국</option>
+                <option value="US">미국</option>
+                <option value="JP">일본</option>
+                <option value="CN">중국</option>
+                <option value="ETC">기타</option>
+                <!-- 필요에 따라 더 많은 국가를 추가하세요 -->
+            </select>
             <div id="login-error-msg" style="color: #ef4444; text-align: center; display: none;"></div>
             <div style="display: flex; gap: 10px;">
                 <button type="button" class="btn-attack" style="flex: 1;" onclick="handleLogin()">로그인</button>

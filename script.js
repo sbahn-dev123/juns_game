@@ -1443,13 +1443,16 @@ async function handleApiResponse(response) {
 async function handleRegister() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
+    const email = document.getElementById('email').value;
+    const country = document.getElementById('country').value;
+    const birthdate = document.getElementById('birthdate').value;
     const errorMsgEl = document.getElementById('login-error-msg');
 
     try {
         const response = await fetch(`${API_URL}/users/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
+            body: JSON.stringify({ username, password, email, country, birthdate }),
         });
         const data = await response.json();
         if (!response.ok) {

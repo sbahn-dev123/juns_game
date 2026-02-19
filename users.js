@@ -10,10 +10,10 @@ const User = require('./User');
 // @desc    Register new user
 // @access  Public
 router.post('/register', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, email, country, birthdate } = req.body;
 
     // Simple validation
-    if (!username || !password) {
+    if (!username || !password || !email || !country || !birthdate) {
         return res.status(400).json({ message: '모든 필드를 채워주세요.' });
     }
 
@@ -24,9 +24,18 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: '이미 존재하는 사용자 이름입니다.' });
         }
 
+        // Check for existing email
+        user = await User.findOne({ email });
+        if (user) {
+            return res.status(400).json({ message: '이미 사용 중인 이메일입니다.' });
+        }
+
         user = new User({
             username,
-            password
+            password,
+            email,
+            country,
+            birthdate
         });
 
         // Create salt & hash
