@@ -372,8 +372,29 @@ function updateLoginStatus(username) {
  * 시작 메뉴를 보여주는 함수
  */
 function showStartMenu() {
+    playBGM('main-theme'); // 시작 메뉴 BGM 재생
     document.getElementById('start-menu').style.display = 'block';
     document.getElementById('game-wrapper').style.display = 'none';
+}
+
+/**
+ * 볼륨 조절 버튼의 UI 상태를 업데이트하는 함수
+ */
+function updateVolumeButtons() {
+    const bgmBtn = document.getElementById('bgm-toggle-btn');
+    const sfxBtn = document.getElementById('sfx-toggle-btn');
+
+    if (isBgmEnabled) {
+        bgmBtn.classList.remove('off');
+    } else {
+        bgmBtn.classList.add('off');
+    }
+
+    if (isSfxEnabled) {
+        sfxBtn.classList.remove('off');
+    } else {
+        sfxBtn.classList.add('off');
+    }
 }
 
 /**

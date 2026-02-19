@@ -19,6 +19,32 @@ body {
     text-align: center;
 }
 
+/* 볼륨 조절 버튼 */
+#volume-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 101; /* 다른 모달 위에 표시될 수 있도록 */
+}
+
+.volume-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    padding: 0;
+    box-shadow: none;
+}
+
+.volume-btn.off {
+    opacity: 0.5;
+    text-decoration: line-through 3px red;
+}
+
 .game-title {
     font-size: 64px;
     color: #a78bfa;

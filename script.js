@@ -1005,8 +1005,11 @@ function nextFloor() {
  */
 function generateMonstersForFloor(floorNumber) {
     let generatedMonsters = [];
+    const isBossFloor = floorNumber % 10 === 0;
+
     // 메인 보스 몬스터 등장 로직 (20, 40, 60...)
     if (floorNumber % 20 === 0) {
+        playBGM('boss-theme');
         const bossIndex = (floorNumber / 20) - 1;
         const bossTemplate = bossList[Math.min(bossIndex, bossList.length - 1)];
         const boss = createMonster(bossTemplate, 1);
@@ -1015,6 +1018,7 @@ function generateMonstersForFloor(floorNumber) {
         playSound('boss-appear');
         log(`🚨 강력한 ${boss.name}이(가) 나타났습니다!`, 'log-monster', { fontSize: '24px', color: '#ef4444' });
     } else if (floorNumber % 20 === 10) { // 중간 보스 몬스터 등장 로직 (10, 30, 50...)
+        playBGM('boss-theme');
         const bossIndex = Math.floor(floorNumber / 20);
         const bossTemplate = midBossList[Math.min(bossIndex, midBossList.length - 1)];
         const boss = createMonster(bossTemplate, 1);
@@ -1023,6 +1027,9 @@ function generateMonstersForFloor(floorNumber) {
         log(`============ 지하 ${floorNumber}층: 보스전! ============`, 'log-system', { fontSize: '28px', color: '#ef4444', textShadow: '0 0 10px #ef4444' });
         log(`🚨 강력한 ${boss.name}이(가) 나타났습니다!`, 'log-monster', { fontSize: '24px', color: '#ef4444' });
     } else {
+        // 일반 층에서는 메인 테마 재생
+        playBGM('main-theme');
+
         // 일반 몬스터 생성 로직
 
         // 110층부터 일반 몬스터 스펙업 배율 계산
@@ -1089,6 +1096,7 @@ function createMonster(template, multiplier) {
  * 플레이어 사망 시 게임 오버를 처리하는 함수
  */
 async function gameOver() {
+    stopBGM();
     playSound('game-over');
     isGameOver = true;
     log("체력이 0이 되었습니다. 게임 오버...", 'log-monster');
@@ -1761,6 +1769,7 @@ function init() {
     const username = localStorage.getItem('username');
     updateLoginStatus(username);
     showStartMenu();
+    updateVolumeButtons(); // 페이지 로드 시 볼륨 버튼 상태 초기화
 }
 
 //* 키보드 입력을 처리하기 위한 이벤트 리스너 추가
