@@ -49,8 +49,9 @@ body {
 
 /* 게임 메인 창 */
 .game-container {
-    width: 130%;
-    height: 98vh;
+    width: 100%;
+    min-height: 98vh;
+    height: auto;
     max-width: 1500px;
     background: rgba(30, 32, 50, 0.9);
     border: 2px solid #7c3aed;
@@ -305,7 +306,7 @@ body {
 /* 컨트롤 패널 */
 .controls {
     display: grid;
-    grid-template-columns: 4fr 3fr 3fr; /* 3-button layout */
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
 }
 
@@ -333,6 +334,26 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-defend-active {
     background: #22d3ee; /* 더 밝은 청록색 */
     box-shadow: 0 4px 0 #06b6d4;
+}
+
+/* 스킬 버튼용 추가 스타일 */
+.skill-desc {
+    font-size: 16px;
+    font-weight: normal;
+    color: #ccc;
+}
+
+.btn-back {
+    grid-column: 1 / -1;
+}
+
+.stun-indicator {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 30px;
+    display: none;
 }
 
 /* 레벨업 모달 (숨김 상태) */
@@ -565,3 +586,85 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .scoreboard-item .rank { font-weight: bold; color: #fbbf24; }
 .scoreboard-item .name { color: #60a5fa; }
 .scoreboard-item .score { font-weight: bold; }
+
+/* --- 반응형 웹을 위한 미디어 쿼리 --- */
+
+/* 태블릿 (1200px 이하) */
+@media (max-width: 1200px) {
+    .emoji { font-size: 120px; }
+    .name { font-size: 22px; }
+    .hp-bar-bg { width: 160px; }
+    button { padding: 40px; font-size: 32px; }
+    .management-container {
+        grid-template-columns: 1fr 1fr; /* 3열 -> 2열 */
+        width: 100%;
+    }
+    .potion-container {
+        flex-direction: column;
+    }
+    .controls {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 태블릿 & 모바일 (992px 이하) */
+@media (max-width: 992px) {
+    .game-container {
+        padding: 10px;
+        min-height: 0;
+    }
+    .emoji { font-size: 100px; }
+    .name { font-size: 20px; }
+    .hp-bar-bg { width: 140px; }
+    .hp-text { font-size: 18px; }
+    .log-box { height: 180px; font-size: 18px; }
+    button { padding: 30px; font-size: 24px; }
+    .shop-row { flex-direction: column; }
+    .management-container { grid-template-columns: 1fr; } /* 2열 -> 1열 */
+}
+
+/* 모바일 (768px 이하) */
+@media (max-width: 768px) {
+    body {
+        height: auto;
+        padding: 5px 0;
+    }
+    .game-container {
+        border-radius: 10px;
+    }
+    .battle-field {
+        flex-direction: column;
+        gap: 20px;
+        padding: 10px;
+    }
+    .emoji { font-size: 80px; }
+    .name { font-size: 18px; }
+    .hp-bar-bg { width: 120px; height: 18px; }
+    .hp-text { font-size: 16px; }
+    .log-box { height: 150px; font-size: 14px; }
+    .xp-bar-container, .mp-bar-container { padding: 15px; }
+    .xp-text, .level-badge { font-size: 16px; }
+    
+    button {
+        padding: 20px 10px;
+        font-size: 18px;
+    }
+
+    .floating-text { font-size: 24px; }
+    .floating-text.crit { font-size: 32px; }
+    .floating-text.level-up { font-size: 40px; }
+
+    .shop-modal, .inventory-modal, .item-select-modal, .equipment-modal { padding: 10px; }
+    .shop-title { font-size: 28px; }
+}
+
+/* 작은 모바일 (480px 이하) */
+@media (max-width: 480px) {
+    .game-title { font-size: 48px; }
+    .start-btn { width: 200px; font-size: 18px; }
+    .floor-badge { font-size: 14px; padding: 8px 15px; }
+    .header { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+    .emoji { font-size: 60px; }
+    .log-box { font-size: 13px; }
+    .controls button { font-size: 16px; }
+}

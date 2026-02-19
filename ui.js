@@ -120,7 +120,7 @@ function updateUI() {
         if (isDead) monsterWrapper.classList.add('dead');
 
         monsterWrapper.innerHTML = `
-            <div class="stun-indicator" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 30px; display: ${isStunned ? 'block' : 'none'};">💫</div>
+            <div class="stun-indicator ${isStunned ? 'visible' : ''}">💫</div>
             <div class="target-indicator">🔻</div>
             <div class="character">
                 <div class="emoji">${isDead ? '💀' : monster.emoji}</div>
@@ -146,19 +146,19 @@ function showSkillSelection() {
     // 플레이어 턴이 아니거나 게임오버 상태면 실행하지 않음
     if (isGameOver || !isPlayerTurn) return;
     const controlsPanel = document.getElementById('controls-panel');
+    controlsPanel.classList.add('skill-view');
     const defenseBtnClass = player.defenseStance ? 'btn-defend-active' : 'btn-defend';
 
     // 스킬 데미지 계산 (마력 스탯 적용)
     const powerAttackDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
     const sweepAttackDmg = Math.floor(player.atk * 0.8 + player.magicDamageBonus); // 휩쓸기는 광역이라 기본 공격력의 80%로 표시
 
-    controlsPanel.style.gridTemplateColumns = '1fr 1fr 1fr 1fr'; // 4개의 스킬 버튼을 위한 레이아웃
     controlsPanel.innerHTML = `
-        <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span style="font-size: 16px;">(피해량: ${player.atk})</span></button>
-        <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span style="font-size: 16px;">(MP 15 / 피해량: ${powerAttackDmg})</span></button>
-        <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span style="font-size: 16px;">(MP 25 / 피해량: ${sweepAttackDmg})</span></button>
-        <button class="${defenseBtnClass}" onclick="toggleDefenseStance()">🛡️ 방어 태세<br><span style="font-size: 16px;">(MP 10)</span></button>
-        <button class="btn-inventory" style="grid-column: 1 / 5; font-size: 20px;" onclick="showMainControls()">↩️ 뒤로가기</button>
+        <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
+        <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span class="skill-desc">(MP 15 / 피해량: ${powerAttackDmg})</span></button>
+        <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span class="skill-desc">(MP 25 / 피해량: ${sweepAttackDmg})</span></button>
+        <button class="${defenseBtnClass}" onclick="toggleDefenseStance()">🛡️ 방어 태세<br><span class="skill-desc">(MP 10)</span></button>
+        <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
     `;
 }
 
@@ -168,7 +168,7 @@ function showSkillSelection() {
 function showMainControls() {
     if (isGameOver) return;
     const controlsPanel = document.getElementById('controls-panel');
-    controlsPanel.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+    controlsPanel.classList.remove('skill-view');
     const saveButton = isLoggedIn() ? `<button class="btn-buff" onclick="saveGame()">💾 저장</button>` : `<button class="btn-buff" disabled title="로그인 시 사용 가능">💾 저장</button>`;
     controlsPanel.innerHTML = `
         <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬</button>
