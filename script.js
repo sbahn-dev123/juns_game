@@ -141,6 +141,7 @@ function executeNormalAttack() {
 
     // --- MP 소모 및 공격 애니메이션 ---
     player.mp -= totalMpCost;
+    playSound('attack');
 
     // 플레이어 공격 애니메이션
     const playerElement = document.getElementById('player-character');
@@ -155,6 +156,7 @@ function executeNormalAttack() {
 
     // --- 흑섬(Black Flash) 발동 체크 ---
     if (Math.random() < player.blackFlashChance) {
+        playSound('black-flash');
         triggerBlackFlash();
         let dmg = Math.floor(player.atk * 6.25);
         log('⚫ 흑섬(黑閃) 발동!', 'log-player', { fontSize: '24px', color: 'white', textShadow: '0 0 5px black, 0 0 15px red' });
@@ -214,6 +216,7 @@ function executeNormalAttack() {
         }
 
         if (isCrit) {
+            playSound('crit');
             dmg = Math.floor(dmg * player.critDamage);
             showFloatingText(dmg, targetMonsterElement, 'crit');
         } else {
@@ -247,6 +250,7 @@ function executeNormalAttack() {
     if (allDead) {
         if (targetMonster.hp <= 0) {
             log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            playSound('monster-die');
             gainXP(targetMonster.xp);
         }
         winBattle();
@@ -254,6 +258,7 @@ function executeNormalAttack() {
         // 현재 타겟 몬스터가 죽었는지 확인
         if (targetMonster.hp <= 0) {
             log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            playSound('monster-die');
             gainXP(targetMonster.xp);
             findNextTarget();
         }
@@ -290,6 +295,7 @@ function monstersAttack() {
                     if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
                 }
                 player.hp -= dmg;
+                playSound('hit');
                 monster.isCharging = false;
                 log(`🔥 ${monster.name}의 ${skill.name}! ${dmg}의 엄청난 피해를 입었습니다!`, 'log-monster');
                 showFloatingText(dmg, playerElement, 'crit');
@@ -355,6 +361,7 @@ function monstersAttack() {
                                 if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
                             }
                             player.hp -= dmg;
+                            playSound('hit');
                             player.isStunned = true;
                             const skillName = skill.name || '강타';
                             log(`💥 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입고 기절했습니다!`, 'log-monster');
@@ -371,6 +378,7 @@ function monstersAttack() {
                             }
                             const healedAmount = Math.floor(dmg * skill.power);
                             player.hp -= dmg;
+                            playSound('hit');
                             monster.hp = Math.min(monster.maxHp, monster.hp + healedAmount);
                             const skillName = skill.name || '생명력 흡수';
                             log(`🩸 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입고, ${monster.name}은(는) ${healedAmount}의 체력을 회복합니다.`, 'log-monster');
@@ -396,6 +404,7 @@ function monstersAttack() {
                     let dmg = Math.floor(Math.random() * 3) + monster.atk;
                     // 몬스터 치명타 (17% 확률, 1.6배 데미지)
                     if (Math.random() < 0.17) {
+                        playSound('crit');
                         dmg = Math.floor(dmg * 1.6);
                         log(`⚡ 치명타! ${monster.name}의 강력한 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
                         showFloatingText(dmg, playerElement, 'crit');
@@ -411,6 +420,7 @@ function monstersAttack() {
                     }
 
                     player.hp -= dmg;
+                    playSound('hit');
                 }
 
                 // 플레이어 피격 애니메이션
@@ -507,6 +517,7 @@ function executePowerAttack() {
 
     // --- MP 소모 및 공격 애니메이션 ---
     player.mp -= totalMpCost;
+    playSound('attack');
 
     // 강한 공격 애니메이션
     const playerElement = document.getElementById('player-character');
@@ -521,6 +532,7 @@ function executePowerAttack() {
 
     // --- 흑섬(Black Flash) 발동 체크 (강공격 시 3% 고정 확률) ---
     if (Math.random() < 0.03) {
+        playSound('black-flash');
         triggerBlackFlash();
         let dmg = Math.floor(player.atk * 6.25);
         log('⚫ 흑섬(黑閃) 발동!', 'log-player', { fontSize: '24px', color: 'white', textShadow: '0 0 5px black, 0 0 15px red' });
@@ -544,6 +556,7 @@ function executePowerAttack() {
 
         // 확정 치명타 체크
         if (player.guaranteedCrit) {
+            playSound('crit');
             dmg = Math.floor((player.atk * 2.0) * player.critDamage + player.magicDamageBonus); // 치명타는 기본 공격력에만 적용 후 마력 피해 추가
             player.guaranteedCrit = false; // 사용 후 플래그 해제
             log('⚡ 흑섬의 여파로 강 공격이 치명타로 적중했습니다!', 'log-player');
@@ -574,12 +587,14 @@ function executePowerAttack() {
     const allDead = monsters.every(m => m.hp <= 0);
     if (allDead) {
         if (targetMonster.hp <= 0) {
+            playSound('monster-die');
             log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
             gainXP(targetMonster.xp);
         }
         winBattle();
     } else {
         if (targetMonster.hp <= 0) {
+            playSound('monster-die');
             log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
             gainXP(targetMonster.xp);
             findNextTarget();
@@ -634,6 +649,7 @@ function executeSweepAttack() {
 
     // --- MP 소모 및 공격 애니메이션 ---
     player.mp -= totalMpCost;
+    playSound('attack');
 
     // 휩쓸기 애니메이션
     const playerElement = document.getElementById('player-character');
@@ -656,6 +672,7 @@ function executeSweepAttack() {
     // --- 확정 치명타 체크 ---
     const isCrit = player.guaranteedCrit;
     if (isCrit) {
+        playSound('crit');
         player.guaranteedCrit = false; // 사용 후 플래그 해제
         log('⚡ 흑섬의 여파로 휩쓸기가 치명타로 적중합니다!', 'log-player');
     }
@@ -688,6 +705,7 @@ function executeSweepAttack() {
 
             // 몬스터 사망 처리 및 경험치 합산
             if (monster.hp <= 0) {
+                playSound('monster-die');
                 log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
                 totalXpGained += monster.xp;
             } else {
@@ -751,6 +769,7 @@ function useInventoryItem(index) {
     
     // 아이템 타입에 따라 다른 효과 적용
     if (item.type === 'buff') {
+        playSound('heal'); // 버프 물약도 동일한 사운드 사용
         player.buff.turns = item.turns;
         player.buff.multiplier = item.mult;
         log(`🧪 ${item.name} 사용! ${item.turns}턴 동안 공격력이 ${item.mult}배가 됩니다.`, 'log-system');
@@ -758,6 +777,7 @@ function useInventoryItem(index) {
         flashColor = '#a855f7'; // 보라색
     } else if (item.type === 'heal') {
         const healAmount = Math.min(player.maxHp - player.hp, item.healAmount);
+        if (healAmount > 0) playSound('heal');
         player.hp = Math.min(player.maxHp, player.hp + healAmount);
         log(`💊 ${item.name} 사용! 체력이 ${healAmount} 회복되었습니다.`, 'log-system');
         if (healAmount > 0) {
@@ -766,6 +786,7 @@ function useInventoryItem(index) {
         flashColor = '#22c55e'; // 초록색
     } else if (item.type === 'mpPotion') {
         const mpAmount = Math.min(player.maxMp - player.mp, item.mpAmount);
+        if (mpAmount > 0) playSound('heal');
         player.mp = Math.min(player.maxMp, player.mp + mpAmount);
         log(`💧 ${item.name} 사용! 마나가 ${mpAmount} 회복되었습니다.`, 'log-system');
         if (mpAmount > 0) {
@@ -773,6 +794,7 @@ function useInventoryItem(index) {
         }
         flashColor = '#60a5fa'; // 파란색
     } else if (item.type === 'critBuff') {
+        playSound('heal');
         player.critBuff.turns = item.turns;
         player.critBuff.bonus = item.bonus;
         recalculatePlayerStats();
@@ -840,6 +862,7 @@ function gainXP(amount) {
 function checkForLevelUp() {
     // 현재 경험치가 필요 경험치보다 많거나 같으면 레벨업
     if (player.xp >= player.xpToNextLevel) {
+        playSound('level-up');
         player.level++;
         player.xp -= player.xpToNextLevel;
         player.statPoints += 3;
@@ -881,6 +904,7 @@ function checkForLevelUp() {
  * 골드와 경험치를 정산하고, 보스 전리품 드랍을 처리합니다.
  */
 function winBattle() {
+    playSound('win');
     const totalCoins = Math.floor(monsters.reduce((sum, m) => sum + m.dropCoins, 0) * player.goldBonus);
     player.coins += totalCoins;
     log(`전투 승리! ${totalCoins} 골드를 획득했습니다.`, 'log-system');
@@ -988,12 +1012,14 @@ function generateMonstersForFloor(floorNumber) {
         const boss = createMonster(bossTemplate, 1);
         generatedMonsters.push(boss);
         log(`============ 지하 ${floorNumber}층: 보스전! ============`, 'log-system', { fontSize: '28px', color: '#ef4444', textShadow: '0 0 10px #ef4444' });
+        playSound('boss-appear');
         log(`🚨 강력한 ${boss.name}이(가) 나타났습니다!`, 'log-monster', { fontSize: '24px', color: '#ef4444' });
     } else if (floorNumber % 20 === 10) { // 중간 보스 몬스터 등장 로직 (10, 30, 50...)
         const bossIndex = Math.floor(floorNumber / 20);
         const bossTemplate = midBossList[Math.min(bossIndex, midBossList.length - 1)];
         const boss = createMonster(bossTemplate, 1);
         generatedMonsters.push(boss);
+        playSound('boss-appear');
         log(`============ 지하 ${floorNumber}층: 보스전! ============`, 'log-system', { fontSize: '28px', color: '#ef4444', textShadow: '0 0 10px #ef4444' });
         log(`🚨 강력한 ${boss.name}이(가) 나타났습니다!`, 'log-monster', { fontSize: '24px', color: '#ef4444' });
     } else {
@@ -1063,6 +1089,7 @@ function createMonster(template, multiplier) {
  * 플레이어 사망 시 게임 오버를 처리하는 함수
  */
 async function gameOver() {
+    playSound('game-over');
     isGameOver = true;
     log("체력이 0이 되었습니다. 게임 오버...", 'log-monster');
     toggleControls(false); // Disable game controls
@@ -1273,6 +1300,7 @@ function sellLootItem(index) {
  * @param {object} data - 구매할 아이템의 데이터
  */
 function buyItem(type, cost, data) {
+    playSound('buy');
     if (player.coins < cost) {
         alert("코인이 부족합니다!");
         return;
@@ -1729,6 +1757,7 @@ async function handleUpdateProfile() {
  * 페이지 로드 시 실행되는 초기화 함수
  */
 function init() {
+    loadSounds();
     const username = localStorage.getItem('username');
     updateLoginStatus(username);
     showStartMenu();

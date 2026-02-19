@@ -146,6 +146,7 @@ function updateUI() {
  * 스킬 선택 버튼들을 보여주는 함수
  */
 function showSkillSelection() {
+    playSound('click');
     // 플레이어 턴이 아니거나 게임오버 상태면 실행하지 않음
     if (isGameOver || !isPlayerTurn) return;
     const controlsPanel = document.getElementById('controls-panel');
@@ -169,6 +170,7 @@ function showSkillSelection() {
  * 메인 컨트롤 버튼(공격/스킬, 물약, 인벤토리)들을 보여주는 함수
  */
 function showMainControls() {
+    playSound('click');
     if (isGameOver) return;
     const controlsPanel = document.getElementById('controls-panel');
     controlsPanel.classList.remove('skill-view');
@@ -186,6 +188,7 @@ function showMainControls() {
  * 인벤토리의 소비 아이템을 종류별로 묶어서 보여줍니다.
  */
 function showAllPotions() {
+    playSound('click');
     const modal = document.getElementById('item-select-modal');
     document.getElementById('item-select-title').innerText = "물약 사용";
 
@@ -268,6 +271,7 @@ function showAllPotions() {
  * 아이템 선택 모달을 닫는 함수
  */
 function closeItemSelect() {
+    playSound('click');
     document.getElementById('item-select-modal').style.display = 'none';
 }
 
@@ -384,6 +388,7 @@ function showGameScreen() {
  * 로그인/회원가입 모달을 여는 함수
  */
 function openLoginModal() {
+    playSound('click');
     const modal = document.getElementById('login-modal');
     // 이전 입력값과 에러 메시지 초기화
     const usernameInput = document.getElementById('login-username');
@@ -404,6 +409,7 @@ function openLoginModal() {
  * 로그인 모달을 닫는 함수
  */
 function closeLoginModal() {
+    playSound('click');
     const modal = document.getElementById('login-modal');
     modal.classList.remove('visible');
     // transition 애니메이션이 끝난 후 display를 none으로 변경합니다.
@@ -418,6 +424,7 @@ function closeLoginModal() {
  * 회원가입 모달을 여는 함수
  */
 function openRegisterModal() {
+    playSound('click');
     const modal = document.getElementById('register-modal');
     
     // 이전 입력값과 에러 메시지 초기화
@@ -436,6 +443,7 @@ function openRegisterModal() {
  * 회원가입 모달을 닫는 함수
  */
 function closeRegisterModal() {
+    playSound('click');
     const modal = document.getElementById('register-modal');
     modal.classList.remove('visible');
     setTimeout(() => {
@@ -466,6 +474,7 @@ function switchToLoginModal(event) {
  * 회원정보 수정 모달을 여는 함수
  */
 async function openEditProfileModal() {
+    playSound('click');
     try {
         // 서버에서 현재 사용자 정보 가져오기
         const userData = await fetchUserProfile();
@@ -506,6 +515,7 @@ async function openEditProfileModal() {
  * 회원정보 수정 모달을 닫는 함수
  */
 function closeEditProfileModal() {
+    playSound('click');
     const modal = document.getElementById('edit-profile-modal');
     modal.classList.remove('visible');
     setTimeout(() => {
@@ -518,6 +528,7 @@ function closeEditProfileModal() {
  * 스코어보드 모달을 여는 함수
  */
 function openScoreboardModal() {
+    playSound('click');
     const modal = document.getElementById('scoreboard-modal');
     modal.style.display = 'flex';
     // 브라우저가 display 변경을 인지하고 transition을 적용할 수 있도록 짧은 지연을 줍니다.
@@ -530,6 +541,7 @@ function openScoreboardModal() {
  * 스코어보드 모달을 닫는 함수
  */
 function closeScoreboardModal() {
+    playSound('click');
     const modal = document.getElementById('scoreboard-modal');
     modal.classList.remove('visible');
     // transition 애니메이션이 끝난 후 display를 none으로 변경합니다.
@@ -566,6 +578,7 @@ function renderScoreboard(scores) {
  * 공지사항 모달을 여는 함수
  */
 function openNoticeModal() {
+    playSound('click');
     const modal = document.getElementById('notice-modal');
     modal.style.display = 'flex';
     setTimeout(() => {
@@ -577,6 +590,7 @@ function openNoticeModal() {
  * 공지사항 모달을 닫는 함수
  */
 function closeNoticeModal() {
+    playSound('click');
     const modal = document.getElementById('notice-modal');
     modal.classList.remove('visible');
     setTimeout(() => {
@@ -618,6 +632,7 @@ function renderNotices(notices) {
  * 인벤토리(장비, 전리품, 스탯) 관리 모달을 여는 함수
  */
 function openInventoryModal() {
+    playSound('click');
     // 스탯 분배를 위한 임시 변수 초기화
     tempStatPoints = player.statPoints;
     tempStats = { str: player.str, vit: player.vit, mag: player.mag, mnd: player.mnd, agi: player.agi, int: player.int, luk: player.luk, fcs: player.fcs };
@@ -655,6 +670,7 @@ function openInventoryModal() {
  * 인벤토리(장비/스탯) 모달을 닫는 함수
  */
 function closeInventoryModal() {
+    playSound('click');
     document.getElementById('equipment-modal').style.display = 'none';
 }
 
@@ -760,6 +776,7 @@ function renderEquipment() {
  *                         true이면 상점을 닫을 때 자동으로 다음 층으로 이동.
  */
 function openShop(auto = false) {
+    if (!auto) playSound('click');
     isShopAutoOpened = auto;
     const modal = document.getElementById('shop-modal');
     modal.style.display = 'flex';
@@ -789,6 +806,7 @@ function openShop(auto = false) {
  * 상점 모달을 닫는 함수
  */
 function closeShop() {
+    playSound('click');
     document.getElementById('shop-modal').style.display = 'none';
     updateUI(); // 상점에서 나온 후 UI 갱신
     if (isShopAutoOpened) {
