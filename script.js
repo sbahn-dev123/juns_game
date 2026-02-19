@@ -1486,6 +1486,7 @@ async function handleLogin() {
         }
         localStorage.setItem('jwt', data.token);
         localStorage.setItem('username', data.username);
+        localStorage.setItem('userRole', data.role); // 역할 정보 저장
         updateLoginStatus(data.username);
         closeLoginModal();
     } catch (error) {
@@ -1500,6 +1501,7 @@ async function handleLogin() {
 function logout() {
     localStorage.removeItem('jwt');
     localStorage.removeItem('username');
+    localStorage.removeItem('userRole'); // 역할 정보 삭제
     updateLoginStatus(null);
     alert("로그아웃되었습니다.");
 }

@@ -345,15 +345,22 @@ function updateLoginStatus(username) {
     const guestMenu = document.getElementById('guest-menu');
     const loggedInMenu = document.getElementById('logged-in-menu');
     const loggedInUserEl = document.getElementById('logged-in-user');
+    const adminLink = document.getElementById('admin-link');
 
     if (username) {
         guestMenu.style.display = 'none';
         loggedInMenu.style.display = 'flex';
         loggedInUserEl.textContent = username;
+
+        // 관리자일 경우 관리자 페이지 링크 표시
+        if (localStorage.getItem('userRole') === 'admin') {
+            adminLink.style.display = 'flex';
+        }
     } else {
         guestMenu.style.display = 'flex';
         loggedInMenu.style.display = 'none';
         loggedInUserEl.textContent = '';
+        adminLink.style.display = 'none';
     }
 }
 

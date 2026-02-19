@@ -1,0 +1,199 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap');
+
+body {
+    font-family: 'Noto Serif KR', serif;
+    background-color: #0d0d1a;
+    color: white;
+    padding: 20px;
+}
+
+.container {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: rgba(30, 32, 50, 0.9);
+    border: 2px solid #7c3aed;
+    border-radius: 15px;
+    padding: 30px;
+}
+
+.back-to-main-btn {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    padding: 10px 20px;
+    background-color: #4b5563;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+.back-to-main-btn:hover {
+    background-color: #6b7280;
+}
+
+h1 {
+    font-size: 32px;
+    color: #a78bfa;
+    text-shadow: 0 0 10px #a78bfa;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.search-container {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+#search-input {
+    width: 50%;
+    max-width: 400px;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background: #333;
+    color: #fff;
+    font-family: inherit;
+}
+
+#search-btn {
+    padding: 12px 24px;
+    background-color: #3b82f6;
+}
+
+p {
+    text-align: right;
+    margin-bottom: 20px;
+    color: #ccc;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+}
+
+th, td {
+    padding: 12px 15px;
+    border: 1px solid #444;
+    text-align: left;
+}
+
+thead {
+    background-color: #4b5563;
+}
+
+tbody tr:nth-child(even) {
+    background-color: rgba(0,0,0,0.2);
+}
+
+tbody tr:hover {
+    background-color: #374151;
+}
+
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    color: white;
+    margin-right: 5px;
+}
+
+.btn-edit {
+    background-color: #3b82f6;
+}
+
+.btn-delete {
+    background-color: #ef4444;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #1e2032;
+    border: 2px solid #7c3aed;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close-btn {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: white;
+}
+
+#edit-user-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#edit-user-form label {
+    font-weight: bold;
+    color: #ccc;
+}
+
+#edit-user-form input,
+#edit-user-form select {
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background: #333;
+    color: #fff;
+    font-family: inherit;
+}
+
+#edit-user-form button {
+    padding: 15px;
+    font-size: 18px;
+    background: #10b981;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#edit-error-msg {
+    color: #ef4444;
+    text-align: center;
+    min-height: 20px;
+}

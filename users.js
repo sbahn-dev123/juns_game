@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const auth = require('./auth');
+const admin = require('./admin'); // 관리자 미들웨어 추가
 // User Model
 const User = require('./User');
 
@@ -86,7 +87,8 @@ router.post('/login', async (req, res) => {
 
         const payload = {
             id: user.id,
-            username: user.username
+            username: user.username,
+            role: user.role // 역할(role) 정보 추가
         };
 
         jwt.sign(
@@ -97,7 +99,8 @@ router.post('/login', async (req, res) => {
                 if (err) throw err;
                 res.json({
                     token,
-                    username: user.username
+                    username: user.username,
+                    role: user.role // 역할 정보도 응답에 포함
                 });
             }
         );
@@ -170,6 +173,68 @@ router.put('/profile', auth, async (req, res) => {
 
         res.json({ message: '프로필이 성공적으로 업데이트되었습니다.' });
 
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+//! ============================================================
+//! 관리자 전용 API
+//! ============================================================
+
+// @route   GET api/users/admin/all
+// @desc    Get all users (for admin)
+// @access  Admin
+router.get('/admin/all', admin, async (req, res) => {
+    try {
+        const users = await User.find().select('-password').sort({ register_date: -1 });
+        res.json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT api/users/admin/:id
+// @desc    Update a user by ID (for admin)
+// @access  Admin
+router.put('/admin/:id', admin, async (req, res) => {
+    const { username, email, country, birthdate, role } = req.body;
+
+    try {
+        let user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+
+        // 필드 업데이트
+        user.username = username || user.username;
+        user.email = email || user.email;
+        user.country = country || user.country;
+        user.birthdate = birthdate || user.birthdate;
+        user.role = role || user.role;
+
+        await user.save();
+        res.json({ message: '사용자 정보가 업데이트되었습니다.' });
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE api/users/admin/:id
+// @desc    Delete a user by ID (for admin)
+// @access  Admin
+router.delete('/admin/:id', admin, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+        await user.remove();
+        res.json({ message: '사용자가 삭제되었습니다.' });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
