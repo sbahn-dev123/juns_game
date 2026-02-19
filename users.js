@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const auth = require('./auth');
 // User Model
 const User = require('./User');
 
@@ -15,6 +16,11 @@ router.post('/register', async (req, res) => {
     // Simple validation
     if (!username || !password || !email || !country || !birthdate) {
         return res.status(400).json({ message: '모든 필드를 채워주세요.' });
+    }
+
+    // 생년월일 유효성 검사 추가
+    if (isNaN(new Date(birthdate).getTime())) {
+        return res.status(400).json({ message: '유효하지 않은 생년월일 형식입니다.' });
     }
 
     try {
@@ -95,6 +101,75 @@ router.post('/login', async (req, res) => {
                 });
             }
         );
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+
+// @route   GET api/users/profile
+// @desc    Get user profile
+// @access  Private
+router.get('/profile', auth, async (req, res) => {
+    try {
+        // .select('-password')를 사용하여 응답에서 비밀번호 필드를 제외합니다.
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+        res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT api/users/profile
+// @desc    Update user profile
+// @access  Private
+router.put('/profile', auth, async (req, res) => {
+    const { email, country, birthdate, currentPassword } = req.body;
+
+    // 유효성 검사
+    if (!email || !country || !birthdate || !currentPassword) {
+        return res.status(400).json({ message: '필수 필드를 모두 입력해주세요.' });
+    }
+
+    // 생년월일 유효성 검사 추가
+    if (isNaN(new Date(birthdate).getTime())) {
+        return res.status(400).json({ message: '유효하지 않은 생년월일 형식입니다.' });
+    }
+
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+
+        // 현재 비밀번호 확인
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: '현재 비밀번호가 일치하지 않습니다.' });
+        }
+
+        // 다른 사용자가 이미 사용 중인 이메일인지 확인
+        if (email !== user.email) {
+            const existingEmailUser = await User.findOne({ email });
+            if (existingEmailUser) {
+                return res.status(400).json({ message: '이미 사용 중인 이메일입니다.' });
+            }
+        }
+
+        // 필드 업데이트
+        user.email = email;
+        user.country = country;
+        user.birthdate = birthdate;
+
+        await user.save();
+
+        res.json({ message: '프로필이 성공적으로 업데이트되었습니다.' });
+
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

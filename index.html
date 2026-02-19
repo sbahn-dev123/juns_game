@@ -18,6 +18,7 @@
             <p class="welcome-msg"><span id="logged-in-user"></span>님, 환영합니다!</p>
             <button class="start-btn" onclick="loadGame()">게임 이어하기</button>
             <button class="start-btn" onclick="startNewGame(true)">새 게임 시작</button>
+            <button class="start-btn" onclick="openEditProfileModal()">회원정보 수정</button>
             <button class="start-btn" onclick="fetchAndShowScores()">스코어보드</button>
             <button class="start-btn" onclick="logout()">로그아웃</button>
         </div>
@@ -193,28 +194,40 @@
     <!-- Login/Register Modal -->
     <div id="login-modal" style="display: none;">
         <div class="login-content">
-            <div class="shop-title">로그인 / 회원가입</div>
+            <div class="shop-title">로그인</div>
             <div id="login-form">
-                <input type="text" id="username" placeholder="사용자 이름" required>
-                <input type="password" id="password" placeholder="비밀번호" required>
-                <input type="email" id="email" placeholder="이메일 (회원가입 시 필수)" required>
-                <input type="date" id="birthdate" title="생년월일 (회원가입 시 필수)" required>
-                <select id="country" title="국가 (회원가입 시 필수)" required>
+                <input type="text" id="login-username" placeholder="사용자 이름" required>
+                <input type="password" id="login-password" placeholder="비밀번호" required>
+                <div id="login-error-msg" style="color: #ef4444; text-align: center; display: none;"></div>
+                <button type="button" class="btn-attack" style="padding: 15px; font-size: 18px;" onclick="handleLogin()">로그인</button>
+                <p class="switch-auth-msg">아직 회원이 아니신가요? <a href="#" onclick="switchToRegisterModal(event)">회원가입</a></p>
+            </div>
+            <button class="modal-close-btn" onclick="closeLoginModal()">닫기</button>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" style="display: none;">
+        <div class="login-content"> <!-- login-content 스타일 재사용 -->
+            <div class="shop-title">회원가입</div>
+            <div id="register-form">
+                <input type="text" id="register-username" placeholder="사용자 이름" required>
+                <input type="password" id="register-password" placeholder="비밀번호" required>
+                <input type="email" id="register-email" placeholder="이메일" required>
+                <input type="date" id="register-birthdate" title="생년월일" required>
+                <select id="register-country" title="국가" required>
                     <option value="" disabled selected>국가 선택</option>
                     <option value="KR">대한민국</option>
                     <option value="US">미국</option>
                     <option value="JP">일본</option>
                     <option value="CN">중국</option>
                     <option value="ETC">기타</option>
-                    <!-- 필요에 따라 더 많은 국가를 추가하세요 -->
                 </select>
-                <div id="login-error-msg" style="color: #ef4444; text-align: center; display: none;"></div>
-                <div class="login-buttons">
-                    <button type="button" class="btn-attack" onclick="handleLogin()">로그인</button>
-                    <button type="button" class="btn-heal" onclick="handleRegister()">회원가입</button>
-                </div>
+                <div id="register-error-msg" style="color: #ef4444; text-align: center; display: none;"></div>
+                <button type="button" class="btn-heal" style="padding: 15px; font-size: 18px;" onclick="handleRegister()">회원가입</button>
+                <p class="switch-auth-msg">이미 회원이신가요? <a href="#" onclick="switchToLoginModal(event)">로그인</a></p>
             </div>
-            <button class="modal-close-btn" onclick="closeLoginModal()">닫기</button>
+            <button class="modal-close-btn" onclick="closeRegisterModal()">닫기</button>
         </div>
     </div>
 
@@ -226,6 +239,32 @@
                 <!-- 점수 목록이 여기에 렌더링됩니다. -->
             </div>
             <button class="modal-close-btn" onclick="closeScoreboardModal()">닫기</button>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" style="display: none;">
+        <div class="login-content"> <!-- login-content 스타일 재사용 -->
+            <div class="shop-title">회원정보 수정</div>
+            <div id="edit-profile-form">
+                <input type="text" id="edit-username" placeholder="사용자 이름" readonly style="background: #444; cursor: not-allowed;">
+                <input type="email" id="edit-email" placeholder="이메일" required>
+                <input type="date" id="edit-birthdate" title="생년월일" required>
+                <select id="edit-country" title="국가" required>
+                    <option value="" disabled>국가 선택</option>
+                    <option value="KR">대한민국</option>
+                    <option value="US">미국</option>
+                    <option value="JP">일본</option>
+                    <option value="CN">중국</option>
+                    <option value="ETC">기타</option>
+                </select>
+                <hr style="border-color: #444; margin: 20px 0;">
+                <p style="font-size: 14px; color: #ccc;">변경 사항을 저장하려면 현재 비밀번호를 입력하세요.</p>
+                <input type="password" id="edit-current-password" placeholder="현재 비밀번호" required>
+                <div id="edit-profile-error-msg" style="color: #ef4444; text-align: center; display: none;"></div>
+                <button type="button" class="btn-attack" style="padding: 15px; font-size: 18px;" onclick="handleUpdateProfile()">저장하기</button>
+            </div>
+            <button class="modal-close-btn" onclick="closeEditProfileModal()">닫기</button>
         </div>
     </div>
 

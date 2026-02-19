@@ -1441,12 +1441,12 @@ async function handleApiResponse(response) {
  * 회원가입을 처리하는 함수 (시뮬레이션)
  */
 async function handleRegister() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const email = document.getElementById('email').value;
-    const country = document.getElementById('country').value;
-    const birthdate = document.getElementById('birthdate').value;
-    const errorMsgEl = document.getElementById('login-error-msg');
+    const username = document.getElementById('register-username').value;
+    const password = document.getElementById('register-password').value;
+    const email = document.getElementById('register-email').value;
+    const country = document.getElementById('register-country').value;
+    const birthdate = document.getElementById('register-birthdate').value;
+    const errorMsgEl = document.getElementById('register-error-msg');
 
     try {
         const response = await fetch(`${API_URL}/users/register`, {
@@ -1459,7 +1459,7 @@ async function handleRegister() {
             throw new Error(data.message || '회원가입에 실패했습니다.');
         }
         alert('회원가입 성공! 이제 로그인해주세요.');
-        errorMsgEl.style.display = 'none';
+        switchToLoginModal(new Event('submit')); // 로그인 창으로 전환
     } catch (error) {
         errorMsgEl.textContent = error.message;
         errorMsgEl.style.display = 'block';
@@ -1470,8 +1470,8 @@ async function handleRegister() {
  * 로그인을 처리하는 함수 (시뮬레이션)
  */
 async function handleLogin() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
     const errorMsgEl = document.getElementById('login-error-msg');
 
     try {
@@ -1611,6 +1611,60 @@ async function fetchAndShowScores() {
         openScoreboardModal();
     } catch (error) {
         alert(error.message);
+    }
+}
+
+/**
+ * 서버에서 현재 로그인된 사용자의 프로필 정보를 가져옵니다.
+ */
+async function fetchUserProfile() {
+    if (!isLoggedIn()) return null;
+
+    try {
+        const response = await fetch(`${API_URL}/users/profile`, {
+            headers: getAuthHeaders(),
+        });
+        const data = await handleApiResponse(response);
+        return data;
+    } catch (error) {
+        console.error('프로필 정보 로딩 실패:', error);
+        throw error; // 에러를 다시 던져서 openEditProfileModal에서 처리하도록 함
+    }
+}
+
+/**
+ * 사용자 프로필 업데이트를 처리하는 함수
+ */
+async function handleUpdateProfile() {
+    const email = document.getElementById('edit-email').value;
+    const country = document.getElementById('edit-country').value;
+    const birthdate = document.getElementById('edit-birthdate').value;
+    const currentPassword = document.getElementById('edit-current-password').value;
+    const errorMsgEl = document.getElementById('edit-profile-error-msg');
+
+    const payload = {
+        email,
+        country,
+        birthdate,
+        currentPassword
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/users/profile`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload),
+        });
+
+        const data = await handleApiResponse(response);
+        if (data === null) return; // 인증 오류는 handleApiResponse에서 처리됨
+
+        alert('회원정보가 성공적으로 수정되었습니다.');
+        closeEditProfileModal();
+
+    } catch (error) {
+        errorMsgEl.textContent = error.message;
+        errorMsgEl.style.display = 'block';
     }
 }
 

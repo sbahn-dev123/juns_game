@@ -378,6 +378,15 @@ function showGameScreen() {
  */
 function openLoginModal() {
     const modal = document.getElementById('login-modal');
+    // 이전 입력값과 에러 메시지 초기화
+    const usernameInput = document.getElementById('login-username');
+    const passwordInput = document.getElementById('login-password');
+    if (usernameInput) usernameInput.value = '';
+    if (passwordInput) passwordInput.value = '';
+    
+    const errorMsg = document.getElementById('login-error-msg');
+    if (errorMsg) errorMsg.style.display = 'none';
+
     modal.style.display = 'flex';
     setTimeout(() => {
         modal.classList.add('visible');
@@ -385,7 +394,7 @@ function openLoginModal() {
 }
 
 /**
- * 로그인/회원가입 모달을 닫는 함수
+ * 로그인 모달을 닫는 함수
  */
 function closeLoginModal() {
     const modal = document.getElementById('login-modal');
@@ -396,6 +405,106 @@ function closeLoginModal() {
         // 모달이 닫힐 때 에러 메시지도 숨김
         document.getElementById('login-error-msg').style.display = 'none';
     }, 300); // CSS의 transition 시간과 일치해야 합니다.
+}
+
+/**
+ * 회원가입 모달을 여는 함수
+ */
+function openRegisterModal() {
+    const modal = document.getElementById('register-modal');
+    
+    // 이전 입력값과 에러 메시지 초기화
+    document.getElementById('register-username').value = '';
+    document.getElementById('register-password').value = '';
+    document.getElementById('register-email').value = '';
+    document.getElementById('register-birthdate').value = '';
+    document.getElementById('register-country').value = '';
+    document.getElementById('register-error-msg').style.display = 'none';
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('visible'), 10);
+}
+
+/**
+ * 회원가입 모달을 닫는 함수
+ */
+function closeRegisterModal() {
+    const modal = document.getElementById('register-modal');
+    modal.classList.remove('visible');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        document.getElementById('register-error-msg').style.display = 'none';
+    }, 300);
+}
+
+/**
+ * 로그인 창에서 회원가입 창으로 전환하는 함수
+ */
+function switchToRegisterModal(event) {
+    event.preventDefault();
+    closeLoginModal();
+    setTimeout(openRegisterModal, 350); // 모달 전환 애니메이션을 위한 지연
+}
+
+/**
+ * 회원가입 창에서 로그인 창으로 전환하는 함수
+ */
+function switchToLoginModal(event) {
+    event.preventDefault();
+    closeRegisterModal();
+    setTimeout(openLoginModal, 350); // 모달 전환 애니메이션을 위한 지연
+}
+
+/**
+ * 회원정보 수정 모달을 여는 함수
+ */
+async function openEditProfileModal() {
+    try {
+        // 서버에서 현재 사용자 정보 가져오기
+        const userData = await fetchUserProfile();
+        if (!userData) {
+            alert('사용자 정보를 불러오는데 실패했습니다.');
+            return;
+        }
+
+        // 폼 필드 채우기
+        document.getElementById('edit-username').value = userData.username;
+        document.getElementById('edit-email').value = userData.email;
+        document.getElementById('edit-country').value = userData.country;
+        // 날짜 입력 필드는 'YYYY-MM-DD' 형식을 사용합니다.
+        const birthDate = new Date(userData.birthdate);
+        if (!isNaN(birthDate.getTime())) {
+            document.getElementById('edit-birthdate').value = birthDate.toISOString().split('T')[0];
+        } else {
+            document.getElementById('edit-birthdate').value = '';
+            console.warn("서버로부터 받은 생년월일 값이 없습니다. 새로 입력해주세요:", userData.birthdate);
+        }
+
+        // 비밀번호 필드 및 에러 메시지 초기화
+        document.getElementById('edit-current-password').value = '';
+        document.getElementById('edit-profile-error-msg').style.display = 'none';
+
+        const modal = document.getElementById('edit-profile-modal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.add('visible');
+        }, 10);
+
+    } catch (error) {
+        alert(`오류: ${error.message}`);
+    }
+}
+
+/**
+ * 회원정보 수정 모달을 닫는 함수
+ */
+function closeEditProfileModal() {
+    const modal = document.getElementById('edit-profile-modal');
+    modal.classList.remove('visible');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        document.getElementById('edit-profile-error-msg').style.display = 'none';
+    }, 300);
 }
 
 /**
