@@ -1407,6 +1407,37 @@ function getAuthHeaders() {
 }
 
 /**
+ * API 응답을 공통으로 처리하고 인증 오류를 감지하는 함수
+ * @param {Response} response - fetch API의 응답 객체
+ * @returns {Promise<any>} - 성공 시 JSON 데이터 또는 true. 실패 시 에러 throw 또는 null 반환.
+ */
+async function handleApiResponse(response) {
+    // 인증 오류 (토큰 만료, 유효하지 않은 토큰 등)
+    if (response.status === 401 || response.status === 400) {
+        const errorData = await response.json().catch(() => ({ message: '응답을 파싱할 수 없습니다.' }));
+        if (errorData.message === '유효하지 않은 토큰입니다.' || errorData.message === '인증 토큰이 없어 접근이 거부되었습니다.') {
+            alert('세션이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.');
+            logout();
+            showStartMenu();
+            return null; // 처리되었음을 알림
+        }
+    }
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: '오류 메시지를 파싱할 수 없습니다.' }));
+        throw new Error(errorData.message || `서버 오류: ${response.status}`);
+    }
+
+    // 내용이 없는 성공적인 응답 (e.g., 204 No Content)
+    const contentType = response.headers.get("content-type");
+    if (response.status === 204 || !contentType || !contentType.includes("application/json")) {
+        return true;
+    }
+
+    return response.json();
+}
+
+/**
  * 회원가입을 처리하는 함수 (시뮬레이션)
  */
 async function handleRegister() {
@@ -1492,16 +1523,17 @@ async function saveGame(isSilent = false) {
             headers: getAuthHeaders(),
             body: JSON.stringify(gameState),
         });
-        if (!response.ok) {
-            throw new Error('게임 저장에 실패했습니다.');
-        }
+
+        const result = await handleApiResponse(response);
+        if (result === null) return; // 인증 오류 처리됨
+
         log("💾 게임 상태를 서버에 저장했습니다.", "log-system");
         if (!isSilent) {
             alert("게임이 저장되었습니다. 시작 화면으로 돌아갑니다.");
             showStartMenu();
         }
     } catch (error) {
-        if (!isSilent) alert(error.message);
+        if (!isSilent) alert(`게임 저장 중 오류가 발생했습니다: ${error.message}`);
     }
 }
 
@@ -1522,7 +1554,9 @@ async function loadGame() {
             startNewGame();
             return;
         }
-        const loadedState = await response.json();
+
+        const loadedState = await handleApiResponse(response);
+        if (loadedState === null) return; // 인증 오류 처리됨
 
         // Check for invalid game state (e.g., saved on game over)
         if (loadedState && loadedState.player && loadedState.player.hp <= 0) {
@@ -1534,7 +1568,7 @@ async function loadGame() {
         showGameScreen();
         startGame(loadedState);
     } catch (error) {
-        alert("게임 불러오기에 실패했습니다.");
+        alert(`게임 불러오기에 실패했습니다: ${error.message}`);
     }
 }
 
@@ -1546,11 +1580,14 @@ async function submitScore() {
     
     const score = floor;
     try {
-        await fetch(`${API_URL}/scores`, {
+        const response = await fetch(`${API_URL}/scores`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({ score }),
         });
+        const result = await handleApiResponse(response);
+        if (result === null) return; // 인증 오류 처리됨
+
         log(`🏆 최종 점수 ${score}층을 서버에 기록합니다.`, "log-system");
     } catch (error) {
         console.error("점수 제출 실패:", error);
