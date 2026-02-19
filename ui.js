@@ -563,6 +563,58 @@ function renderScoreboard(scores) {
 }
 
 /**
+ * 공지사항 모달을 여는 함수
+ */
+function openNoticeModal() {
+    const modal = document.getElementById('notice-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.add('visible');
+    }, 10);
+}
+
+/**
+ * 공지사항 모달을 닫는 함수
+ */
+function closeNoticeModal() {
+    const modal = document.getElementById('notice-modal');
+    modal.classList.remove('visible');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}
+
+/**
+ * 공지사항 데이터를 받아 UI를 렌더링하는 함수
+ * @param {Array<object>} notices - { version, date, summary, link } 형태의 배열
+ */
+function renderNotices(notices) {
+    const listEl = document.getElementById('notice-list');
+    listEl.innerHTML = '';
+
+    if (!notices || notices.length === 0) {
+        listEl.innerHTML = '<div class="notice-item" style="text-align: center;">공지사항이 없습니다.</div>';
+        return;
+    }
+
+    notices.forEach(notice => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'notice-item';
+        // 클릭 시 상세 내용을 토글하는 함수 호출
+        itemEl.setAttribute('onclick', `toggleNoticeDetail(this, '${notice.file}')`);
+        itemEl.innerHTML = `
+            <div class="notice-item-header">
+                <span class="notice-version">${notice.version}</span>
+                <span class="notice-date">${notice.date}</span>
+            </div>
+            <p class="notice-summary">${notice.summary}</p>
+            <div class="notice-details"></div> <!-- 상세 내용이 표시될 영역 -->
+        `;
+        listEl.appendChild(itemEl);
+    });
+}
+
+/**
  * 인벤토리(장비, 전리품, 스탯) 관리 모달을 여는 함수
  */
 function openInventoryModal() {

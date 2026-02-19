@@ -1617,6 +1617,61 @@ async function fetchAndShowScores() {
 }
 
 /**
+ * 공지사항 데이터를 가져와 표시하는 함수
+ */
+function fetchAndShowNotices() {
+    // updates.js 파일에서 updateHistory 변수를 전역으로 사용합니다.
+    if (typeof updateHistory !== 'undefined' && updateHistory.length > 0) {
+        renderNotices(updateHistory);
+        openNoticeModal();
+    } else {
+        alert('표시할 공지사항이 없습니다.');
+    }
+}
+
+/**
+ * 공지사항 항목을 클릭했을 때 상세 내용을 보여주거나 숨기는 함수
+ * @param {HTMLElement} element - 클릭된 .notice-item 요소
+ * @param {string} filePath - 불러올 마크다운 파일의 경로
+ */
+async function toggleNoticeDetail(element, filePath) {
+    if (!element || !filePath) return;
+
+    const detailsEl = element.querySelector('.notice-details');
+    const isActive = element.classList.contains('active');
+
+    // 현재 열려있는 다른 모든 항목을 닫습니다.
+    document.querySelectorAll('#notice-list .notice-item.active').forEach(item => {
+        if (item !== element) {
+            item.classList.remove('active');
+            item.querySelector('.notice-details').style.display = 'none';
+        }
+    });
+
+    if (isActive) {
+        // 이미 열려있으면 닫습니다.
+        element.classList.remove('active');
+        detailsEl.style.display = 'none';
+    } else {
+        // 닫혀있으면 엽니다.
+        element.classList.add('active');
+        
+        // 내용이 아직 로드되지 않았다면 fetch로 불러옵니다.
+        if (detailsEl.innerHTML.trim() === '') {
+            try {
+                detailsEl.textContent = '로딩 중...';
+                const response = await fetch(filePath);
+                if (!response.ok) throw new Error('내용을 불러올 수 없습니다.');
+                detailsEl.textContent = await response.text();
+            } catch (error) {
+                detailsEl.textContent = error.message;
+            }
+        }
+        detailsEl.style.display = 'block';
+    }
+}
+
+/**
  * 서버에서 현재 로그인된 사용자의 프로필 정보를 가져옵니다.
  */
 async function fetchUserProfile() {
