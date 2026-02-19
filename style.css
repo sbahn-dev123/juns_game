@@ -630,6 +630,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 #login-modal.visible .login-content,
+#register-modal.visible .login-content,
 #edit-profile-modal.visible .login-content {
     transform: scale(1);
 }
@@ -771,22 +772,28 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     }
     .game-container {
         border-radius: 10px;
+        gap: 8px; /* 요소 간 간격 축소 */
     }
     .battle-field {
         flex-direction: column;
-        gap: 20px;
-        padding: 10px;
+        gap: 8px; /* 캐릭터 간 간격 축소 */
+        padding: 5px; /* 전투 필드 여백 축소 */
     }
-    .emoji { font-size: 80px; }
-    .name { font-size: 18px; }
-    .hp-bar-bg { width: 120px; height: 18px; }
-    .hp-text { font-size: 16px; }
-    .log-box { height: 150px; font-size: 14px; }
-    .xp-bar-container, .mp-bar-container { padding: 15px; }
-    .xp-text, .level-badge { font-size: 16px; }
+    .emoji { font-size: 65px; } /* 캐릭터 이모지 크기 축소 */
+    .name { font-size: 15px; margin-top: 4px; } /* 이름 폰트 축소 */
+    .hp-bar-bg { width: 90px; height: 15px; margin-top: 4px; } /* 체력바 크기 축소 */
+    .hp-text { font-size: 13px; margin-top: 2px; } /* 체력 텍스트 축소 */
+    .log-box {
+        height: 90px; /* 로그 박스 높이 추가 축소 */
+        font-size: 13px;
+        padding: 8px;
+    }
+    .xp-bar-container, .mp-bar-container { padding: 8px; gap: 8px; } /* MP/XP 바 여백 축소 */
+    .xp-bar-bg { height: 18px; }
+    .xp-text, .level-badge { font-size: 13px; } /* 레벨/XP 텍스트 축소 */
     
     button {
-        padding: 20px 10px;
+        padding: 12px 8px; /* 컨트롤 버튼 여백 추가 축소 */
         font-size: 18px;
     }
 
@@ -802,9 +809,17 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 480px) {
     .game-title { font-size: 48px; }
     .start-btn { width: 200px; font-size: 18px; }
-    .floor-badge { font-size: 14px; padding: 8px 15px; }
+    .floor-badge { font-size: 12px; padding: 6px 10px; }
     .header { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
-    .emoji { font-size: 60px; }
-    .log-box { font-size: 13px; }
-    .controls button { font-size: 16px; }
+    .emoji { font-size: 55px; }
+    .log-box { font-size: 12px; height: 80px; }
+    .xp-bar-container, .mp-bar-container { padding: 5px; }
+    .xp-bar-bg { height: 15px; }
+    .xp-text, .level-badge { font-size: 12px; }
+
+    /* 컨트롤 버튼을 더 작게 만듦 */
+    .controls button {
+        padding: 8px 4px;
+        font-size: 14px;
+    }
 }
