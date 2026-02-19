@@ -1608,5 +1608,21 @@ function handleKeydown(e) {
     }
 }
 
+/**
+ * 마우스 클릭으로 몬스터 타겟을 변경합니다.
+ * @param {number} index - 선택한 몬스터의 인덱스
+ */
+function selectTarget(index) {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const monster = monsters[index];
+    if (monster && monster.hp > 0) {
+        player.targetIndex = index;
+        updateUI();
+    } else {
+        log("쓰러진 몬스터는 선택할 수 없습니다.", 'log-system');
+    }
+}
+
 //* 게임 시작
 init();

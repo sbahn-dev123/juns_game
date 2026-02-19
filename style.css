@@ -97,10 +97,15 @@ body {
 .monster-wrapper {
     position: relative;
     transition: transform 0.2s ease;
+    cursor: pointer;
 }
 
 .monster-wrapper.targeted {
     transform: translateY(-10px); /* 선택된 몬스터를 위로 살짝 이동 */
+}
+
+.monster-wrapper.dead {
+    cursor: not-allowed;
 }
 
 .target-indicator {

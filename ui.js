@@ -119,6 +119,9 @@ function updateUI() {
         if (isTargeted) monsterWrapper.classList.add('targeted');
         if (isDead) monsterWrapper.classList.add('dead');
 
+        // 몬스터 클릭 시 타겟으로 지정하는 이벤트 추가
+        monsterWrapper.setAttribute('onclick', `selectTarget(${index})`);
+
         monsterWrapper.innerHTML = `
             <div class="stun-indicator ${isStunned ? 'visible' : ''}">💫</div>
             <div class="target-indicator">🔻</div>
