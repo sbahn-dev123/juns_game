@@ -18,18 +18,15 @@ function formatDate(dateString) {
 }
 
 /**
- * 국가 코드를 국기 이모지로 변환하는 함수
+ * 국가 코드를 국기 이미지 HTML로 변환하는 함수
  * @param {string} countryCode - 'KR', 'US' 등의 국가 코드
- * @returns {string} - 국기 이모지
+ * @returns {string} - <img> 태그 문자열
  */
-function getFlagEmoji(countryCode) {
+function getFlagImgHtml(countryCode) {
     if (!countryCode) return '';
-    // 국가 코드(ISO 3166-1 alpha-2)를 유니코드 지역 문자로 변환
-    const codePoints = countryCode
-        .toUpperCase()
-        .split('')
-        .map(char => 127397 + char.charCodeAt());
-    return String.fromCodePoint(...codePoints);
+    if (countryCode.toUpperCase() === 'ETC') return '<span class="flag-icon">🌐</span>'; // 기타 국가는 이모지 사용
+    const code = countryCode.toLowerCase();
+    return `<img src="https://flagcdn.com/w20/${code}.png" srcset="https://flagcdn.com/w40/${code}.png 2x" width="20" alt="${countryCode}" class="flag-icon">`;
 }
 
 // --- Modal Control ---
@@ -160,7 +157,7 @@ function renderUserList(usersToRender) {
         row.innerHTML = `
             <td>${user.username}</td>
             <td>${user.email}</td>
-            <td><span class="flag-emoji">${getFlagEmoji(user.country)}</span> ${user.country}</td>
+            <td>${getFlagImgHtml(user.country)} ${user.country}</td>
             <td>${formatDate(user.birthdate)}</td>
             <td>${user.role}</td>
             <td>${formatDate(user.register_date)}</td>

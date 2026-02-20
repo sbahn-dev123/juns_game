@@ -573,18 +573,15 @@ function closeScoreboardModal() {
 }
 
 /**
- * 국가 코드를 국기 이모지로 변환하는 함수
+ * 국가 코드를 국기 이미지 HTML로 변환하는 함수
  * @param {string} countryCode - 'KR', 'US' 등의 국가 코드
- * @returns {string} - 국기 이모지
+ * @returns {string} - <img> 태그 문자열
  */
-function getFlagEmoji(countryCode) {
+function getFlagImgHtml(countryCode) {
     if (!countryCode) return '';
-    // 국가 코드(ISO 3166-1 alpha-2)를 유니코드 지역 문자로 변환
-    const codePoints = countryCode
-        .toUpperCase()
-        .split('')
-        .map(char => 127397 + char.charCodeAt());
-    return String.fromCodePoint(...codePoints);
+    if (countryCode.toUpperCase() === 'ETC') return '<span class="flag-icon">🌐</span>'; // 기타 국가는 이모지 사용
+    const code = countryCode.toLowerCase();
+    return `<img src="https://flagcdn.com/w20/${code}.png" srcset="https://flagcdn.com/w40/${code}.png 2x" width="20" alt="${countryCode}" class="flag-icon">`;
 }
 
 /**
@@ -603,9 +600,9 @@ function renderScoreboard(scores) {
     scores.forEach((entry, index) => {
         const itemEl = document.createElement('div');
         itemEl.className = 'scoreboard-item';
-        const flagEmoji = getFlagEmoji(entry.country);
+        const flagHtml = getFlagImgHtml(entry.country);
         itemEl.innerHTML = `
-            <div><span class="rank">#${index + 1}</span> <span class="name"><span class="flag-emoji">${flagEmoji}</span> ${entry.username}</span></div>
+            <div><span class="rank">#${index + 1}</span> <span class="name">${flagHtml} ${entry.username}</span></div>
             <div class="score">${entry.score} 층</div>
         `;
         listEl.appendChild(itemEl);

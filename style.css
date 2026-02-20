@@ -636,10 +636,11 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .scoreboard-item .name { color: #60a5fa; }
 .scoreboard-item .score { font-weight: bold; }
 
-/* 국기 이모지 전용 폰트 스택 */
-.flag-emoji {
-    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "EmojiOne Color", "Android Emoji", sans-serif;
-    margin-right: 4px; /* 이모지와 텍스트 사이 간격 */
+/* 국기 아이콘 스타일 */
+.flag-icon {
+    vertical-align: middle; /* 텍스트와 수직 정렬 */
+    margin-right: 6px;
+    height: 1em; /* 텍스트 크기에 맞게 높이 조절 */
 }
 
 /* 로그인/회원가입/프로필수정 공통 모달 스타일 */
