@@ -2,10 +2,11 @@ const sounds = {};
 let bgm = null; // BGM을 위한 별도의 Audio 객체
 let currentTrackName = null; // 현재 재생 중인 BGM 트랙 이름
 
-let bgmNeedsResume = false; // BGM 자동 재생이 차단되었는지 확인하는 플래그
 // --- BGM 플레이리스트 관리 ---
 const mainThemePlaylist = []; // 메인 BGM 트랙 키들을 담는 배열
-let currentPlaylistIndex = 0; // 현재 재생 중인 플레이리스트 인덱스
+let currentMainThemeTrack = null; // 현재 선택/재생 중인 메인 BGM 트랙
+
+let bgmNeedsResume = false; // BGM 자동 재생이 차단되었는지 확인하는 플래그
 
 // --- 볼륨 상태 관리 ---
 // localStorage에서 설정을 불러오고, 없으면 true(켜짐)로 기본 설정합니다.
@@ -21,7 +22,9 @@ function toggleBgm() {
     updateVolumeButtons(); // UI 버튼 상태 업데이트
 
     if (isBgmEnabled) {
-        // BGM이 켜졌을 때, 현재 화면에 맞는 BGM을 재생합니다.
+        // BGM을 켤 때, 새로운 메인 테마 곡을 무작위로 선택합니다.
+        pickNewMainTheme();
+        // 현재 화면 상태에 맞는 BGM을 재생합니다.
         const isGameRunning = document.getElementById('game-wrapper').style.display !== 'none';
         if (isGameRunning) {
             const isBossFloor = typeof floor !== 'undefined' && floor % 10 === 0;
@@ -67,39 +70,24 @@ function tryResumeBGM() {
 }
 
 /**
- * 메인 BGM 플레이리스트에서 다음 곡을 재생하는 함수
+ * 메인 BGM 플레이리스트에서 새로운 곡을 무작위로 선택하는 함수
  */
-function playNextMainTheme() {
-    if (!isBgmEnabled || mainThemePlaylist.length === 0) return;
-
-    // 현재 재생 중인 곡의 'ended' 이벤트 리스너를 제거합니다.
-    if (bgm) {
-        bgm.removeEventListener('ended', playNextMainTheme);
+function pickNewMainTheme() {
+    if (mainThemePlaylist.length === 0) {
+        currentMainThemeTrack = null;
+        return;
+    }
+    if (mainThemePlaylist.length === 1) {
+        currentMainThemeTrack = mainThemePlaylist[0];
+        return;
     }
 
-    // 다음 곡 인덱스로 이동
-    currentPlaylistIndex = (currentPlaylistIndex + 1) % mainThemePlaylist.length;
-    const nextTrackKey = mainThemePlaylist[currentPlaylistIndex];
+    let newTrack;
+    do {
+        newTrack = mainThemePlaylist[Math.floor(Math.random() * mainThemePlaylist.length)];
+    } while (newTrack === currentMainThemeTrack); // 이전에 재생된 곡과 다른 곡을 선택
 
-    bgm = sounds[nextTrackKey];
-    bgm.loop = false; // 플레이리스트의 각 곡은 반복하지 않습니다.
-    bgm.volume = 0.3; // BGM 볼륨
-    bgm.currentTime = 0;
-    const playPromise = bgm.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.error("BGM 재생 실패:", error.name, error.message);
-            if (error.name === 'NotAllowedError') {
-                console.log("자동 재생이 차단되었습니다. 사용자 상호작용 시 재시도합니다.");
-                bgmNeedsResume = true;
-            }
-        });
-    }
-
-    // 새로 재생하는 곡이 끝나면 다시 이 함수가 호출되도록 이벤트 리스너를 추가합니다.
-    bgm.addEventListener('ended', playNextMainTheme);
-
-    currentTrackName = nextTrackKey;
+    currentMainThemeTrack = newTrack;
 }
 
 /**
@@ -135,17 +123,17 @@ function loadSounds() {
         }
     });
 
-    // 플레이리스트를 섞습니다.
-    mainThemePlaylist.sort(() => Math.random() - 0.5);
+    // 초기 메인 BGM을 선택합니다.
+    pickNewMainTheme();
 
     return new Promise((resolve) => {
-        if (mainThemePlaylist.length === 0) {
+        if (!currentMainThemeTrack) {
             console.log("메인 BGM이 없습니다.");
             resolve(); // BGM이 없으면 바로 진행
             return;
         }
     
-        const firstTrack = sounds[mainThemePlaylist[0]];
+        const firstTrack = sounds[currentMainThemeTrack];
 
         // readyState 3: HAVE_FUTURE_DATA, 4: HAVE_ENOUGH_DATA
         // 이미 데이터가 충분히 로드된 경우 (캐시 등) 즉시 resolve
@@ -188,18 +176,35 @@ function playBGM(trackName, volume = 0.3) {
 
     // 'main-theme' 재생 요청 시
     if (trackName === 'main-theme') {
-        // 이미 메인 테마가 '재생 중'이면 아무것도 하지 않습니다. (일시정지 상태는 제외)
-        if (currentTrackName && currentTrackName.startsWith('main-theme-') && bgm && !bgm.paused) {
+        // 선택된 메인 테마가 없으면 아무것도 안함
+        if (!currentMainThemeTrack) return;
+
+        // 이미 선택된 메인 테마가 재생 중이면 아무것도 안함
+        if (currentTrackName === currentMainThemeTrack && bgm && !bgm.paused) {
             return;
         }
-        // 다른 BGM(예: 보스 테마)이 재생 중이었다면 정지하고 리스너를 제거합니다.
+
+        // 다른 BGM(예: 보스 테마)이 재생 중이었다면 정지
         if (bgm) {
             bgm.pause();
-            bgm.removeEventListener('ended', playNextMainTheme);
         }
-        // 플레이리스트를 처음부터 시작합니다.
-        currentPlaylistIndex = -1;
-        playNextMainTheme();
+
+        // 선택된 메인 테마를 반복 재생
+        bgm = sounds[currentMainThemeTrack];
+        bgm.loop = true; // 단일 곡 반복
+        bgm.volume = volume;
+        bgm.currentTime = 0;
+        const playPromise = bgm.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.error("BGM 재생 실패:", error.name, error.message);
+                if (error.name === 'NotAllowedError') {
+                    console.log("자동 재생이 차단되었습니다. 사용자 상호작용 시 재시도합니다.");
+                    bgmNeedsResume = true;
+                }
+            });
+        }
+        currentTrackName = currentMainThemeTrack;
         return;
     }
 
@@ -213,7 +218,6 @@ function playBGM(trackName, volume = 0.3) {
         // 현재 재생 중인 BGM(플레이리스트 포함)을 정지하고 리스너를 제거합니다.
         if (bgm) {
             bgm.pause();
-            bgm.removeEventListener('ended', playNextMainTheme);
         }
 
         bgm = sounds[trackName];
@@ -241,8 +245,6 @@ function stopBGM() {
     if (bgm) {
         bgm.pause();
         bgm.currentTime = 0; // 시작 메뉴로 돌아갈 때 등 완전히 정지할 때 사용
-        bgm.removeEventListener('ended', playNextMainTheme); // 이벤트 리스너 정리
     }
     currentTrackName = null;
-    currentPlaylistIndex = 0; // 다음에 재생할 때 처음부터 시작하도록 인덱스 초기화
 }
