@@ -668,6 +668,22 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     margin-top: 20px;
 }
 
+/* 회원정보 수정 폼 그룹 스타일 */
+#edit-profile-form .form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#edit-profile-form .form-group label {
+    flex-basis: 70px; /* 라벨 너비 고정 */
+    flex-shrink: 0;
+    text-align: left;
+    font-size: 16px;
+    color: #ddd;
+    font-weight: bold;
+}
+
 #login-form input,
 #register-form input,
 #edit-profile-form input,
