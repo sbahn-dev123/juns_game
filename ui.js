@@ -383,6 +383,7 @@ function showStartMenu() {
 function updateVolumeButtons() {
     const bgmBtn = document.getElementById('bgm-toggle-btn');
     const sfxBtn = document.getElementById('sfx-toggle-btn');
+    
 
     if (isBgmEnabled) {
         bgmBtn.classList.remove('off');

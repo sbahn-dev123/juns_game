@@ -1764,12 +1764,16 @@ async function handleUpdateProfile() {
 /**
  * 페이지 로드 시 실행되는 초기화 함수
  */
-function init() {
-    loadSounds();
+async function init() {
+    await loadSounds(); // 사운드, 특히 첫 BGM이 로드될 때까지 기다립니다.
+    showStartMenu(); // UI와 BGM을 먼저 표시하고 재생합니다.
     const username = localStorage.getItem('username');
     updateLoginStatus(username);
-    showStartMenu();
     updateVolumeButtons(); // 페이지 로드 시 볼륨 버튼 상태 초기화
+
+    // BGM 자동 재생 실패 시 복구를 위한 이벤트 리스너 (최초 1회만 실행)
+    document.body.addEventListener('click', tryResumeBGM, { once: true });
+    document.body.addEventListener('keydown', tryResumeBGM, { once: true });
 }
 
 //* 키보드 입력을 처리하기 위한 이벤트 리스너 추가
