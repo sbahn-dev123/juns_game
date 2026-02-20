@@ -6,12 +6,25 @@ const auth = require('./auth');
 const Score = require('./Score');
 
 // @route   GET api/scores
-// @desc    Get all scores
+// @desc    Get top scores
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        const scores = await Score.find().sort({ score: -1 }).limit(10);
-        res.json(scores);
+        // 상위 20개의 점수를 찾고, 'user' 필드를 통해 'country' 정보를 함께 가져옵니다.
+        const topScores = await Score.find()
+            .sort({ score: -1 })
+            .limit(20)
+            .populate('user', 'country'); // 'user'는 Score 모델의 필드, 'country'는 가져올 User 모델의 필드입니다.
+
+        // 클라이언트에 보낼 데이터를 형식에 맞게 가공합니다.
+        const formattedScores = topScores.map(score => ({
+            username: score.username,
+            score: score.score,
+            // 사용자가 삭제되었을 경우를 대비하여 예외 처리
+            country: score.user ? score.user.country : null,
+        }));
+
+        res.json(formattedScores);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

@@ -632,9 +632,15 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     border-bottom: 1px solid #444;
 }
 .scoreboard-item:last-child { border-bottom: none; }
-.scoreboard-item .rank { font-weight: bold; color: #fbbf24; }
+.scoreboard-item .rank { font-weight: bold; color: #fbbf24; margin-right: 10px; }
 .scoreboard-item .name { color: #60a5fa; }
 .scoreboard-item .score { font-weight: bold; }
+
+/* 국기 이모지 전용 폰트 스택 */
+.flag-emoji {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "EmojiOne Color", "Android Emoji", sans-serif;
+    margin-right: 4px; /* 이모지와 텍스트 사이 간격 */
+}
 
 /* 로그인/회원가입/프로필수정 공통 모달 스타일 */
 #login-modal,

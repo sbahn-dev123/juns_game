@@ -134,6 +134,12 @@ tbody tr:hover {
     justify-content: center;
 }
 
+/* 국기 이모지 전용 폰트 스택 */
+.flag-emoji {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "EmojiOne Color", "Android Emoji", sans-serif;
+    margin-right: 4px; /* 이모지와 텍스트 사이 간격 */
+}
+
 .modal-content {
     background: #1e2032;
     border: 2px solid #7c3aed;

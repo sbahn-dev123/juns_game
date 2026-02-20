@@ -17,6 +17,21 @@ function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('ko-KR', options);
 }
 
+/**
+ * 국가 코드를 국기 이모지로 변환하는 함수
+ * @param {string} countryCode - 'KR', 'US' 등의 국가 코드
+ * @returns {string} - 국기 이모지
+ */
+function getFlagEmoji(countryCode) {
+    if (!countryCode) return '';
+    // 국가 코드(ISO 3166-1 alpha-2)를 유니코드 지역 문자로 변환
+    const codePoints = countryCode
+        .toUpperCase()
+        .split('')
+        .map(char => 127397 + char.charCodeAt());
+    return String.fromCodePoint(...codePoints);
+}
+
 // --- Modal Control ---
 const editModal = document.getElementById('edit-user-modal');
 
@@ -145,7 +160,7 @@ function renderUserList(usersToRender) {
         row.innerHTML = `
             <td>${user.username}</td>
             <td>${user.email}</td>
-            <td>${user.country}</td>
+            <td><span class="flag-emoji">${getFlagEmoji(user.country)}</span> ${user.country}</td>
             <td>${formatDate(user.birthdate)}</td>
             <td>${user.role}</td>
             <td>${formatDate(user.register_date)}</td>

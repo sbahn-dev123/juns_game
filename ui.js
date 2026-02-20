@@ -573,6 +573,21 @@ function closeScoreboardModal() {
 }
 
 /**
+ * 국가 코드를 국기 이모지로 변환하는 함수
+ * @param {string} countryCode - 'KR', 'US' 등의 국가 코드
+ * @returns {string} - 국기 이모지
+ */
+function getFlagEmoji(countryCode) {
+    if (!countryCode) return '';
+    // 국가 코드(ISO 3166-1 alpha-2)를 유니코드 지역 문자로 변환
+    const codePoints = countryCode
+        .toUpperCase()
+        .split('')
+        .map(char => 127397 + char.charCodeAt());
+    return String.fromCodePoint(...codePoints);
+}
+
+/**
  * 스코어보드 데이터를 받아 UI를 렌더링하는 함수
  * @param {Array<object>} scores - { username: string, score: number } 형태의 배열
  */
@@ -588,8 +603,9 @@ function renderScoreboard(scores) {
     scores.forEach((entry, index) => {
         const itemEl = document.createElement('div');
         itemEl.className = 'scoreboard-item';
+        const flagEmoji = getFlagEmoji(entry.country);
         itemEl.innerHTML = `
-            <div><span class="rank">#${index + 1}</span> <span class="name">${entry.username}</span></div>
+            <div><span class="rank">#${index + 1}</span> <span class="name"><span class="flag-emoji">${flagEmoji}</span> ${entry.username}</span></div>
             <div class="score">${entry.score} 층</div>
         `;
         listEl.appendChild(itemEl);
