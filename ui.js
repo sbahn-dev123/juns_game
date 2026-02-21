@@ -177,9 +177,11 @@ function showMainControls() {
     const saveButton = isLoggedIn() ? `<button class="btn-buff" onclick="saveGame()">💾 저장</button>` : `<button class="btn-buff" disabled title="로그인 시 사용 가능">💾 저장</button>`;
     controlsPanel.innerHTML = `
         <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬</button>
+        <button class="btn-heal" onclick="showAllPotions()">🧪 물약</button>
         ${saveButton}
-        <button class="btn-heal" onclick="showAllPotions()">🧪 물약 사용</button>
-        <button class="btn-armor" onclick="openInventoryModal()">🛡️ 인벤토리</button>
+        <button class="btn-armor" onclick="openInventoryModal('equipment')">🛡️ 장비</button>
+        <button class="btn-inventory" onclick="openInventoryModal('loot')">💎 전리품</button>
+        <button class="btn-buff" onclick="openInventoryModal('stats')">📊 스탯</button>
     `;
 }
 
@@ -190,6 +192,15 @@ function showMainControls() {
 function showAllPotions() {
     playSound('click');
     const modal = document.getElementById('item-select-modal');
+
+    // 아이템 목록이 길어져 UI가 잘리는 것을 방지하기 위해
+    // 모달 컨텐츠에 최대 높이와 스크롤을 적용합니다. (상점/인벤토리와 동일한 방식)
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '90vh';
+        modalContent.style.overflowY = 'auto';
+    }
+
     document.getElementById('item-select-title').innerText = "물약 사용";
 
     const allPotions = player.inventory.filter(item => item.type === 'heal' || item.type === 'mpPotion' || item.type === 'buff' || item.type === 'critBuff');
@@ -264,6 +275,10 @@ function showAllPotions() {
     renderPotionGroup(groupedBuff, buffList);
     renderPotionGroup(groupedCritBuff, critBuffList);
     
+    // potion-container의 스타일을 원래대로 복원 (가로 정렬)
+    const potionContainer = modal.querySelector('.potion-container');
+    potionContainer.style.flexDirection = ''; // 'column' 속성 제거
+
     modal.style.display = 'flex';
 }
 
@@ -552,6 +567,15 @@ function closeEditProfileModal() {
 function openScoreboardModal() {
     playSound('click');
     const modal = document.getElementById('scoreboard-modal');
+
+    // 화면이 작은 기기에서 모달 내용이 잘리는 것을 방지하기 위해
+    // 모달 컨텐츠에 최대 높이와 스크롤을 적용합니다.
+    const modalContent = modal.querySelector('.scoreboard-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '85vh';
+        modalContent.style.overflowY = 'auto';
+    }
+
     modal.style.display = 'flex';
     // 브라우저가 display 변경을 인지하고 transition을 적용할 수 있도록 짧은 지연을 줍니다.
     setTimeout(() => {
@@ -615,6 +639,15 @@ function renderScoreboard(scores) {
 function openNoticeModal() {
     playSound('click');
     const modal = document.getElementById('notice-modal');
+
+    // 화면이 작은 기기에서 모달 내용이 잘리는 것을 방지하기 위해
+    // 모달 컨텐츠에 최대 높이와 스크롤을 적용합니다.
+    const modalContent = modal.querySelector('.notice-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '85vh';
+        modalContent.style.overflowY = 'auto';
+    }
+
     modal.style.display = 'flex';
     setTimeout(() => {
         modal.classList.add('visible');
@@ -631,6 +664,40 @@ function closeNoticeModal() {
     setTimeout(() => {
         modal.style.display = 'none';
     }, 300);
+}
+
+/**
+ * 게임 오버 모달을 표시하는 함수
+ * @param {number} score - 최종 점수 (층)
+ */
+function showGameOverModal(score) {
+    const modal = document.getElementById('game-over-modal');
+    document.getElementById('final-score').innerText = score;
+    modal.style.display = 'flex';
+}
+
+/**
+ * 게임 오버 모달을 닫는 함수
+ */
+function closeGameOverModal() {
+    const modal = document.getElementById('game-over-modal');
+    modal.style.display = 'none';
+}
+
+/**
+ * 게임 오버 화면에서 '새 게임' 버튼을 눌렀을 때 호출되는 함수
+ */
+function handleNewGameFromGameOver() {
+    closeGameOverModal();
+    startNewGame(true); // script.js에 정의된 함수
+}
+
+/**
+ * 게임 오버 화면에서 '메인으로' 버튼을 눌렀을 때 호출되는 함수
+ */
+function handleToMainFromGameOver() {
+    closeGameOverModal();
+    showStartMenu();
 }
 
 /**
@@ -665,8 +732,9 @@ function renderNotices(notices) {
 
 /**
  * 인벤토리(장비, 전리품, 스탯) 관리 모달을 여는 함수
+ * @param {string} activeTab - 표시할 탭 ('equipment', 'loot', 'stats')
  */
-function openInventoryModal() {
+function openInventoryModal(activeTab) {
     playSound('click');
     // 스탯 분배를 위한 임시 변수 초기화
     tempStatPoints = player.statPoints;
@@ -674,6 +742,14 @@ function openInventoryModal() {
 
     const modal = document.getElementById('equipment-modal');
     modal.style.display = 'flex';
+
+    // 모바일 환경에서 모달 내용이 잘리는 것을 방지하기 위해
+    // 모달 컨텐츠에 최대 높이와 스크롤을 적용합니다.
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '85vh';
+        modalContent.style.overflowY = 'auto';
+    }
     
     // 전리품 섹션이 없으면 동적으로 생성
     const container = modal.querySelector('.management-container');
@@ -683,22 +759,71 @@ function openInventoryModal() {
         lootSection.id = 'loot-management-section';
         lootSection.className = 'management-section';
         lootSection.innerHTML = `
-            <h3>전리품</h3>
-            <div id="loot-inventory-list" class="equipment-list" style="max-height: 45vh; overflow-y: auto;"></div>
+            <h3>전리품 (스크롤 가능)</h3>
+            <div id="loot-inventory-list" class="equipment-list" style="max-height: 60vh; overflow-y: auto;"></div>
         `;
         // 스탯 섹션 앞에 전리품 섹션 삽입
-        const statSection = container.querySelector('.stat-up-list').closest('.management-section');
-        if (statSection) {
-            container.insertBefore(lootSection, statSection);
+        const statSectionEl = container.querySelector('.stat-up-list')?.closest('.management-section');
+        if (statSectionEl) {
+            container.insertBefore(lootSection, statSectionEl);
         } else {
             container.appendChild(lootSection);
         }
     }
     
-    // 모달 내용 렌더링
+    // 모달 내용 렌더링 (UI에 요소가 존재하도록 보장)
     renderStatUpModal();
     renderEquipment();
-    renderLootInventory(); // 전리품 인벤토리 렌더링
+    renderLootInventory();
+
+    // --- 섹션 및 UI 요소 가져오기 ---
+    const modalTitleEl = modal.querySelector('h2'); // 모달의 메인 제목
+    const managementContainer = container;
+    const currentEquipmentSection = document.getElementById('current-equipment-display');
+    const armorSection = document.getElementById('equipment-armor-list')?.closest('.management-section');
+    const weaponSection = document.getElementById('equipment-weapon-list')?.closest('.management-section');
+    const statSection = document.querySelector('.stat-up-list')?.closest('.management-section');
+    // lootSection은 위에서 이미 정의됨
+
+    // --- 모든 관련 섹션 숨기기 ---
+    if (currentEquipmentSection) currentEquipmentSection.style.display = 'none';
+    if (armorSection) armorSection.style.display = 'none';
+    if (weaponSection) weaponSection.style.display = 'none';
+    if (lootSection) lootSection.style.display = 'none';
+    if (statSection) statSection.style.display = 'none';
+
+    // --- 컨테이너 스타일 초기화 및 탭에 맞게 재설정 ---
+    managementContainer.style.display = 'grid'; // 그리드를 기본값으로 재설정
+    managementContainer.style.gridTemplateColumns = '';
+    managementContainer.style.width = '';
+    managementContainer.style.maxWidth = '';
+    managementContainer.style.margin = '';
+
+    switch (activeTab) {
+        case 'equipment':
+            if (modalTitleEl) modalTitleEl.innerText = '🛡️ 장비 관리';
+            if (currentEquipmentSection) currentEquipmentSection.style.display = 'block';
+            if (armorSection) armorSection.style.display = 'block';
+            if (weaponSection) weaponSection.style.display = 'block';
+            
+            // 장비 뷰에 맞게 그리드 조정
+            managementContainer.style.gridTemplateColumns = '1fr 1fr';
+            managementContainer.style.width = '100%';
+            managementContainer.style.maxWidth = '1800px'; // 장비창 UI 크기 확장
+            break;
+        case 'loot':
+            if (modalTitleEl) modalTitleEl.innerText = '💎 전리품';
+            if (lootSection) lootSection.style.display = 'block';
+            // 단일 뷰로 표시하기 위해 그리드 해제
+            managementContainer.style.display = 'block';
+            break;
+        case 'stats':
+            if (modalTitleEl) modalTitleEl.innerText = '📊 스탯 분배';
+            if (statSection) statSection.style.display = 'block';
+            // 단일 뷰로 표시하기 위해 그리드 해제
+            managementContainer.style.display = 'block';
+            break;
+    }
 }
 
 /**
@@ -766,6 +891,9 @@ function renderEquipment() {
 
     // 보유 방어구 목록 렌더링
     const armorListEl = document.getElementById('equipment-armor-list');
+    // 모바일에서 스크롤이 가능하도록 스타일을 추가합니다.
+    armorListEl.style.maxHeight = '15vh';
+    armorListEl.style.overflowY = 'auto';
     armorListEl.innerHTML = '';
     if (player.armorInventory.length === 0) {
         armorListEl.innerHTML = '<div class="inventory-item">보유한 방어구가 없습니다.</div>';
@@ -786,6 +914,9 @@ function renderEquipment() {
 
     // 보유 무기 목록 렌더링
     const weaponListEl = document.getElementById('equipment-weapon-list');
+    // 모바일에서 스크롤이 가능하도록 스타일을 추가합니다.
+    weaponListEl.style.maxHeight = '15vh';
+    weaponListEl.style.overflowY = 'auto';
     weaponListEl.innerHTML = '';
     if (player.weaponInventory.length === 0) {
         weaponListEl.innerHTML = '<div class="inventory-item">보유한 무기가 없습니다.</div>';
@@ -815,6 +946,15 @@ function openShop(auto = false) {
     isShopAutoOpened = auto;
     const modal = document.getElementById('shop-modal');
     modal.style.display = 'flex';
+
+    // 모바일 환경에서 상점 내용이 잘리는 것을 방지하기 위해
+    // 모달 컨텐츠에 최대 높이와 스크롤을 적용합니다.
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '90vh';
+        modalContent.style.overflowY = 'auto';
+    }
+
     document.getElementById('shop-coins').innerText = player.coins;
 
     // 전리품 판매 섹션이 없으면 동적으로 생성

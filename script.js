@@ -1101,20 +1101,16 @@ async function gameOver() {
     isGameOver = true;
     log("체력이 0이 되었습니다. 게임 오버...", 'log-monster');
     toggleControls(false); // Disable game controls
-
+ 
     await submitScore(); // 점수 제출
-
+ 
     if (isLoggedIn()) {
         log("최종 게임 상태를 저장합니다...", "log-system");
         await saveGame(true); // Silently save the game state
     }
-
-    // Use a timeout to allow player to read final logs
-    setTimeout(() => {
-        alert("게임이 종료되었습니다. 시작 화면으로 돌아갑니다.");
-        showStartMenu();
-        // When a new game starts, controls will be re-enabled.
-    }, 2000); // 2 second delay
+ 
+    // 게임 오버 모달을 표시합니다.
+    showGameOverModal(floor);
 }
 
 /**
