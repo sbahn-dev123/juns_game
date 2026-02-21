@@ -14,7 +14,7 @@ services:
       # Mount the backend code for development hot-reloading
       - ./backend:/usr/src/app
       # Mount the frontend code
-      - ./frontend:/usr/src/app/frontend
+      - ./frontend/www:/usr/src/app/frontend/www
       # Use an anonymous volume to prevent local node_modules from overwriting the container's
       - /usr/src/app/node_modules
     # backend 폴더의 .env 파일을 환경 변수로 사용합니다.

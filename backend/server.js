@@ -70,7 +70,7 @@ mongoose.connect(process.env.MONGO_URI)
 //! 1. 특정 동적 라우트 -> 2. API 라우트 -> 3. 정적 파일 -> 4. SPA 대체 경로
 //! ============================================================
 
-const frontendPath = path.join(__dirname, 'frontend');
+const frontendPath = path.join(__dirname, 'frontend', 'www');
 
 // 1. 동적 설정 제공 라우트 (/config.js)
 // API 라우트나 정적 파일보다 먼저 처리되어야 합니다.

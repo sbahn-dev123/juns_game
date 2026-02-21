@@ -12,8 +12,8 @@ RUN npm install
 # 백엔드 소스 코드를 작업 디렉토리(/usr/src/app)에 복사합니다.
 COPY backend/ .
 
-# 프론트엔드 코드를 작업 디렉토리 내의 'frontend' 폴더로 복사합니다.
-COPY frontend/ ./frontend/
+# 웹 에셋(프론트엔드 빌드 결과물)을 컨테이너에 복사합니다.
+COPY frontend/www/ ./frontend/www/
 
 # 앱이 3000번 포트를 사용하도록 외부에 알립니다.
 EXPOSE 3000

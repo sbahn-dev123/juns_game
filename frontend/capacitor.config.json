@@ -1,0 +1,10 @@
+{
+  "appId": "com.junsrpg.app",
+  "appName": "Juns Cave RPG",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "http://35.199.151.16",
+    "cleartext": true
+  }
+}
