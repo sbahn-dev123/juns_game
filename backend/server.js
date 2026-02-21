@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs');
-const User = require('./User');
+const User = require(path.join(__dirname, 'User'));
 
 const app = express();
 
@@ -84,9 +84,9 @@ app.get('/config.js', (req, res) => {
 });
 
 // 2. API 라우트 설정
-app.use('/api/users', require('./users'));
-app.use('/api/game', require('./game'));
-app.use('/api/scores', require('./scores'));
+app.use('/api/users', require(path.join(__dirname, 'users')));
+app.use('/api/game', require(path.join(__dirname, 'game')));
+app.use('/api/scores', require(path.join(__dirname, 'scores')));
 
 //! ============================================================
 //! 동적 설정 제공

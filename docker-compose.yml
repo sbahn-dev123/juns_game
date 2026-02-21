@@ -1,23 +1,38 @@
 version: '3'
+
 services:
   app:
-    build: .
+    # 현재 디렉토리의 Dockerfile을 사용하여 이미지를 빌드합니다.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # 컨테이너의 3000번 포트를 호스트의 3000번 포트와 연결합니다.
     ports:
       - "3000:3000"
+    # 개발 중 코드 변경 시 자동 재시작을 위해 볼륨을 마운트합니다.
     volumes:
-      - .:/usr/src/app
+      # Mount the backend code for development hot-reloading
+      - ./backend:/usr/src/app
+      # Mount the frontend code
+      - ./frontend:/usr/src/app/frontend
+      # Use an anonymous volume to prevent local node_modules from overwriting the container's
       - /usr/src/app/node_modules
-    depends_on:
-      - mongo
+    # backend 폴더의 .env 파일을 환경 변수로 사용합니다.
     env_file:
       - .env
+    # 컨테이너가 예기치 않게 종료되면 다시 시작합니다.
+    restart: unless-stopped
+    # app 서비스가 mongo 서비스에 의존하도록 설정합니다.
+    depends_on:
+      - mongo
 
   mongo:
-    image: mongo
+    image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    restart: unless-stopped
 
 volumes:
   mongo-data:
