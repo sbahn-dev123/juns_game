@@ -675,8 +675,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     background: rgba(0, 0, 0, 0.7);
     display: none; /* JS로 제어 */
     align-items: center;
-    justify-content: flex-start; /* 콘텐츠를 상단에 정렬 */
-    padding-top: 5vh; /* 상단 여백 추가 */
+    justify-content: center; /* 콘텐츠를 중앙에 정렬 */
     z-index: 100;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
@@ -773,8 +772,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     background: rgba(0, 0, 0, 0.7);
     display: none; /* JS로 제어 */
     align-items: center;
-    justify-content: flex-start; /* 콘텐츠를 상단에 정렬 */
-    padding-top: 5vh; /* 상단 여백 추가 */
+    justify-content: center; /* 콘텐츠를 중앙에 정렬 */
     z-index: 100;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
@@ -829,8 +827,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     background: rgba(0, 0, 0, 0.7);
     display: none; /* JS로 제어 */
     align-items: center;
-    justify-content: flex-start; /* 콘텐츠를 상단에 정렬 */
-    padding-top: 5vh; /* 상단 여백 추가 */
+    justify-content: center; /* 콘텐츠를 중앙에 정렬 */
     z-index: 100;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
