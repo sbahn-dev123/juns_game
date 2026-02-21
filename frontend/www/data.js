@@ -47,9 +47,9 @@ const monsterList = [
 //* 중간 보스 몬스터 도감: 10층, 30층, 50층 등 20층 간격으로 등장하는 특별한 몬스터입니다.
 const midBossList = [
     // 10층 보스
-    { name: "오크 족장", emoji: "🗿", hp: 140, atk: 22, xp: 380, dropCoins: 200, specialDrop: { type: 'permanent_stat', stat: 'str', value: 5, name: '족장의 전투도끼', sellPrice: 700 } },
+    { name: "오크 족장", emoji: "🗿", hp: 100, atk: 15, xp: 380, dropCoins: 200, specialDrop: { type: 'permanent_stat', stat: 'str', value: 5, name: '족장의 전투도끼', sellPrice: 700 } },
     // 30층 보스
-    { name: "미노타우르스", emoji: "🐃", hp: 520, atk: 45, xp: 1400, dropCoins: 900, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 7, name: '미노타우르스의 돌심장', sellPrice: 1800 } },
+    { name: "미노타우르스", emoji: "🐃", hp: 420, atk: 38, xp: 1400, dropCoins: 900, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 7, name: '미노타우르스의 돌심장', sellPrice: 1800 } },
     // 50층 보스
     { name: "키메라", emoji: "🦁", hp: 1200, atk: 95, xp: 3500, dropCoins: 2200, specialDrop: { type: 'xp_bonus', value: 0.30, name: '키메라의 지혜', sellPrice: 4000 } },
     // 70층 보스
@@ -71,9 +71,9 @@ const midBossList = [
 //* 메인 보스 몬스터 도감: 20층, 40층, 60층 등 20층마다 등장하는 강력한 몬스터입니다.
 const bossList = [
     // 20층 보스
-    { name: "거대 고블린 왕", emoji: "👑", hp: 430, atk: 36, xp: 1000, dropCoins: 650, skill: { type: 'stun', chance: 0.32, name: '왕의 철퇴' }, specialDrop: { type: 'gold_bonus', value: 0.30, name: '빛나는 탐욕의 왕관', sellPrice: 2000 } },
+    { name: "거대 고블린 왕", emoji: "👑", hp: 300, atk: 27, xp: 1000, dropCoins: 650, skill: { type: 'stun', chance: 0.32, name: '왕의 철퇴' }, specialDrop: { type: 'gold_bonus', value: 0.30, name: '빛나는 탐욕의 왕관', sellPrice: 2000 } },
     // 40층 보스
-    { name: "어둠의 기사", emoji: "⚔️", hp: 750, atk: 58, xp: 1900, dropCoins: 1200, skill: { type: 'charge_attack', chance: 0.4, power: 2.5, name: '어둠의 검격' }, specialDrop: { type: 'crit_damage_bonus', value: 0.25, name: '기사의 부서진 검', sellPrice: 3000 } },
+    { name: "어둠의 기사", emoji: "⚔️", hp: 650, atk: 52, xp: 1900, dropCoins: 1200, skill: { type: 'charge_attack', chance: 0.4, power: 2.5, name: '어둠의 검격' }, specialDrop: { type: 'crit_damage_bonus', value: 0.25, name: '기사의 부서진 검', sellPrice: 3000 } },
     // 60층 보스
     { name: "고대 드래곤", emoji: "🐉", hp: 1800, atk: 110, xp: 4500, dropCoins: 3000, skill: { type: 'charge_attack', chance: 0.45, power: 3, name: '고대의 드래곤 브레스' }, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 18, name: '고대 드래곤의 굳건한 심장', sellPrice: 6000 } },
     // 80층 보스
