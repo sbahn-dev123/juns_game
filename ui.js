@@ -1,13 +1,17 @@
-//! ============================================================
-//! UI 함수
-//! 게임의 UI 렌더링 및 조작과 관련된 모든 함수를 정의합니다.
-//! ============================================================
+//! =================================================================
+//! ui.js
+//!
+//! 이 파일은 게임의 UI 렌더링 및 조작과 관련된 모든 함수를 정의합니다.
+//! - 정보 출력 (로그, 데미지 텍스트)
+//! - UI 상태 업데이트 (체력바, 버프 아이콘 등)
+//! - 모달 창 관리 (상점, 인벤토리, 로그인 등)
+//! =================================================================
 
 /**
- * 로그 창에 메시지를 출력하는 함수
- * @param {string} msg - 출력할 메시지 내용
- * @param {string} [type=''] - 메시지 종류 ('log-player', 'log-monster', 'log-system')
- * @param {object} [styles={}] - 적용할 추가 CSS 스타일
+ * 로그 창에 메시지를 출력하고 자동으로 스크롤합니다.
+ * @param {string} msg - 출력할 메시지 내용.
+ * @param {string} [type=''] - 메시지 종류에 따른 CSS 클래스 ('log-player', 'log-monster', 'log-system').
+ * @param {object} [styles={}] - 적용할 추가 인라인 CSS 스타일.
  */
 function log(msg, type = '', styles = {}) {
     const box = document.getElementById('log-box');
@@ -20,10 +24,10 @@ function log(msg, type = '', styles = {}) {
 }
 
 /**
- * 캐릭터 위에 떠오르는 텍스트(데미지, MISS 등)를 표시하는 함수
- * @param {string|number} text - 표시할 텍스트
- * @param {HTMLElement} targetElement - 텍스트가 표시될 대상 DOM 요소
- * @param {string} type - 텍스트 종류 ('damage', 'crit', 'miss', 'heal', 'black-flash' 등)
+ * 캐릭터 위에 떠오르는 텍스트(데미지, MISS 등)를 표시합니다.
+ * @param {string|number} text - 표시할 텍스트.
+ * @param {HTMLElement} targetElement - 텍스트가 표시될 대상 캐릭터의 DOM 요소.
+ * @param {string} type - 텍스트 종류에 따른 CSS 클래스 ('damage', 'crit', 'miss', 'heal' 등).
  */
 function showFloatingText(text, targetElement, type) {
     if (!targetElement) return;
@@ -51,7 +55,7 @@ function showFloatingText(text, targetElement, type) {
 }
 
 /**
- * 게임의 모든 UI를 현재 게임 상태에 맞게 업데이트하는 함수
+ * 게임의 모든 UI를 현재 게임 상태(`player`, `monsters` 등)에 맞게 업데이트하는 메인 함수.
  */
 function updateUI() {
     // 플레이어 정보 UI 업데이트 (체력, 골드, 이모지 등)
@@ -143,7 +147,8 @@ function updateUI() {
 }
 
 /**
- * 스킬 선택 버튼들을 보여주는 함수
+ * 메인 컨트롤 UI를 스킬 선택 버튼들로 교체하여 보여줍니다.
+ * - 각 스킬의 예상 데미지를 동적으로 계산하여 표시합니다.
  */
 function showSkillSelection() {
     playSound('click');
@@ -167,7 +172,7 @@ function showSkillSelection() {
 }
 
 /**
- * 메인 컨트롤 버튼(공격/스킬, 물약, 인벤토리)들을 보여주는 함수
+ * 메인 컨트롤 버튼(스킬, 물약, 장비 등)들을 보여줍니다.
  */
 function showMainControls() {
     playSound('click');
@@ -186,8 +191,8 @@ function showMainControls() {
 }
 
 /**
- * 사용 가능한 모든 물약 목록을 보여주는 모달을 여는 함수
- * 인벤토리의 소비 아이템을 종류별로 묶어서 보여줍니다.
+ * 사용 가능한 모든 물약 목록을 보여주는 모달을 엽니다.
+ * - 인벤토리의 소비 아이템을 종류별로 그룹화하여 개수와 함께 표시합니다.
  */
 function showAllPotions() {
     playSound('click');
@@ -283,7 +288,7 @@ function showAllPotions() {
 }
 
 /**
- * 아이템 선택 모달을 닫는 함수
+ * 아이템(물약) 선택 모달을 닫습니다.
  */
 function closeItemSelect() {
     playSound('click');
@@ -291,7 +296,8 @@ function closeItemSelect() {
 }
 
 /**
- * 스탯 분배 모달의 내용을 렌더링하는 함수
+ * 스탯 분배 모달의 내용을 렌더링합니다.
+ * - 현재 스탯, 분배 후 예상 능력치 등을 실시간으로 계산하여 보여줍니다.
  */
 function renderStatUpModal() {
     document.querySelector('#stat-points-display span').innerText = tempStatPoints;
@@ -357,8 +363,8 @@ function renderStatUpModal() {
 }
 
 /**
- * 로그인 상태에 따라 시작 메뉴 UI를 업데이트하는 함수
- * @param {string|null} username - 로그인한 사용자 이름, 비로그인 시 null
+ * 로그인 상태에 따라 시작 메뉴의 UI(게스트/로그인 메뉴)를 업데이트합니다.
+ * @param {string|null} username - 로그인한 사용자 이름. 비로그인 시 null.
  */
 function updateLoginStatus(username) {
     const guestMenu = document.getElementById('guest-menu');
@@ -384,7 +390,7 @@ function updateLoginStatus(username) {
 }
 
 /**
- * 시작 메뉴를 보여주는 함수
+ * 시작 메뉴 화면을 표시하고 메인 테마 BGM을 재생합니다.
  */
 function showStartMenu() {
     playBGM('main-theme'); // 시작 메뉴 BGM 재생
@@ -393,7 +399,7 @@ function showStartMenu() {
 }
 
 /**
- * 볼륨 조절 버튼의 UI 상태를 업데이트하는 함수
+ * 볼륨 조절 버튼의 UI 상태(on/off)를 현재 설정에 맞게 업데이트합니다.
  */
 function updateVolumeButtons() {
     const bgmBtn = document.getElementById('bgm-toggle-btn');
@@ -414,7 +420,7 @@ function updateVolumeButtons() {
 }
 
 /**
- * 게임 화면을 보여주는 함수
+ * 메인 게임 화면을 표시합니다.
  */
 function showGameScreen() {
     document.getElementById('start-menu').style.display = 'none';
@@ -422,7 +428,7 @@ function showGameScreen() {
 }
 
 /**
- * 로그인/회원가입 모달을 여는 함수
+ * 로그인 모달을 엽니다.
  */
 function openLoginModal() {
     playSound('click');
@@ -443,7 +449,7 @@ function openLoginModal() {
 }
 
 /**
- * 로그인 모달을 닫는 함수
+ * 로그인 모달을 닫습니다.
  */
 function closeLoginModal() {
     playSound('click');
@@ -458,7 +464,7 @@ function closeLoginModal() {
 }
 
 /**
- * 회원가입 모달을 여는 함수
+ * 회원가입 모달을 엽니다.
  */
 function openRegisterModal() {
     playSound('click');
@@ -477,7 +483,7 @@ function openRegisterModal() {
 }
 
 /**
- * 회원가입 모달을 닫는 함수
+ * 회원가입 모달을 닫습니다.
  */
 function closeRegisterModal() {
     playSound('click');
@@ -490,7 +496,7 @@ function closeRegisterModal() {
 }
 
 /**
- * 로그인 창에서 회원가입 창으로 전환하는 함수
+ * 로그인 창에서 회원가입 창으로 전환합니다.
  */
 function switchToRegisterModal(event) {
     event.preventDefault();
@@ -499,7 +505,7 @@ function switchToRegisterModal(event) {
 }
 
 /**
- * 회원가입 창에서 로그인 창으로 전환하는 함수
+ * 회원가입 창에서 로그인 창으로 전환합니다.
  */
 function switchToLoginModal(event) {
     event.preventDefault();
@@ -508,7 +514,8 @@ function switchToLoginModal(event) {
 }
 
 /**
- * 회원정보 수정 모달을 여는 함수
+ * 회원정보 수정 모달을 엽니다.
+ * - 모달을 열기 전에 서버에서 현재 사용자 정보를 가져와 폼을 채웁니다.
  */
 async function openEditProfileModal() {
     playSound('click');
@@ -549,7 +556,7 @@ async function openEditProfileModal() {
 }
 
 /**
- * 회원정보 수정 모달을 닫는 함수
+ * 회원정보 수정 모달을 닫습니다.
  */
 function closeEditProfileModal() {
     playSound('click');
@@ -562,7 +569,7 @@ function closeEditProfileModal() {
 }
 
 /**
- * 스코어보드 모달을 여는 함수
+ * 스코어보드 모달을 엽니다.
  */
 function openScoreboardModal() {
     playSound('click');
@@ -584,7 +591,7 @@ function openScoreboardModal() {
 }
 
 /**
- * 스코어보드 모달을 닫는 함수
+ * 스코어보드 모달을 닫습니다.
  */
 function closeScoreboardModal() {
     playSound('click');
@@ -597,9 +604,9 @@ function closeScoreboardModal() {
 }
 
 /**
- * 국가 코드를 국기 이미지 HTML로 변환하는 함수
- * @param {string} countryCode - 'KR', 'US' 등의 국가 코드
- * @returns {string} - <img> 태그 문자열
+ * 국가 코드를 국기 이미지 HTML로 변환합니다.
+ * @param {string} countryCode - 'KR', 'US' 등의 2자리 국가 코드.
+ * @returns {string} - `<img>` 태그 문자열 또는 이모지.
  */
 function getFlagImgHtml(countryCode) {
     if (!countryCode) return '';
@@ -609,8 +616,8 @@ function getFlagImgHtml(countryCode) {
 }
 
 /**
- * 스코어보드 데이터를 받아 UI를 렌더링하는 함수
- * @param {Array<object>} scores - { username: string, score: number } 형태의 배열
+ * 서버에서 받은 스코어보드 데이터를 UI에 렌더링합니다.
+ * @param {Array<object>} scores - `{ username: string, score: number, country: string }` 형태의 배열.
  */
 function renderScoreboard(scores) {
     const listEl = document.getElementById('scoreboard-list');
@@ -634,7 +641,7 @@ function renderScoreboard(scores) {
 }
 
 /**
- * 공지사항 모달을 여는 함수
+ * 공지사항 모달을 엽니다.
  */
 function openNoticeModal() {
     playSound('click');
@@ -655,7 +662,7 @@ function openNoticeModal() {
 }
 
 /**
- * 공지사항 모달을 닫는 함수
+ * 공지사항 모달을 닫습니다.
  */
 function closeNoticeModal() {
     playSound('click');
@@ -667,8 +674,8 @@ function closeNoticeModal() {
 }
 
 /**
- * 게임 오버 모달을 표시하는 함수
- * @param {number} score - 최종 점수 (층)
+ * 게임 오버 모달을 표시합니다.
+ * @param {number} score - 최종 점수 (도달한 층).
  */
 function showGameOverModal(score) {
     const modal = document.getElementById('game-over-modal');
@@ -677,7 +684,7 @@ function showGameOverModal(score) {
 }
 
 /**
- * 게임 오버 모달을 닫는 함수
+ * 게임 오버 모달을 닫습니다.
  */
 function closeGameOverModal() {
     const modal = document.getElementById('game-over-modal');
@@ -685,7 +692,7 @@ function closeGameOverModal() {
 }
 
 /**
- * 게임 오버 화면에서 '새 게임' 버튼을 눌렀을 때 호출되는 함수
+ * 게임 오버 화면에서 '새 게임' 버튼 클릭을 처리합니다.
  */
 function handleNewGameFromGameOver() {
     closeGameOverModal();
@@ -693,7 +700,7 @@ function handleNewGameFromGameOver() {
 }
 
 /**
- * 게임 오버 화면에서 '메인으로' 버튼을 눌렀을 때 호출되는 함수
+ * 게임 오버 화면에서 '메인으로' 버튼 클릭을 처리합니다.
  */
 function handleToMainFromGameOver() {
     closeGameOverModal();
@@ -701,8 +708,8 @@ function handleToMainFromGameOver() {
 }
 
 /**
- * 공지사항 데이터를 받아 UI를 렌더링하는 함수
- * @param {Array<object>} notices - { version, date, summary, link } 형태의 배열
+ * `updates.js`의 공지사항 데이터를 받아 UI에 렌더링합니다.
+ * @param {Array<object>} notices - `{ version, date, summary, file }` 형태의 배열.
  */
 function renderNotices(notices) {
     const listEl = document.getElementById('notice-list');
@@ -731,8 +738,9 @@ function renderNotices(notices) {
 }
 
 /**
- * 인벤토리(장비, 전리품, 스탯) 관리 모달을 여는 함수
- * @param {string} activeTab - 표시할 탭 ('equipment', 'loot', 'stats')
+ * 인벤토리 관리 모달(장비, 전리품, 스탯)을 엽니다.
+ * - `activeTab` 파라미터에 따라 해당 탭의 내용만 보여줍니다.
+ * @param {'equipment' | 'loot' | 'stats'} activeTab - 표시할 탭.
  */
 function openInventoryModal(activeTab) {
     playSound('click');
@@ -827,7 +835,7 @@ function openInventoryModal(activeTab) {
 }
 
 /**
- * 인벤토리(장비/스탯) 모달을 닫는 함수
+ * 인벤토리(장비/전리품/스탯) 관리 모달을 닫습니다.
  */
 function closeInventoryModal() {
     playSound('click');
@@ -835,15 +843,15 @@ function closeInventoryModal() {
 }
 
 /**
- * 장비 관리 모달을 닫는 함수 (HTML과의 호환성을 위해 유지)
- * HTML 파일에 onclick="closeEquipment()"가 남아있을 수 있어 추가합니다.
+ * 장비 관리 모달을 닫는 함수 (HTML과의 호환성을 위해 유지).
+ * - `closeInventoryModal`을 호출합니다.
  */
 function closeEquipment() {
     closeInventoryModal();
 }
 
 /**
- * 전리품 인벤토리 UI를 렌더링하는 함수
+ * 보유 중인 전리품 목록과 그 효과를 UI에 렌더링합니다.
  */
 function renderLootInventory() {
     const listEl = document.getElementById('loot-inventory-list');
@@ -877,7 +885,7 @@ function renderLootInventory() {
 }
 
 /**
- * 장비 관리 UI(현재 착용 장비, 보유 장비 목록)를 렌더링하는 함수
+ * 장비 관리 UI(현재 착용 장비, 보유 장비 목록)를 렌더링합니다.
  */
 function renderEquipment() {
     // 현재 착용 장비 표시
@@ -937,9 +945,8 @@ function renderEquipment() {
 }
 
 /**
- * 상점 모달을 여는 함수
- * @param {boolean} [auto=false] - 5층마다 자동으로 열렸는지 여부.
- *                         true이면 상점을 닫을 때 자동으로 다음 층으로 이동.
+ * 상점 모달을 엽니다.
+ * @param {boolean} [auto=false] - 5층마다 자동으로 열렸는지 여부. `true`이면 상점을 닫을 때 자동으로 다음 층으로 이동합니다.
  */
 function openShop(auto = false) {
     if (!auto) playSound('click');
@@ -978,7 +985,7 @@ function openShop(auto = false) {
 }
 
 /**
- * 상점 모달을 닫는 함수
+ * 상점 모달을 닫고, 자동으로 열렸던 경우 다음 층으로 진행합니다.
  */
 function closeShop() {
     playSound('click');
@@ -991,7 +998,7 @@ function closeShop() {
 }
 
 /**
- * 상점에서 판매하는 모든 아이템 목록을 UI에 렌더링하는 함수
+ * 상점에서 판매하는 모든 아이템 목록을 UI에 렌더링합니다.
  */
 function renderShopItems() {
     const armorContainer = document.getElementById('armor-shop-items');
@@ -1091,7 +1098,7 @@ function renderShopItems() {
 }
 
 /**
- * 판매 가능한 전리품 목록을 상점 UI에 렌더링하는 함수
+ * 판매 가능한 전리품 목록을 상점 UI에 렌더링합니다.
  */
 function renderSellableLoot() {
     const sellContainer = document.getElementById('sell-loot-items');
@@ -1125,7 +1132,7 @@ function renderSellableLoot() {
 }
 
 /**
- * 인벤토리 모달을 여는 함수 (현재는 사용되지 않음)
+ * (사용되지 않음) 인벤토리 모달을 여는 함수.
  */
 function openInventory() {
     document.getElementById('inventory-modal').style.display = 'flex';
@@ -1133,14 +1140,14 @@ function openInventory() {
 }
 
 /**
- * 인벤토리 모달을 닫는 함수 (현재는 사용되지 않음)
+ * (사용되지 않음) 인벤토리 모달을 닫는 함수.
  */
 function closeInventory() {
     document.getElementById('inventory-modal').style.display = 'none';
 }
 
 /**
- * 인벤토리 모달의 내용을 렌더링하는 함수 (현재는 사용되지 않음)
+ * (사용되지 않음) 인벤토리 모달의 내용을 렌더링하는 함수.
  */
 function renderInventory() {
     const list = document.getElementById('inventory-list');

@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- ==================== 시작 메뉴 ==================== -->
     <div id="start-menu">
         <div id="volume-controls">
             <button id="bgm-toggle-btn" class="volume-btn" onclick="toggleBgm()" title="배경음악 켜기/끄기">🎵</button>
@@ -31,10 +32,12 @@
         </div>
     </div>
 
-<div id="game-wrapper" style="display: none;">
-    <div id="black-flash-overlay"></div>
-    <div class="game-container">
-        <div class="header">
+    <!-- ==================== 메인 게임 화면 ==================== -->
+    <div id="game-wrapper" style="display: none;">
+        <div id="black-flash-overlay"></div> <!-- 흑섬 발동 시 화면 효과 -->
+        <div class="game-container">
+            <!-- 상단 정보 (층, 턴, 골드, 버프) -->
+            <div class="header">
             <span class="floor-badge">지하 <span id="floor-num">1</span>층</span>
             <span class="floor-badge" style="background: #4b5563; margin-left: 5px;">TURN <span id="turn-num">1</span></span>
             <span class="floor-badge" style="background: #fbbf24; color: #000; margin-left: 5px;">🪙 <span id="player-coins">0</span></span>
@@ -44,7 +47,8 @@
             <span class="floor-badge" id="blessing-badge" style="background: #ca8a04; margin-left: 5px; display: none;" title="">👑</span>
         </div>
 
-        <div class="battle-field" id="battle-field">
+            <!-- 전투 필드 (캐릭터 표시 영역) -->
+            <div class="battle-field" id="battle-field">
             <div class="character" id="player-character">
                 <div class="emoji" id="player-emoji"></div>
                 <div class="name">용사</div>
@@ -57,10 +61,12 @@
             </div>
         </div>
 
-        <div class="log-box" id="log-box">
+            <!-- 전투 및 시스템 로그 -->
+            <div class="log-box" id="log-box">
             <div class="log-msg log-system">동굴 탐험을 시작합니다...</div>
         </div>
 
+        <!-- MP 및 경험치 바 -->
         <div class="mp-bar-container">
             <div class="level-badge" style="color: #60a5fa;">MP</div>
             <div class="xp-bar-bg">
@@ -81,6 +87,7 @@
             </div>
         </div>
 
+        <!-- 하단 컨트롤 버튼 -->
         <div class="controls" id="controls-panel">
             <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬</button>
             <button class="btn-heal" onclick="showAllPotions()">🧪 물약</button>
@@ -88,11 +95,15 @@
         </div>
     </div>
 
+    <!-- ==================== 모달 (팝업창) 영역 ==================== -->
+
+    <!-- 레벨업 알림 모달 -->
     <div id="levelup-modal">
         <div class="levelup-text">경험치를 획득했다!</div>
         <div style="font-size: 24px; color: #ccc;">잠시 후 다음 층으로 이동합니다...</div>
     </div>
 
+    <!-- 상점 모달 -->
     <div id="shop-modal">
         <div class="shop-title" style="font-size: 24px;">⛺ 떠돌이 상인</div>
         <div class="floor-badge" style="background: #fbbf24; color: #000; margin-bottom: 15px;">🪙 <span id="shop-coins">0</span></div>
@@ -130,6 +141,7 @@
         <button style="margin-top: 20px; background: #ef4444; box-shadow: 0 4px 0 #991b1b;" onclick="closeShop()">상점 나가기</button>
     </div>
 
+    <!-- (사용되지 않음) 구 인벤토리 모달 -->
     <div id="inventory-modal">
         <div class="shop-title" style="font-size: 24px;">🎒 인벤토리</div>
         <div class="inventory-list" id="inventory-list">
@@ -138,6 +150,7 @@
         <button style="margin-top: 30px; background: #4b5563; box-shadow: 0 4px 0 #374151;" onclick="closeInventory()">닫기</button>
     </div>
 
+    <!-- 물약 사용 모달 -->
     <div id="item-select-modal">
         <div class="shop-title" style="font-size: 24px;" id="item-select-title">물약 사용</div>
         <div class="potion-container">
@@ -161,6 +174,7 @@
         <button style="margin-top: 20px; background: #4b5563; box-shadow: 0 4px 0 #374151;" onclick="closeItemSelect()">닫기</button>
     </div>
 
+    <!-- 장비/전리품/스탯 통합 관리 모달 -->
     <div id="equipment-modal">
         <div class="shop-title" style="font-size: 24px;">🛡️ 장비 및 스탯 관리</div>
         <div class="management-container">
@@ -198,7 +212,7 @@
     </div>
 </div>
 
-    <!-- Login/Register Modal -->
+    <!-- 로그인 모달 -->
     <div id="login-modal" style="display: none;">
         <div class="login-content">
             <div class="shop-title">로그인</div>
@@ -213,7 +227,7 @@
         </div>
     </div>
 
-    <!-- Register Modal -->
+    <!-- 회원가입 모달 -->
     <div id="register-modal" style="display: none;">
         <div class="login-content"> <!-- login-content 스타일 재사용 -->
             <div class="shop-title">회원가입</div>
@@ -238,7 +252,7 @@
         </div>
     </div>
 
-    <!-- Scoreboard Modal -->
+    <!-- 스코어보드(랭킹) 모달 -->
     <div id="scoreboard-modal" style="display: none;">
         <div class="scoreboard-content">
             <div class="shop-title">🏆 스코어보드</div>
@@ -249,7 +263,7 @@
         </div>
     </div>
 
-    <!-- Edit Profile Modal -->
+    <!-- 회원정보 수정 모달 -->
     <div id="edit-profile-modal" style="display: none;">
         <div class="login-content"> <!-- login-content 스타일 재사용 -->
             <div class="shop-title">회원정보 수정</div>
@@ -287,7 +301,7 @@
         </div>
     </div>
 
-    <!-- Notice Modal -->
+    <!-- 공지사항 모달 -->
     <div id="notice-modal" style="display: none;">
         <div class="notice-content">
             <div class="shop-title">📢 공지사항 및 업데이트</div>
@@ -298,6 +312,7 @@
         </div>
     </div>
 
+    <!-- 스크립트 파일 로드 -->
     <script src="data.js"></script>
     <script src="updates.js"></script> <!-- 업데이트 이력 데이터 -->
     <script src="audio.js"></script> <!-- 사운드 효과 -->

@@ -1,13 +1,13 @@
 /* Google Fonts에서 'Noto Serif KR' 폰트 불러오기 */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap');
 
-/* --- 1. 기본 스타일 & 초기화 --- */
+/* ==================== 1. 기본 스타일 & 초기화 ==================== */
 /* html이 전체 높이를 차지하도록 설정 */
 html {
     height: 100%;
 }
 
-/* 모든 요소의 기본 여백과 패딩을 제거하고, 테두리를 포함하여 크기를 계산하도록 설정 */
+/* 모든 요소의 기본 여백/패딩을 제거하고, 테두리를 포함하여 크기를 계산하도록 설정 */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* body 전체에 대한 기본 스타일 정의 */
@@ -23,12 +23,12 @@ body {
     user-select: none; /* 드래그 방지 */
 }
 
-/* --- 2. 시작 메뉴 --- */
+/* ==================== 2. 시작 메뉴 & 공통 UI ==================== */
 #start-menu {
     text-align: center;
 }
 
-/* 볼륨 조절 버튼 */
+/* 볼륨 조절 버튼 (화면 우측 상단) */
 #volume-controls {
     position: absolute;
     top: 20px;
@@ -38,6 +38,7 @@ body {
     z-index: 101; /* 다른 모달 위에 표시될 수 있도록 */
 }
 
+/* 개별 볼륨 버튼 스타일 */
 .volume-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -49,6 +50,7 @@ body {
     box-shadow: none;
 }
 
+/* 볼륨 off 상태 스타일 */
 .volume-btn.off {
     opacity: 0.5;
     text-decoration: line-through 3px red;
@@ -84,7 +86,7 @@ body {
     margin-bottom: 10px;
 }
 
-/* --- 3. 게임 화면 레이아웃 --- */
+/* ==================== 3. 게임 화면 레이아웃 ==================== */
 .game-container {
     width: 100%;
     height: 100%; /* 컨테이너가 body 높이를 꽉 채우도록 설정 */
@@ -131,7 +133,7 @@ body {
     align-items: flex-end; /* 몬스터들을 하단에 정렬 */
 }
 
-/* 개별 몬스터를 감싸는 래퍼 */
+/* 개별 몬스터를 감싸는 컨테이너 */
 .monster-wrapper {
     position: relative;
     transition: transform 0.2s ease;
@@ -166,7 +168,7 @@ body {
     filter: grayscale(1);
 }
 
-/* --- 4. 캐릭터 및 공통 UI 요소 --- */
+/* ==================== 4. 캐릭터 및 공통 UI 요소 ==================== */
 /* 플레이어와 몬스터의 공통 스타일 */ .character {
     text-align: center;
     position: relative;
@@ -187,7 +189,7 @@ body {
 }
 .hp-text { font-size: 18px; color: #aaa; margin-top: 5px; }
 
-/* --- 5. 애니메이션 및 효과 --- */
+/* ==================== 5. 애니메이션 및 효과 ==================== */
 /* 피격 시 흔들림 효과 */
 @keyframes shake {
     0% { transform: translateX(0); }
@@ -285,7 +287,7 @@ body {
     text-shadow: 0 0 5px black, 0 0 10px #fbbf24;
 }
 
-/* --- 6. 하단 UI (로그, 상태바, 컨트롤) --- */
+/* ==================== 6. 하단 UI (로그, 상태바, 컨트롤) ==================== */
 .log-box {
     background: rgba(0,0,0,0.5);
     height: 150px;
@@ -406,7 +408,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     display: none;
 }
 
-/* --- 7. 모달 (팝업창) 스타일 --- */
+/* ==================== 7. 모달 (팝업창) 스타일 ==================== */
 /* 레벨업 모달 */
 #levelup-modal {
     position: absolute; top:0; left:0; width:100%; height:100%;
@@ -456,7 +458,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .shop-btn .armor-emoji { font-size: 32px; line-height: 1; }
 .shop-btn:hover { background: #6b7280; }
 
-/* 인벤토리 모달 (현재는 장비/스탯 모달로 통합됨) */
+/* (사용되지 않음) 구 인벤토리 모달 */
 /* 인벤토리 모달 */
 #inventory-modal {
     position: absolute; top:0; left:0; width:100%; height:100%;
@@ -468,6 +470,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     z-index: 20;
 }
 .inventory-list { width: 80%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
+/* 아이템 목록 공통 스타일 (물약, 장비, 전리품 등에서 재사용) */
 .inventory-item { background: #374151; padding: 22px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
 .item-info { font-size: 22px; }
 .btn-use { padding: 14px 28px; font-size: 20px; background: #10b981; box-shadow: 0 4px 0 #047857; }
@@ -578,6 +581,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .equipment-list { display: flex; flex-direction: column; gap: 10px; max-height: 40vh; overflow-y: auto; }
 
 /* 장비 및 스탯 모달 통합 */
+.modal-content { /* 모달 공통 컨텐츠 래퍼 */ }
 .management-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -633,7 +637,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     pointer-events: none; /* 이벤트를 통과시켜 클릭 방해 안함 */
 }
 
-@keyframes black-flash-animation {
+@keyframes black-flash-animation { /* 흑섬 발동 시 화면 깜빡임 애니메이션 */
     0% { opacity: 0.9; background-color: red; }
     50% { opacity: 1; background-color: black; }
     100% { opacity: 0; }
@@ -891,7 +895,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .notice-date { font-size: 0.9em; color: #999; }
 .notice-summary { color: #ddd; }
 
-/* --- 9. 반응형 웹을 위한 미디어 쿼리 --- */
+/* ==================== 9. 반응형 웹을 위한 미디어 쿼리 ==================== */
 
 /* 태블릿 (1200px 이하) */
 @media (max-width: 1200px) {

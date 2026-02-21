@@ -1,10 +1,23 @@
 
-//! ============================================================
-//! 1. 게임 상태 변수 정의
-//! 이 섹션에서는 게임의 모든 상태와 기본 데이터를 정의합니다.
-//! ============================================================
+//! =================================================================
+//! script.js
+//!
+//! 이 파일은 게임의 핵심 로직을 담당합니다.
+//! - 게임 상태 변수 (플레이어, 몬스터, 층 등) 정의
+//! - 전투 시스템 (공격, 스킬, 턴 관리)
+//! - 캐릭터 성장 (레벨업, 스탯 분배)
+//! - 게임 진행 (다음 층 이동, 상점, 게임 오버)
+//! - 서버 통신 (저장, 불러오기, 랭킹)
+//! =================================================================
 
-//* 플레이어의 모든 상태를 담고 있는 객체
+//** ============================================================ **//
+//** 1. 게임 상태 변수 정의
+//** ============================================================ **//
+
+/**
+ * @namespace player
+ * @description 플레이어의 모든 상태 정보를 담고 있는 객체.
+ */
 const player = {
     // --- 기본 스탯 ---
     baseMaxHp: 35,      // 기본 최대 체력 (스탯, 장비 미적용)
@@ -18,7 +31,7 @@ const player = {
     level: 1,           // 현재 레벨
     xp: 0,              // 현재 경험치
     xpToNextLevel: 100, // 다음 레벨까지 필요한 경험치
-    statPoints: 0,      // 분배 가능한 스탯 포인트
+    statPoints: 0,      // 분배 가능한 스탯 포인트 (레벨업 시 획득)
     // --- 분배 가능 스탯 ---
     str: 0,             // 힘 스탯 (공격력에 영향)
     vit: 0,             // 체력 스탯 (최대 체력에 영향)
@@ -29,19 +42,19 @@ const player = {
     luk: 0,             // 운 스탯 (치명타 확률에 영향)
     fcs: 0,             // 고도의 집중 스탯 (흑섬 확률에 영향)
     // --- 버프 및 상태 ---
-    blackFlashBuff: { active: false, duration: 0 }, // 흑섬 버프 상태 (활성화 여부, 남은 층)
-    critBuff: { turns: 0, bonus: 0 }, // 치명타 확률 버프 상태 (남은 턴, 추가 확률)
-    guaranteedCrit: false, // 다음 공격 확정 치명타 여부
-    defenseBuff: { turns: 0, reduction: 0.6 }, // 방어 버프 (60% 감소)
-    defenseStance: false, // 방어 태세 여부
-    isStunned: false,   // 기절 상태 여부
+    blackFlashBuff: { active: false, duration: 0 }, // 흑섬 버프 상태 (활성화 여부, 남은 층 수)
+    critBuff: { turns: 0, bonus: 0 }, // 치명타 확률 증가 버프 (남은 턴, 추가 확률%)
+    guaranteedCrit: false, // 다음 공격이 확정 치명타인지 여부 (흑섬 발동 시 활성화)
+    defenseBuff: { turns: 0, reduction: 0.6 }, // 방어 성공 시 받는 피해량 감소 버프 (남은 턴, 피해 감소율)
+    defenseStance: false, // 방어 태세 활성화 여부 (토글 스킬)
+    isStunned: false,   // 플레이어의 기절 상태 여부
     // --- 계산된 스탯 ---
-    evasionChance: 4,   // 현재 회피 확률 (%)
-    critChance: 10,     // 현재 치명타 확률 (%)
-    critDamage: 2,      // 현재 치명타 배율
-    goldBonus: 1,       // 골드 획득 보너스 배율
-    blackFlashChance: 0.008, // 흑섬 확률
-    magicDamageBonus: 0, // 마력 추가 피해량
+    evasionChance: 4,   // 최종 회피 확률 (%)
+    critChance: 10,     // 최종 치명타 확률 (%)
+    critDamage: 2,      // 최종 치명타 배율 (기본 2배)
+    goldBonus: 1,       // 최종 골드 획득 보너스 배율
+    blackFlashChance: 0.008, // 최종 흑섬 발동 확률
+    magicDamageBonus: 0, // 마력 스탯에 의한 스킬 추가 피해량
     // --- 재화 및 장비 ---
     coins: 0,           // 보유 골드
     baseEmoji: '🧙‍♂️',   // 기본 이모지
@@ -49,13 +62,13 @@ const player = {
     // --- 인벤토리 ---
     equippedArmor: null, // 현재 착용한 방어구
     equippedWeapon: null,// 현재 착용한 무기
-    armorInventory: [], // 보유한 방어구 목록
-    weaponInventory: [],// 보유한 무기 목록
-    lootInventory: [], // 보스 전리품 보관
-    targetIndex: 0,     // 현재 공격 목표 몬스터의 인덱스
-    buff: { turns: 0, multiplier: 1.5 }, // 공격력 강화 버프 상태 (남은 턴, 공격력 배율)
+    armorInventory: [], // 보유 중인 모든 방어구 목록
+    weaponInventory: [],// 보유 중인 모든 무기 목록
+    lootInventory: [],  // 보유 중인 모든 전리품 목록 (패시브 효과)
+    targetIndex: 0,     // 현재 공격 대상으로 지정된 몬스터의 인덱스
+    buff: { turns: 0, multiplier: 1.5 }, // 공격력 강화 물약 버프 (남은 턴, 공격력 배율)
     // --- 소비 아이템 인벤토리 ---
-    inventory: [        // 보유한 소비 아이템 목록
+    inventory: [        // 보유한 모든 소비 아이템(물약 등) 목록
         // 게임 시작 시 기본 회복 물약 3개 지급
         { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
         { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
@@ -63,24 +76,28 @@ const player = {
     ]
 };
 
-//* 현재 전투 중인 몬스터 객체들을 담는 배열
+/** @type {Array<object>} 현재 전투 중인 몬스터 객체들을 담는 배열 */
 let monsters = [];
 
-//* 게임의 주요 상태 변수
+/** @type {number} 현재 진행 중인 층 */
 let floor = 1;              // 현재 층
+/** @type {number} 현재 층의 턴 수 */
 let turn = 1;               // 현재 턴
+/** @type {boolean} 플레이어의 턴인지 여부 */
 let isPlayerTurn = true;    // 플레이어 턴 여부
+/** @type {boolean} 게임 오버 상태인지 여부 */
 let isGameOver = false;     // 게임 오버 여부
+/** @type {boolean} 5층마다 상점이 자동으로 열렸는지 여부 (상점 닫을 때 다음 층 자동 진행을 위함) */
 let isShopAutoOpened = false; // 5층마다 상점이 자동으로 열렸는지 여부
 
-//* 스탯 분배 모달에서 임시로 사용할 변수
-let tempStatPoints = 0; // 임시 스탯 포인트
-let tempStats = {};     // 임시 스탯 객체 (힘, 체력, 운 등)
+/** @type {number} 스탯 분배 모달에서 임시로 사용할 스탯 포인트 */
+let tempStatPoints = 0;
+/** @type {object} 스탯 분배 모달에서 임시로 사용할 스탯 객체 (힘, 체력, 운 등) */
+let tempStats = {};
 
-//! ============================================================
-//! 3. 전투 로직
-//! 플레이어와 몬스터가 턴을 주고받는 핵심 전투 로직을 다룹니다.
-//! ============================================================
+//** ============================================================ **//
+//** 2. 전투 로직
+//** ============================================================ **//
 
 /**
  * 흑섬(Black Flash) 효과 애니메이션을 실행하는 함수
@@ -94,6 +111,10 @@ function triggerBlackFlash() {
 
 /**
  * 플레이어의 일반 공격을 처리하는 함수
+ * - 플레이어 턴, MP, 기절 상태 등을 확인합니다.
+ * - 방어 태세 효과를 적용합니다.
+ * - 흑섬 또는 일반 공격을 실행하고, 몬스터에게 피해를 줍니다.
+ * - 전투 종료 또는 몬스터 턴으로 전환을 처리합니다.
  */
 function executeNormalAttack() {
     // --- 턴 시작 조건 검사 ---
@@ -460,13 +481,14 @@ function endMonstersTurn() {
     }
 }
 
-//! ============================================================
-//! 3.5 스킬 시스템
-//! 플레이어가 사용하는 다양한 스킬의 로직을 정의합니다.
-//! ============================================================
+//** ============================================================ **//
+//** 3. 스킬 및 아이템 사용
+//** ============================================================ **//
 
 /**
- * 강 공격 (단일 대상, 높은 데미지, MP 소모, 낮은 확률로 흑섬 발동)
+ * '강 공격' 스킬을 실행하는 함수.
+ * - 단일 대상에게 높은 피해를 줍니다. (기본 공격력의 200% + 마력 추가 피해)
+ * - 15 MP를 소모하며, 3%의 고정 흑섬 발동 확률을 가집니다.
  */
 function executePowerAttack() {
     if (isGameOver || !isPlayerTurn) return;
@@ -604,7 +626,9 @@ function executePowerAttack() {
 }
 
 /**
- * 휩쓸기 (모든 몬스터 대상 광역 공격, MP 소모)
+ * '휩쓸기' 스킬을 실행하는 함수.
+ * - 살아있는 모든 몬스터에게 광역 피해를 줍니다. (기본 공격력의 80% + 마력 추가 피해)
+ * - 25 MP를 소모합니다.
  */
 function executeSweepAttack() {
     if (isGameOver || !isPlayerTurn) return;
@@ -738,8 +762,9 @@ function executeSweepAttack() {
 }
 
 /**
- * 방어 태세를 켜고 끄는 함수 (토글)
- * 이 행동 자체는 턴을 소모하지 않으며, 다음 공격 스킬 사용 시 MP를 추가로 소모하여 방어 효과를 발동시킵니다.
+ * '방어 태세'를 켜고 끄는 토글 함수.
+ * - 이 행동 자체는 턴을 소모하지 않습니다.
+ * - 활성화된 상태에서 다음 공격 스킬 사용 시 10 MP를 추가로 소모하여, 78% 확률로 방어 버프를 얻습니다.
  */
 function toggleDefenseStance() {
     if (isGameOver || !isPlayerTurn) return;
@@ -756,7 +781,8 @@ function toggleDefenseStance() {
 }
 
 /**
- * 인벤토리의 소비 아이템을 사용하는 함수
+ * 인벤토리의 소비 아이템(물약)을 사용하는 함수.
+ * - 아이템 종류(회복, 버프 등)에 따라 적절한 효과를 적용하고 인벤토리에서 제거합니다.
  * @param {number} index - 사용할 아이템의 player.inventory 배열 인덱스
  */
 function useInventoryItem(index) {
@@ -827,7 +853,7 @@ function useInventoryItem(index) {
 }
 
 /**
- * 현재 타겟 몬스터가 죽었을 경우, 다음 살아있는 몬스터를 자동으로 타겟으로 지정합니다.
+ * 현재 타겟 몬스터가 죽었을 경우, 다음 살아있는 몬스터를 자동으로 타겟으로 지정하는 함수.
  */
 function findNextTarget() {
     const livingMonsterIndex = monsters.findIndex(m => m.hp > 0);
@@ -835,6 +861,10 @@ function findNextTarget() {
         player.targetIndex = livingMonsterIndex;
     }
 }
+
+//** ============================================================ **//
+//** 4. 게임 진행 및 성장
+//** ============================================================ **//
 
 /**
  * 플레이어가 경험치를 획득하고, 레벨업 조건을 확인합니다.
@@ -894,14 +924,10 @@ function checkForLevelUp() {
     }
 }
 
-//! ============================================================
-//! 4. 게임 진행 로직 (승리, 패배, 다음 층)
-//! 전투 종료 후의 흐름과 다음 단계로의 진행을 관리합니다.
-//! ============================================================
-
 /**
- * 전투에서 승리했을 때 호출되는 함수
- * 골드와 경험치를 정산하고, 보스 전리품 드랍을 처리합니다.
+ * 전투에서 승리했을 때 호출되는 함수.
+ * - 골드를 정산하고, 보스 몬스터의 경우 특별 전리품 드랍을 처리합니다.
+ * - 경험치는 몬스터 사망 시점에 즉시 획득합니다.
  */
 function winBattle() {
     playSound('win');
@@ -926,7 +952,7 @@ function winBattle() {
 }
 
 /**
- * 전투 승리 후 다음 단계(상점 또는 다음 층)로 진행합니다.
+ * 전투 승리 후 다음 단계(상점 또는 다음 층)로 진행하는 함수.
  */
 function proceedToNextStage() {
     if (floor % 5 === 0) {
@@ -937,7 +963,9 @@ function proceedToNextStage() {
 }
 
 /**
- * 다음 층으로 이동하고, 플레이어 상태를 일부 회복하며, 새로운 몬스터를 생성합니다.
+ * 다음 층으로 이동하는 함수.
+ * - 플레이어 상태를 일부 회복(체력 전체, 마나 일부)하고, 버프 턴을 감소시킵니다.
+ * - 낮은 확률로 아이템을 줍고, 새로운 몬스터를 생성합니다.
  */
 function nextFloor() {
     floor++;
@@ -998,9 +1026,9 @@ function nextFloor() {
 }
 
 /**
- * 특정 층에 맞는 몬스터들을 생성하고 로그를 출력하는 함수
- * 보스 층, 중간 보스 층, 일반 층을 구분하여 몬스터를 생성합니다.
- * @param {number} floorNumber - 생성할 층 번호
+ * 특정 층에 맞는 몬스터들을 생성하고 로그를 출력하는 함수.
+ * - 보스 층, 중간 보스 층, 일반 층을 구분하여 몬스터를 생성합니다.
+ * @param {number} floorNumber - 몬스터를 생성할 층 번호.
  * @returns {Array<object>} - 생성된 몬스터 객체 배열
  */
 function generateMonstersForFloor(floorNumber) {
@@ -1073,8 +1101,9 @@ function generateMonstersForFloor(floorNumber) {
 
 /**
  * 몬스터 템플릿과 난이도 배율을 기반으로 실제 몬스터 객체를 생성하는 함수
- * @param {object} template - 몬스터 도감에 있는 몬스터 템플릿
- * @param {number} multiplier - 난이도 배율
+ * @param {object} template - 몬스터 도감(data.js)에 정의된 몬스터 템플릿.
+ * @param {number} multiplier - 난이도 배율 (층이 높아질수록 증가).
+ * @returns {object} - 실제 게임에서 사용될 몬스터 객체.
  */
 function createMonster(template, multiplier) {
     const baseCoin = Math.floor(template.hp / 2);
@@ -1093,7 +1122,8 @@ function createMonster(template, multiplier) {
 }
 
 /**
- * 플레이어 사망 시 게임 오버를 처리하는 함수
+ * 플레이어 사망 시 게임 오버를 처리하는 함수.
+ * - 점수를 서버에 제출하고, 게임 상태를 저장한 후 게임 오버 모달을 표시합니다.
  */
 async function gameOver() {
     stopBGM();
@@ -1114,7 +1144,8 @@ async function gameOver() {
 }
 
 /**
- * 컨트롤 버튼(공격, 물약 등)의 활성화/비활성화 상태를 조절합니다.
+ * 컨트롤 버튼(스킬, 물약 등)의 활성화/비활성화 상태를 조절하는 함수.
+ * - 플레이어 턴일 때만 버튼을 활성화합니다.
  * @param {boolean} enable - true면 활성화, false면 비활성화
  */
 function toggleControls(enable) {
@@ -1126,13 +1157,12 @@ function toggleControls(enable) {
     }
 }
 
-//! ============================================================
-//! 5. 스탯 분배 시스템 (장비 모달에 통합됨)
-//! 레벨업으로 얻은 스탯 포인트를 분배하는 UI와 로직을 관리합니다.
-//! ============================================================
+//** ============================================================ **//
+//** 5. 스탯 및 장비 관리
+//** ============================================================ **//
 
 /**
- * 특정 스탯을 1 증가시키는 임시 함수 (분배 확정 전)
+ * 스탯 분배 모달에서 특정 스탯을 1 증가시키는 임시 함수 (분배 확정 전).
  * @param {string} statKey - 증가시킬 스탯의 키 ('str', 'vit' 등)
  */
 function addStat(statKey) {
@@ -1144,7 +1174,7 @@ function addStat(statKey) {
 }
 
 /**
- * 임시로 분배한 스탯을 원래대로 초기화하는 함수
+ * 임시로 분배한 스탯을 원래대로 초기화하는 함수.
  */
 function resetTempStats() {
     tempStatPoints = player.statPoints;
@@ -1153,7 +1183,7 @@ function resetTempStats() {
 }
 
 /**
- * 스탯 분배를 확정하고 실제 플레이어 능력치에 적용합니다.
+ * 스탯 분배를 확정하고 실제 플레이어 능력치에 적용하는 함수.
  */
 function confirmStatUp() {
     player.statPoints = tempStatPoints;
@@ -1170,7 +1200,8 @@ function confirmStatUp() {
 }
 
 /**
- * 스탯, 장비, 버프 등을 모두 고려하여 플레이어의 최종 능력치를 재계산합니다.
+ * 스탯, 장비, 전리품, 버프 등을 모두 고려하여 플레이어의 최종 능력치를 재계산하는 함수.
+ * - 이 함수는 스탯 변경, 장비 교체, 버프 획득/소실 시 호출되어야 합니다.
  */
 function recalculatePlayerStats() {
     // 전리품 패시브 스탯 보너스 계산
@@ -1224,15 +1255,10 @@ function recalculatePlayerStats() {
     if (player.mp > player.maxMp) player.mp = player.maxMp;
 }
 
-//! ============================================================
-//! 6. 장비 및 스탯 모달
-//! 인벤토리(장비, 전리품)와 스탯 분배 창을 관리하는 로직입니다.
-//! ============================================================
-
 /**
- * 장비 아이템을 착용하는 함수
- * @param {string} type - 착용할 아이템 타입 ('armor' 또는 'weapon')
- * @param {number} index - 해당 타입의 인벤토리 배열 인덱스
+ * 장비 아이템을 착용하는 함수.
+ * @param {'armor' | 'weapon'} type - 착용할 아이템 타입.
+ * @param {number} index - 해당 타입의 인벤토리 배열 인덱스.
  */
 function equipItem(type, index) {
     let hpPercentage = 1.0; // 체력 비율 유지를 위한 변수
@@ -1260,8 +1286,8 @@ function equipItem(type, index) {
 }
 
 /**
- * 전리품 아이템을 사용하여 영구 스탯을 얻는 함수
- * @param {number} index - 사용할 전리품의 player.lootInventory 배열 인덱스
+ * (사용되지 않음) 전리품은 이제 소모품이 아닌 패시브 아이템입니다.
+ * @param {number} index
  */
 function useLootItem(index) {
     // 전리품은 이제 소모하는 아이템이 아니라, 보유 시 지속 효과(패시브)를 제공합니다.
@@ -1269,10 +1295,9 @@ function useLootItem(index) {
     log("전리품은 보유하는 것만으로 효과가 적용됩니다.", "log-system");
 }
 
-//! ============================================================
-//! 7. 상점 시스템
-//! 아이템 구매 및 전리품 판매를 담당하는 상점 로직입니다.
-//! ============================================================
+//** ============================================================ **//
+//** 6. 상점 시스템
+//** ============================================================ **//
 
 /**
  * 전리품을 판매하여 골드를 획득하는 함수
@@ -1299,9 +1324,9 @@ function sellLootItem(index) {
 
 /**
  * 상점에서 아이템을 구매하고 골드를 차감하는 함수
- * @param {string} type - 구매할 아이템 타입 ('armor', 'weapon', 'heal' 등)
- * @param {number} cost - 아이템 가격
- * @param {object} data - 구매할 아이템의 데이터
+ * @param {'armor' | 'weapon' | 'heal' | 'buff' | 'critBuff' | 'mpPotion'} type - 구매할 아이템 타입.
+ * @param {number} cost - 아이템 가격.
+ * @param {object} data - 구매할 아이템의 데이터 (data.js 에서 가져옴).
  */
 function buyItem(type, cost, data) {
     playSound('buy');
@@ -1341,18 +1366,14 @@ function buyItem(type, cost, data) {
     }
 }
 
-//! ============================================================
-//! 8. 인벤토리 시스템
-//! 소비 아이템 인벤토리를 관리하는 로직입니다. (현재는 물약 사용 모달로 대체됨)
-//! ============================================================
+//** ============================================================ **//
+//** 7. 게임 초기화 및 이벤트 리스너
+//** ============================================================ **//
 
-//! ============================================================
-//! 9. 초기화 및 이벤트 리스너
-//! 게임 시작 및 사용자 입력(키보드)을 처리합니다.
-//! ============================================================
 /**
- * 게임을 시작하고 1층을 설정하는 함수
- * @param {object|null} loadedState - 불러온 게임 상태. null이면 초기 상태로 시작.
+ * 게임을 시작하고 첫 층을 설정하는 함수.
+ * - 새 게임 또는 불러온 게임 상태에 따라 게임 환경을 설정합니다.
+ * @param {object|null} [loadedState=null] - 불러온 게임 상태. null이면 초기 상태로 시작.
  */
 function startGame(loadedState = null) {
     // 플레이어 스탯을 초기 계산하고, 체력/마나를 가득 채웁니다.
@@ -1377,8 +1398,9 @@ function startGame(loadedState = null) {
 }
 
 /**
- * 새로운 게임을 시작하는 함수
- * @param {boolean} isNew - 새 게임 시작 여부 (불러오기와 구분)
+ * 새로운 게임을 시작하는 함수.
+ * - 모든 게임 상태를 초기값으로 리셋합니다.
+ * @param {boolean} [isNew=false] - 로그인 상태에서 '새 게임' 버튼을 눌렀는지 여부 (경고창 표시용).
  */
 function startNewGame(isNew = false) {
     if (isNew && isLoggedIn() && !confirm("정말로 새로운 게임을 시작하시겠습니까? 기존에 저장된 데이터는 덮어씌워집니다.")) {
@@ -1412,10 +1434,12 @@ function startNewGame(isNew = false) {
     startGame();
 }
 
-//* ============================================================
-//* 10. 서버 통신 (시뮬레이션)
-//* ============================================================
-const API_URL = '/api'; // 프록시를 사용하므로 상대 경로로 설정
+//** ============================================================ **//
+//** 8. 서버 통신
+//** ============================================================ **//
+
+/** @const {string} 백엔드 API 서버의 기본 URL */
+const API_URL = '/api';
 
 /**
  * 로그인 상태인지 확인하는 함수
@@ -1426,7 +1450,7 @@ function isLoggedIn() {
 }
 
 /**
- * 인증 헤더를 반환하는 함수
+ * 인증 토큰(JWT)이 포함된 HTTP 요청 헤더를 생성하여 반환하는 함수.
  * @returns {Headers}
  */
 function getAuthHeaders() {
@@ -1439,9 +1463,10 @@ function getAuthHeaders() {
 }
 
 /**
- * API 응답을 공통으로 처리하고 인증 오류를 감지하는 함수
- * @param {Response} response - fetch API의 응답 객체
- * @returns {Promise<any>} - 성공 시 JSON 데이터 또는 true. 실패 시 에러 throw 또는 null 반환.
+ * API 응답을 공통으로 처리하고 인증 오류(토큰 만료 등)를 감지하는 함수.
+ * - fetch 응답을 받아 JSON으로 파싱하고, 에러가 있으면 throw 합니다.
+ * @param {Response} response - fetch API의 응답(Response) 객체.
+ * @returns {Promise<any>} - 성공 시 JSON 데이터 또는 true. 인증 오류 시 null.
  */
 async function handleApiResponse(response) {
     // 인증 오류 (토큰 만료, 유효하지 않은 토큰 등)
@@ -1470,7 +1495,7 @@ async function handleApiResponse(response) {
 }
 
 /**
- * 회원가입을 처리하는 함수 (시뮬레이션)
+ * 회원가입 폼 데이터를 서버로 전송하여 회원가입을 처리하는 함수.
  */
 async function handleRegister() {
     const username = document.getElementById('register-username').value;
@@ -1499,7 +1524,8 @@ async function handleRegister() {
 }
 
 /**
- * 로그인을 처리하는 함수 (시뮬레이션)
+ * 로그인 폼 데이터를 서버로 전송하여 로그인을 처리하는 함수.
+ * - 성공 시 JWT 토큰을 받아 localStorage에 저장합니다.
  */
 async function handleLogin() {
     const username = document.getElementById('login-username').value;
@@ -1528,7 +1554,8 @@ async function handleLogin() {
 }
 
 /**
- * 로그아웃을 처리하는 함수
+ * 로그아웃을 처리하는 함수.
+ * - localStorage에서 사용자 정보와 토큰을 제거합니다.
  */
 function logout() {
     localStorage.removeItem('jwt');
@@ -1539,7 +1566,8 @@ function logout() {
 }
 
 /**
- * 게임 상태를 서버에 저장하는 함수 (시뮬레이션)
+ * 현재 게임 상태를 서버에 저장하는 함수.
+ * @param {boolean} [isSilent=false] - 사용자에게 알림(alert)을 표시하지 않고 조용히 저장할지 여부.
  */
 async function saveGame(isSilent = false) {
     if (!isLoggedIn()) {
@@ -1575,7 +1603,8 @@ async function saveGame(isSilent = false) {
 }
 
 /**
- * 서버에서 게임 상태를 불러오는 함수 (시뮬레이션)
+ * 서버에서 마지막으로 저장된 게임 상태를 불러오는 함수.
+ * - 저장된 데이터가 없거나 유효하지 않으면 새 게임을 시작합니다.
  */
 async function loadGame() {
     if (!isLoggedIn()) {
@@ -1610,7 +1639,8 @@ async function loadGame() {
 }
 
 /**
- * 게임 점수를 서버에 제출하는 함수 (시뮬레이션)
+ * 게임 점수(도달한 층)를 서버에 제출하는 함수.
+ * - 게임 오버 시 호출됩니다.
  */
 async function submitScore() {
     if (!isLoggedIn()) return; // 로그인 상태가 아니면 점수 제출 안 함
@@ -1632,7 +1662,7 @@ async function submitScore() {
 }
 
 /**
- * 서버에서 스코어보드를 가져와 표시하는 함수 (시뮬레이션)
+ * 서버에서 전체 사용자 랭킹(스코어보드)을 가져와 표시하는 함수.
  */
 async function fetchAndShowScores() {
     try {
@@ -1649,7 +1679,7 @@ async function fetchAndShowScores() {
 }
 
 /**
- * 공지사항 데이터를 가져와 표시하는 함수
+ * `updates.js` 파일에 정의된 공지사항 데이터를 가져와 모달에 표시하는 함수.
  */
 function fetchAndShowNotices() {
     // updates.js 파일에서 updateHistory 변수를 전역으로 사용합니다.
@@ -1662,9 +1692,9 @@ function fetchAndShowNotices() {
 }
 
 /**
- * 공지사항 항목을 클릭했을 때 상세 내용을 보여주거나 숨기는 함수
- * @param {HTMLElement} element - 클릭된 .notice-item 요소
- * @param {string} filePath - 불러올 마크다운 파일의 경로
+ * 공지사항 항목을 클릭했을 때 상세 내용을 보여주거나 숨기는 함수.
+ * @param {HTMLElement} element - 클릭된 `.notice-item` 요소.
+ * @param {string} filePath - 불러올 상세 내용 파일의 경로.
  */
 async function toggleNoticeDetail(element, filePath) {
     if (!element || !filePath) return;
@@ -1704,7 +1734,7 @@ async function toggleNoticeDetail(element, filePath) {
 }
 
 /**
- * 서버에서 현재 로그인된 사용자의 프로필 정보를 가져옵니다.
+ * 서버에서 현재 로그인된 사용자의 프로필 정보를 가져오는 함수.
  */
 async function fetchUserProfile() {
     if (!isLoggedIn()) return null;
@@ -1722,7 +1752,7 @@ async function fetchUserProfile() {
 }
 
 /**
- * 사용자 프로필 업데이트를 처리하는 함수
+ * 사용자 프로필 업데이트 폼 데이터를 서버로 전송하여 정보를 수정하는 함수.
  */
 async function handleUpdateProfile() {
     const email = document.getElementById('edit-email').value;
@@ -1758,7 +1788,8 @@ async function handleUpdateProfile() {
 }
 
 /**
- * 페이지 로드 시 실행되는 초기화 함수
+ * 페이지 로드 시 실행되는 초기화 함수.
+ * - 사운드 로드, UI 초기화, 로그인 상태 확인 등을 수행합니다.
  */
 async function init() {
     await loadSounds(); // 사운드, 특히 첫 BGM이 로드될 때까지 기다립니다.
@@ -1772,11 +1803,12 @@ async function init() {
     document.body.addEventListener('keydown', tryResumeBGM, { once: true });
 }
 
-//* 키보드 입력을 처리하기 위한 이벤트 리스너 추가
+// 키보드 입력을 처리하기 위한 이벤트 리스너 추가
 document.addEventListener('keydown', handleKeydown);
 
 /**
- * 키보드 입력(좌우 방향키)을 감지하여 몬스터 타겟을 변경합니다.
+ * 키보드 입력(좌우 방향키)을 감지하여 몬스터 타겟을 변경하는 함수.
+ * @param {KeyboardEvent} e - 키보드 이벤트 객체.
  */
 function handleKeydown(e) {
     if (!isPlayerTurn || isGameOver || monsters.length <= 1) return;
@@ -1798,8 +1830,8 @@ function handleKeydown(e) {
 }
 
 /**
- * 마우스 클릭으로 몬스터 타겟을 변경합니다.
- * @param {number} index - 선택한 몬스터의 인덱스
+ * 마우스 클릭으로 몬스터 타겟을 변경하는 함수.
+ * @param {number} index - 선택한 몬스터의 인덱스.
  */
 function selectTarget(index) {
     if (isGameOver || !isPlayerTurn) return;
@@ -1813,5 +1845,5 @@ function selectTarget(index) {
     }
 }
 
-//* 게임 시작
+// 게임 시작
 init();
