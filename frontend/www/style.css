@@ -1099,6 +1099,26 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     .scoreboard-item .score-time {
         font-size: 12px !important; /* 14px -> 12px (인라인 스타일 재정의) */
     }
+
+    /* --- 회원정보 수정 모달 모바일 최적화 --- */
+    #edit-profile-form .form-group {
+        flex-direction: column; /* 라벨과 입력을 세로로 쌓음 */
+        align-items: flex-start; /* 왼쪽 정렬 */
+        gap: 5px; /* 간격 축소 */
+    }
+
+    #edit-profile-form .form-group label {
+        flex-basis: auto; /* 너비 고정 해제 */
+        font-size: 13px; /* 16px -> 13px (약 20% 감소) */
+    }
+
+    #edit-profile-form p {
+        font-size: 12px !important; /* 14px -> 12px (인라인 스타일 재정의) */
+    }
+
+    #edit-profile-form button {
+        font-size: 16px !important; /* 18px -> 16px (인라인 스타일 재정의) */
+    }
 }
 
 /* 작은 모바일 (480px 이하) */
