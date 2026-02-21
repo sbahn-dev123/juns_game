@@ -716,6 +716,67 @@ function closeEditProfileModal() {
 }
 
 /**
+ * 회원정보 수정을 서버에 요청합니다.
+ * 이메일, 국가, 생년월일 및 비밀번호 변경을 처리합니다.
+ */
+async function handleUpdateProfile() {
+    const email = document.getElementById('edit-email').value;
+    const country = document.getElementById('edit-country').value;
+    const birthdate = document.getElementById('edit-birthdate').value;
+    const currentPassword = document.getElementById('edit-current-password').value;
+    const newPassword = document.getElementById('edit-new-password').value;
+    const confirmPassword = document.getElementById('edit-confirm-password').value;
+    const errorMsgEl = document.getElementById('edit-profile-error-msg');
+
+    errorMsgEl.style.display = 'none';
+
+    // 새 비밀번호 유효성 검사
+    if (newPassword && newPassword !== confirmPassword) {
+        errorMsgEl.textContent = '새 비밀번호가 일치하지 않습니다.';
+        errorMsgEl.style.display = 'block';
+        return;
+    }
+
+    const payload = {
+        email,
+        country,
+        birthdate,
+        currentPassword,
+    };
+
+    // 새 비밀번호가 입력된 경우에만 payload에 추가
+    if (newPassword) {
+        payload.newPassword = newPassword;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${window.API_URL}/users/profile`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-auth-token': token,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('회원정보가 성공적으로 수정되었습니다.');
+            closeEditProfileModal();
+        } else {
+            errorMsgEl.textContent = data.message || '정보 수정에 실패했습니다.';
+            errorMsgEl.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('회원정보 수정 요청 오류:', error);
+        errorMsgEl.textContent = '요청 중 오류가 발생했습니다.';
+        errorMsgEl.style.display = 'block';
+    }
+}
+
+/**
  * 스코어보드 모달을 엽니다.
  */
 function openScoreboardModal() {

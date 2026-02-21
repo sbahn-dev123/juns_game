@@ -314,9 +314,19 @@
                         <option value="ETC">기타</option>
                     </select>
                 </div>
+                <hr style="border-color: #444; margin: 10px 0;">
+                <p style="font-size: 14px; color: #ccc; text-align: left; margin-bottom: 10px;">비밀번호를 변경하려면 새 비밀번호를 입력하세요. (비워두면 변경되지 않음)</p>
+                <div class="form-group">
+                    <label for="edit-new-password">새 비밀번호</label>
+                    <input type="password" id="edit-new-password" placeholder="새 비밀번호">
+                </div>
+                <div class="form-group">
+                    <label for="edit-confirm-password">새 비밀번호 확인</label>
+                    <input type="password" id="edit-confirm-password" placeholder="새 비밀번호 확인">
+                </div>
                 <hr style="border-color: #444; margin: 20px 0;">
-                <p style="font-size: 14px; color: #ccc;">변경 사항을 저장하려면 현재 비밀번호를 입력하세요.</p>
-                <input type="password" id="edit-current-password" placeholder="현재 비밀번호" required>
+                <p style="font-size: 14px; color: #ccc; text-align: left;">변경 사항을 저장하려면 현재 비밀번호를 입력하세요.</p>
+                <input type="password" id="edit-current-password" placeholder="현재 비밀번호" required style="width: 100%; margin-top: 10px;">
                 <div id="edit-profile-error-msg" style="color: #ef4444; text-align: center; display: none;"></div>
                 <button type="button" class="btn-attack" style="padding: 15px; font-size: 18px;" onclick="handleUpdateProfile()">저장하기</button>
             </div>

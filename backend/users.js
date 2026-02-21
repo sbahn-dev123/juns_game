@@ -132,7 +132,7 @@ router.get('/profile', auth, async (req, res) => {
 // @desc    Update user profile
 // @access  Private
 router.put('/profile', auth, async (req, res) => {
-    const { email, country, birthdate, currentPassword } = req.body;
+    const { email, country, birthdate, currentPassword, newPassword } = req.body;
 
     // 유효성 검사
     if (!email || !country || !birthdate || !currentPassword) {
@@ -168,6 +168,15 @@ router.put('/profile', auth, async (req, res) => {
         user.email = email;
         user.country = country;
         user.birthdate = birthdate;
+
+        // 새 비밀번호가 제공된 경우 업데이트
+        if (newPassword) {
+            if (newPassword.length < 4) { // 예시: 최소 4자
+                return res.status(400).json({ message: '새 비밀번호는 4자 이상이어야 합니다.' });
+            }
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(newPassword, salt);
+        }
 
         await user.save();
 
