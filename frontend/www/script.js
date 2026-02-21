@@ -50,11 +50,17 @@ const player = {
     isStunned: false,   // 플레이어의 기절 상태 여부
     // --- 계산된 스탯 ---
     evasionChance: 4,   // 최종 회피 확률 (%)
-    critChance: 10,     // 최종 치명타 확률 (%)
+    critChance: 11,     // 최종 치명타 확률 (%)
     critDamage: 2,      // 최종 치명타 배율 (기본 2배)
     goldBonus: 1,       // 최종 골드 획득 보너스 배율
     blackFlashChance: 0.008, // 최종 흑섬 발동 확률
     magicDamageBonus: 0, // 마력 스탯에 의한 스킬 추가 피해량
+    // --- 전리품으로 인한 특수 능력치 ---
+    critDamageBonus: 0, // 치명타 피해량 보너스
+    mpCostMultiplier: 1, // MP 소모량 배율 (감소 효과)
+    hpRegen: 0,          // 턴 종료 시 HP 회복량
+    bonusStatPointsPerLevel: 0, // 레벨업 시 추가 스탯 포인트
+    debuffResistance: 0, // 상태이상(기절 등) 저항 확률
     // --- 재화 및 장비 ---
     coins: 0,           // 보유 골드
     baseEmoji: '🧙‍♂️',   // 기본 이모지
@@ -129,7 +135,7 @@ function executeNormalAttack() {
     // 방어 태세 여부에 따라 총 MP 소모량 계산
     const mpCost = 0;
     const defenseMpCost = player.defenseStance ? 10 : 0;
-    const totalMpCost = mpCost + defenseMpCost;
+    const totalMpCost = Math.floor((mpCost + defenseMpCost) * player.mpCostMultiplier);
 
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
@@ -382,12 +388,19 @@ function monstersAttack() {
                                 if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
                             }
                             player.hp -= dmg;
-                            playSound('hit');
-                            player.isStunned = true;
+                            playSound('hit');                            
                             const skillName = skill.name || '강타';
-                            log(`💥 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입고 기절했습니다!`, 'log-monster');
                             showFloatingText(dmg, playerElement, 'crit');
-                            showFloatingText('STUN', playerElement, 'stun');
+
+                            // 기절 저항 체크
+                            if (Math.random() < player.debuffResistance) {
+                                log(`💥 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입었지만, 기절 효과에는 저항했습니다!`, 'log-monster');
+                                showFloatingText('RESIST', playerElement, 'buff');
+                            } else {
+                                player.isStunned = true;
+                                log(`💥 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입고 기절했습니다!`, 'log-monster');
+                                showFloatingText('STUN', playerElement, 'stun');
+                            }
                             break;
                         }
                         case 'drain': {
@@ -408,6 +421,12 @@ function monstersAttack() {
                             break;
                         }
                         case 'mp_drain': {
+                            // 상태이상 저항 체크
+                            if (Math.random() < player.debuffResistance) {
+                                log(`🛡️ 전리품 효과! ${monster.name}의 마력 흡수 효과에 저항했습니다!`, 'log-player');
+                                showFloatingText('RESIST', playerElement, 'buff');
+                                break; // 저항 성공 시 스킬 무효
+                            }
                             const drainedMp = skill.power;
                             player.mp = Math.max(0, player.mp - drainedMp);
                             const skillName = skill.name || '마력 흡수';
@@ -474,6 +493,15 @@ function endMonstersTurn() {
         if (player.defenseBuff.turns > 0) {
             player.defenseBuff.turns--;
         }
+
+        // 전리품 효과: 턴 종료 시 체력 회복
+        if (player.hpRegen > 0 && player.hp < player.maxHp) {
+            const healedAmount = Math.min(player.maxHp - player.hp, player.hpRegen);
+            player.hp += healedAmount;
+            log(`✨ 전리품 효과로 체력이 ${healedAmount}만큼 회복됩니다.`, 'log-system', { color: '#22c55e' });
+            showFloatingText(`+${healedAmount}`, document.getElementById('player-character'), 'heal');
+        }
+
         turn++;
         isPlayerTurn = true;
         toggleControls(true); // 플레이어 턴으로 전환하고 컨트롤 버튼 활성화
@@ -502,7 +530,7 @@ function executePowerAttack() {
     // 방어 태세 여부에 따라 총 MP 소모량 계산
     const mpCost = 15;
     const defenseMpCost = player.defenseStance ? 10 : 0;
-    const totalMpCost = mpCost + defenseMpCost;
+    const totalMpCost = Math.floor((mpCost + defenseMpCost) * player.mpCostMultiplier);
 
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
@@ -636,7 +664,7 @@ function executeSweepAttack() {
     // 방어 태세 여부에 따라 총 MP 소모량 계산
     const mpCost = 25;
     const defenseMpCost = player.defenseStance ? 10 : 0;
-    const totalMpCost = mpCost + defenseMpCost;
+    const totalMpCost = Math.floor((mpCost + defenseMpCost) * player.mpCostMultiplier);
 
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
@@ -859,6 +887,19 @@ function findNextTarget() {
     const livingMonsterIndex = monsters.findIndex(m => m.hp > 0);
     if (livingMonsterIndex !== -1) {
         player.targetIndex = livingMonsterIndex;
+    let maxHp = -1;
+    let nextTargetIndex = -1;
+
+    // 살아있는 몬스터 중에서 HP가 가장 높은 몬스터를 찾습니다.
+    monsters.forEach((monster, index) => {
+        if (monster.hp > 0 && monster.hp > maxHp) {
+            maxHp = monster.hp;
+            nextTargetIndex = index;
+        }
+    });
+
+    if (nextTargetIndex !== -1) {
+        player.targetIndex = nextTargetIndex;
     }
 }
 
@@ -894,8 +935,10 @@ function checkForLevelUp() {
     if (player.xp >= player.xpToNextLevel) {
         playSound('level-up');
         player.level++;
-        player.xp -= player.xpToNextLevel;
-        player.statPoints += 3;
+        player.xp -= player.xpToNextLevel; // 레벨업에 사용된 경험치 차감
+        const baseStatPoints = 3;
+        const totalStatPoints = baseStatPoints + player.bonusStatPointsPerLevel;
+        player.statPoints += totalStatPoints;
         player.xpToNextLevel = Math.floor(100 * Math.pow(1.3, player.level - 1)); // 다음 레벨업에 필요한 경험치 증가
 
         // 레벨업 시각 효과 및 애니메이션
@@ -919,7 +962,11 @@ function checkForLevelUp() {
         // --- 애니메이션 끝 ---
 
         log(`✨ LEVEL UP! ✨ 레벨 ${player.level} 달성!`, 'log-system', { fontSize: '24px', textShadow: '0 0 10px #fbbf24' });
-        log(`스탯 포인트를 3 획득했습니다!`, 'log-system');
+        if (player.bonusStatPointsPerLevel > 0) {
+            log(`스탯 포인트를 ${totalStatPoints} (기본 3 + 보너스 ${player.bonusStatPointsPerLevel}) 획득했습니다!`, 'log-system');
+        } else {
+            log(`스탯 포인트를 ${totalStatPoints} 획득했습니다!`, 'log-system');
+        }
         log('장비/스탯 창에서 포인트를 분배할 수 있습니다.', 'log-system');
     }
 }
@@ -972,7 +1019,6 @@ function nextFloor() {
     turn = 1;
     isPlayerTurn = true;
     monsters = [];
-    player.targetIndex = 0;
     
     // --- 플레이어 상태 회복 및 버프 턴 감소 ---
     player.hp = player.maxHp; // 다음 층 이동 시 체력은 완전 회복
@@ -1020,6 +1066,13 @@ function nextFloor() {
     
     // --- 새로운 층의 몬스터 생성 및 UI 업데이트 ---
     monsters = generateMonstersForFloor(floor);
+
+    // HP가 가장 높은 몬스터를 자동으로 타겟팅
+    if (monsters.length > 0) {
+        player.targetIndex = monsters.reduce((maxIndex, monster, currentIndex, arr) => {
+            return monster.hp > arr[maxIndex].hp ? currentIndex : maxIndex;
+        }, 0);
+    }
 
     updateUI();
     toggleControls(true);
@@ -1212,11 +1265,29 @@ function recalculatePlayerStats() {
     // 전리품 패시브 스탯 보너스 계산
     const lootBonuses = { str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0 };
     let lootGoldBonus = 0;
+
+    // 특수 능력치 초기화
+    player.critDamageBonus = 0;
+    player.mpCostMultiplier = 1;
+    player.hpRegen = 0;
+    player.bonusStatPointsPerLevel = 0;
+    player.debuffResistance = 0;
+
     player.lootInventory.forEach(loot => {
         if (loot.type === 'permanent_stat' && lootBonuses.hasOwnProperty(loot.stat)) {
             lootBonuses[loot.stat] += loot.value;
         } else if (loot.type === 'gold_bonus') {
             lootGoldBonus += loot.value;
+        } else if (loot.type === 'crit_damage_bonus') {
+            player.critDamageBonus += loot.value;
+        } else if (loot.type === 'mp_cost_reduction') {
+            player.mpCostMultiplier -= loot.value;
+        } else if (loot.type === 'hp_regen_per_turn') {
+            player.hpRegen += loot.value;
+        } else if (loot.type === 'bonus_stat_points') {
+            player.bonusStatPointsPerLevel += loot.value;
+        } else if (loot.type === 'debuff_resistance') {
+            player.debuffResistance += loot.value;
         }
     });
 
@@ -1238,7 +1309,7 @@ function recalculatePlayerStats() {
     player.maxMp = player.baseMaxMp + (finalMnd * 5);
     player.critChance = 11 + (finalLuk * 0.7) + player.critBuff.bonus;
     player.evasionChance = 4 + (finalAgi * 2);
-    player.critDamage = 2;
+    player.critDamage = 2 + player.critDamageBonus;
     player.goldBonus = 1 + (finalInt * 0.02) + lootGoldBonus;
     player.blackFlashChance = 0.008 + (finalFcs * 0.004);
     player.magicDamageBonus = finalMag * 2.0;
@@ -1394,6 +1465,12 @@ function startGame(loadedState = null) {
         // 새 게임
         // (player object는 startNewGame에서 초기화됨)
         monsters = generateMonstersForFloor(floor);
+        // HP가 가장 높은 몬스터를 자동으로 타겟팅
+        if (monsters.length > 0) {
+            player.targetIndex = monsters.reduce((maxIndex, monster, currentIndex, arr) => {
+                return monster.hp > arr[maxIndex].hp ? currentIndex : maxIndex;
+            }, 0);
+        }
     }
 
     // --- 데이터 호환성 및 무결성 보장 ---
