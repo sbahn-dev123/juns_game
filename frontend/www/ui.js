@@ -272,13 +272,29 @@ function showAllPotions() {
             const useIndex = itemGroup.originalIndexes[0];
             
             let emoji = '';
-            if (itemGroup.type === 'heal') emoji = '💊';
-            else if (itemGroup.type === 'buff') emoji = '🧪';
-            else if (itemGroup.type === 'critBuff') emoji = '🔮';
-            else if (itemGroup.type === 'mpPotion') emoji = '💧';
+            let description = '';
+
+            if (itemGroup.type === 'heal') {
+                emoji = '💊';
+                const healText = itemGroup.healAmount === 9999 ? '전체' : itemGroup.healAmount;
+                description = `(체력 ${healText} 회복)`;
+            } else if (itemGroup.type === 'buff') {
+                emoji = '🧪';
+                description = `(공격력 ${itemGroup.mult}배, ${itemGroup.turns}턴)`;
+            } else if (itemGroup.type === 'critBuff') {
+                emoji = '🔮';
+                description = `(치명타 +${itemGroup.bonus}%, ${itemGroup.turns}턴)`;
+            } else if (itemGroup.type === 'mpPotion') {
+                emoji = '💧';
+                const mpText = itemGroup.mpAmount === 9999 ? '전체' : itemGroup.mpAmount;
+                description = `(마나 ${mpText} 회복)`;
+            }
 
             itemEl.innerHTML = `
-                <div class="item-info">${emoji} ${itemGroup.name} (보유: ${itemGroup.count}개)</div>
+                <div class="item-info">
+                    ${emoji} ${itemGroup.name} (보유: ${itemGroup.count}개)<br>
+                    <span class="skill-desc" style="color: #f59e0b;">${description}</span>
+                </div>
                 <button class="btn-use" onclick="useInventoryItem(${useIndex})">사용</button>
             `;
             container.appendChild(itemEl);
