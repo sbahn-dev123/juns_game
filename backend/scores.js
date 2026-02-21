@@ -38,6 +38,7 @@ router.get('/', async (req, res) => {
                 $project: {
                     username: 1,
                     score: 1,
+                    date: 1,
                     country: { $arrayElemAt: ['$userDetails.country', 0] },
                     gameState: { $arrayElemAt: ['$gameDetails.gameState', 0] }
                 }
@@ -48,6 +49,7 @@ router.get('/', async (req, res) => {
         const formattedScores = topScores.map(score => ({
             username: score.username,
             score: score.score,
+            date: score.date,
             country: score.country,
             // Check if game state exists and player is alive to determine liveFloor
             liveFloor: (score.gameState && score.gameState.player && score.gameState.player.hp > 0)

@@ -619,6 +619,41 @@ function getFlagImgHtml(countryCode) {
 }
 
 /**
+ * 날짜 문자열을 "N분 전", "N시간 전" 등 상대적인 시간으로 변환합니다.
+ * @param {string} dateString - ISO 8601 형식의 날짜 문자열.
+ * @returns {string} - 변환된 상대 시간 문자열.
+ */
+function formatTimeAgo(dateString) {
+    if (!dateString) return '';
+
+    const now = new Date();
+    const past = new Date(dateString);
+    const seconds = Math.floor((now - past) / 1000);
+
+    let interval = seconds / 31536000; // 1년
+    if (interval > 1) {
+        return Math.floor(interval) + "년 전";
+    }
+    interval = seconds / 2592000; // 1달
+    if (interval > 1) {
+        return Math.floor(interval) + "개월 전";
+    }
+    interval = seconds / 86400; // 1일
+    if (interval > 1) {
+        return Math.floor(interval) + "일 전";
+    }
+    interval = seconds / 3600; // 1시간
+    if (interval > 1) {
+        return Math.floor(interval) + "시간 전";
+    }
+    interval = seconds / 60; // 1분
+    if (interval > 1) {
+        return Math.floor(interval) + "분 전";
+    }
+    return "방금 전";
+}
+
+/**
  * 서버에서 받은 스코어보드 데이터를 UI에 렌더링합니다.
  * @param {Array<object>} scores - `{ username: string, score: number, country: string }` 형태의 배열.
  */
@@ -700,11 +735,14 @@ function renderScoreboard(scores) {
             const rankDisplay = index === 0 ? '👑' : `#${index + 1}`;
             const rankColor = index === 0 ? '#ffd700' : '#fbbf24';
 
+            const timeAgo = formatTimeAgo(entry.date);
+
             itemEl.innerHTML = `
                 <div>
                     <span class="rank" style="color: ${rankColor};">${rankDisplay}</span> <span class="name">${flagHtml} ${entry.username}</span> <span class="score" style="margin-left: 8px;">(${entry.score} 층)</span>
                     ${progressHtml}
                 </div>
+                <div class="score-time" style="color: #9ca3af; font-size: 14px; align-self: center;">${timeAgo}</div>
             `;
             listEl.appendChild(itemEl);
         });
