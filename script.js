@@ -1459,6 +1459,7 @@ function startNewGame(isNew = false) {
 //** ============================================================ **//
 
 // API_URL은 index.html에 포함된 config.js에서 전역 변수(window.API_URL)로 설정됩니다.
+const API_URL = window.API_URL; // config.js에서 생성된 전역 변수를 상수로 할당
 
 /**
  * 로그인 상태인지 확인하는 함수

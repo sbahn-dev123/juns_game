@@ -79,23 +79,26 @@ app.get('/config.js', (req, res) => {
   // .env 파일의 NODE_ENV 값에 따라 API URL을 동적으로 설정합니다.
   const isProduction = process.env.NODE_ENV === 'production';
   const apiUrl = isProduction 
-    ? (process.env.PROD_API_URL || 'http://35.199.151.16//api') // 프로덕션 환경일 경우 .env의 PROD_API_URL 사용
+    ? (process.env.PROD_API_URL || 'http://35.199.151.16/api') // 프로덕션 환경일 경우 .env의 PROD_API_URL 사용
     : 'http://localhost:3000/api'; // 개발 환경일 경우 localhost 사용
 
   // 클라이언트에서 사용할 API_URL을 전역 변수로 설정하는 스크립트를 응답으로 보냅니다.
   res.send(`window.API_URL = "${apiUrl}";`);
 });
 
-// 정적 파일 제공 (HTML, CSS, 클라이언트 JS)
-app.use(express.static(path.join(__dirname, '')));
-
 // 관리자 페이지 라우트
 app.get('/admin', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'admin.html'));
 });
 
+// 정적 파일 제공 (HTML, CSS, 클라이언트 JS)
+// 이 미들웨어는 동적 라우트(/config.js, /admin) 뒤, 그리고 SPA 폴백 앞에 위치해야 합니다.
+app.use(express.static(path.join(__dirname, '')));
+
 // 그 외 모든 GET 요청에 대해 index.html을 제공 (Single Page Application)
-app.get(/^\/(?!api).*/, (req, res) => {
+// API, 동적 config, admin 페이지를 제외한 모든 GET 요청을 index.html로 리디렉션합니다.
+// 이는 클라이언트 사이드 라우팅(존재하는 경우)을 지원하고, 페이지 새로고침 시 404 오류를 방지합니다.
+app.get(/^\/(?!(api|config\.js|admin)).*/, (req, res) => {
     res.sendFile(path.resolve(__dirname, 'index.html'));
 });
 
