@@ -684,6 +684,9 @@ function showGameOverModal(score) {
     const modal = document.getElementById('game-over-modal');
     document.getElementById('final-score').innerText = score;
     modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.add('visible');
+    }, 10);
 }
 
 /**
@@ -691,7 +694,11 @@ function showGameOverModal(score) {
  */
 function closeGameOverModal() {
     const modal = document.getElementById('game-over-modal');
-    modal.style.display = 'none';
+    modal.classList.remove('visible');
+    // transition 애니메이션이 끝난 후 display를 none으로 변경합니다.
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 500); // CSS의 transition 시간과 일치해야 합니다.
 }
 
 /**

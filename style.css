@@ -895,6 +895,26 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .notice-date { font-size: 0.9em; color: #999; }
 .notice-summary { color: #ddd; }
 
+/* 게임 오버 모달 */
+#game-over-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85); /* 다른 모달보다 더 어둡게 */
+    display: none; /* JS로 제어 */
+    align-items: center;
+    justify-content: center; /* 중앙 정렬 */
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#game-over-modal.visible {
+    opacity: 1;
+}
+
 /* ==================== 9. 반응형 웹을 위한 미디어 쿼리 ==================== */
 
 /* 태블릿 (1200px 이하) */

@@ -312,6 +312,18 @@
         </div>
     </div>
 
+    <!-- 게임 오버 모달 -->
+    <div id="game-over-modal" style="display: none;">
+        <div class="login-content" style="max-width: 450px; text-align: center;">
+            <h2 style="color: #ef4444; font-size: 40px; text-shadow: 0 0 10px red;">GAME OVER</h2>
+            <p style="font-size: 24px; margin: 20px 0;">최종 점수: <span id="final-score">0</span>층</p>
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button class="btn-attack" style="flex: 1; font-size: 18px; padding: 15px;" onclick="handleNewGameFromGameOver()">새 게임</button>
+                <button class="btn-inventory" style="flex: 1; font-size: 18px; padding: 15px;" onclick="handleToMainFromGameOver()">메인으로</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 스크립트 파일 로드 -->
     <script src="data.js"></script>
     <script src="updates.js"></script> <!-- 업데이트 이력 데이터 -->
