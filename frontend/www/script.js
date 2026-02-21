@@ -1125,8 +1125,8 @@ function generateMonstersForFloor(floorNumber) {
 
         // 일반 몬스터 생성 로직
 
-        // 110층부터 일반 몬스터 스펙업 배율 계산
-        const difficultyMultiplier = (floorNumber >= 110) ? (1 + (floorNumber - 110) * 0.037) : 1;
+        // 100층부터 일반 몬스터 스펙업 배율 계산
+        const difficultyMultiplier = (floorNumber >= 100) ? (1 + (floorNumber - 100) * 0.0335) : 1;
 
         // --- 추가 몬스터 생성 로직 ---
         // 51층부터 30층마다 1마리씩, 순차적으로 강해지는 몬스터 추가
