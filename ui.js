@@ -813,8 +813,6 @@ function openInventoryModal(activeTab) {
     // --- 컨테이너 스타일 초기화 및 탭에 맞게 재설정 ---
     managementContainer.style.display = 'grid'; // 그리드를 기본값으로 재설정
     managementContainer.style.gridTemplateColumns = '';
-    managementContainer.style.width = '';
-    managementContainer.style.maxWidth = '';
     managementContainer.style.margin = '';
 
     switch (activeTab) {
@@ -824,10 +822,8 @@ function openInventoryModal(activeTab) {
             if (armorSection) armorSection.style.display = 'block';
             if (weaponSection) weaponSection.style.display = 'block';
             
-            // 장비 뷰에 맞게 그리드 조정
-            managementContainer.style.gridTemplateColumns = '1fr 1fr';
-            managementContainer.style.width = '100%';
-            managementContainer.style.maxWidth = '1800px'; // 장비창 UI 크기 확장
+            // 단일 뷰로 표시하기 위해 그리드 해제
+            managementContainer.style.display = 'block';
             break;
         case 'loot':
             if (modalTitleEl) modalTitleEl.innerText = '💎 전리품';

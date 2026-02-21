@@ -544,7 +544,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     flex-direction: column;
     align-items: center;
     justify-content: flex-start; /* 콘텐츠를 상단에 정렬 */
-    padding-top: 5vh; /* 상단 여백 추가 */
+    padding: 5vh 20px; /* 상하 및 좌우 여백을 추가하여 콘텐츠가 화면 가장자리에 닿지 않도록 함 */
     z-index: 20;
 }
 #current-equipment-display {
@@ -565,8 +565,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .equipment-container {
     display: flex;
     gap: 20px;
-    width: 80%;
-    max-width: 900px;
+    width: 100%;
+    /* max-width를 제거하여 항상 100% 너비를 사용하도록 함 */
 }
 .equipment-section {
     flex: 1;
@@ -586,9 +586,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
-    width: 130%;
-    max-width: 2300px; /* 모달 너비 확장 */
-    justify-content: center;
+    width: 100%; /* 컨테이너가 모달의 패딩 영역 내에서 100% 너비를 차지하도록 설정 */
+    /* max-width를 제거하여 항상 화면 너비에 맞게 표시되도록 함 */
 }
 .management-section {
     flex: 1;
