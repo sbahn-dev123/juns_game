@@ -1,0 +1,37 @@
+# Git and Docker configuration files
+# These are for development and build setup, not needed inside the final image.
+.git
+.gitignore
+.dockerignore
+docker-compose.yml
+Dockerfile
+
+# Documentation
+README.md
+
+# Dependency directories
+# These folders are large and should be generated inside the container
+# by running `npm install` during the build process.
+node_modules/
+frontend/node_modules/
+
+# Environment variables
+# This file contains secrets and should be injected at runtime, not built into the image.
+.env
+
+# Capacitor/Native mobile build artifacts
+# These are not needed for the web server deployment.
+frontend/android/
+frontend/ios/
+
+# Log files
+*.log
+npm-debug.log*
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE configuration files
+.vscode/
+.idea/
