@@ -656,6 +656,33 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .scoreboard-item .name { color: #60a5fa; }
 .scoreboard-item .score { font-weight: bold; }
 
+/* 스코어보드 섹션 헤더 스타일 */
+.scoreboard-header {
+    text-align: center;
+    color: #a78bfa;
+    margin: 15px 0 5px 0;
+    font-size: 16px;
+}
+
+/* 현재 진행 중인 게임 랭킹 아이템 스타일 */
+.scoreboard-item.current-run {
+    background-color: rgba(251, 191, 36, 0.1);
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+}
+
+/* 랭킹 1위 강조 스타일 */
+.scoreboard-item.top-ranker {
+    background-color: rgba(255, 215, 0, 0.15);
+    border: 1px solid #ffd700;
+    border-radius: 8px;
+}
+
+/* 스코어보드에서 내 최고기록 강조 스타일 */
+.scoreboard-item.current-user-score {
+    background-color: rgba(96, 165, 250, 0.1);
+}
+
 /* 국기 아이콘 스타일 */
 .flag-icon {
     vertical-align: middle; /* 텍스트와 수직 정렬 */

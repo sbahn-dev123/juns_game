@@ -10,18 +10,49 @@ const Score = require('./Score');
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        // 상위 20개의 점수를 찾고, 'user' 필드를 통해 'country' 정보를 함께 가져옵니다.
-        const topScores = await Score.find()
-            .sort({ score: -1 })
-            .limit(20)
-            .populate('user', 'country'); // 'user'는 Score 모델의 필드, 'country'는 가져올 User 모델의 필드입니다.
+        // Aggregation pipeline to get top scores and join with user and game data
+        const topScores = await Score.aggregate([
+            // 1. Sort by score and limit to top 20
+            { $sort: { score: -1 } },
+            { $limit: 20 },
+            // 2. Join with 'users' collection to get country
+            {
+                $lookup: {
+                    from: 'users', // The collection name for the User model
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'userDetails'
+                }
+            },
+            // 3. Join with 'games' collection to get live game state
+            {
+                $lookup: {
+                    from: 'gamestates', // The collection name for the GameState model
+                    localField: 'user', // field from the input documents (scores)
+                    foreignField: 'user',
+                    as: 'gameDetails'
+                }
+            },
+            // 4. Reshape the documents for the final output
+            {
+                $project: {
+                    username: 1,
+                    score: 1,
+                    country: { $arrayElemAt: ['$userDetails.country', 0] },
+                    gameState: { $arrayElemAt: ['$gameDetails.gameState', 0] }
+                }
+            }
+        ]);
 
         // 클라이언트에 보낼 데이터를 형식에 맞게 가공합니다.
         const formattedScores = topScores.map(score => ({
             username: score.username,
             score: score.score,
-            // 사용자가 삭제되었을 경우를 대비하여 예외 처리
-            country: score.user ? score.user.country : null,
+            country: score.country,
+            // Check if game state exists and player is alive to determine liveFloor
+            liveFloor: (score.gameState && score.gameState.player && score.gameState.player.hp > 0)
+                ? score.gameState.floor
+                : 0
         }));
 
         res.json(formattedScores);

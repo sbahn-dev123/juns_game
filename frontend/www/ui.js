@@ -625,22 +625,95 @@ function getFlagImgHtml(countryCode) {
 function renderScoreboard(scores) {
     const listEl = document.getElementById('scoreboard-list');
     listEl.innerHTML = '';
+    const currentUsername = localStorage.getItem('username');
+    const isMyGameActive = !isGameOver && floor > 1;
 
-    if (!scores || scores.length === 0) {
-        listEl.innerHTML = '<div class="scoreboard-item" style="justify-content: center;">기록된 점수가 없습니다.</div>';
-        return;
+    // 서버에서 liveFloor 데이터를 보내준다고 가정합니다.
+    // 1. 현재 진행 중인 게임 중 최고 기록 찾기
+    const liveGames = scores.filter(s => s.liveFloor && s.liveFloor > 0);
+    if (liveGames.length > 0) {
+        // liveFloor 기준으로 내림차순 정렬
+        liveGames.sort((a, b) => b.liveFloor - a.liveFloor);
+        const topLivePlayer = liveGames[0];
+
+        const headerEl = document.createElement('h4');
+        headerEl.className = 'scoreboard-header';
+        headerEl.innerText = '--- 실시간 최고 기록 ---';
+        listEl.appendChild(headerEl);
+
+        const flagHtml = getFlagImgHtml(topLivePlayer.country);
+        const liveRecordEl = document.createElement('div');
+        liveRecordEl.className = 'scoreboard-item current-run'; // 강조 스타일 재사용
+        
+        // 만약 실시간 1위가 '나'라면, 가장 정확한 로컬 'floor' 변수 사용
+        const liveFloor = (currentUsername && topLivePlayer.username === currentUsername && isMyGameActive) ? floor : topLivePlayer.liveFloor;
+
+        liveRecordEl.innerHTML = `
+            <div>
+                <span class="rank" style="color: #fde047;">🔥</span> <span class="name">${flagHtml} ${topLivePlayer.username}</span> <span class="score" style="color: #fde047; margin-left: 8px;">(${liveFloor}층 진행 중)</span>
+            </div>
+        `;
+        listEl.appendChild(liveRecordEl);
     }
 
-    scores.forEach((entry, index) => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'scoreboard-item';
-        const flagHtml = getFlagImgHtml(entry.country);
-        itemEl.innerHTML = `
-            <div><span class="rank">#${index + 1}</span> <span class="name">${flagHtml} ${entry.username}</span></div>
-            <div class="score">${entry.score} 층</div>
-        `;
-        listEl.appendChild(itemEl);
-    });
+    // 2. 명예의 전당 (TOP 10 최종 기록) 표시
+    if (scores && scores.length > 0) {
+        if (listEl.children.length > 0) { // 구분선 추가
+            const separator = document.createElement('hr');
+            separator.style.borderColor = '#444';
+            separator.style.margin = '12px 0';
+            separator.style.borderStyle = 'solid';
+            listEl.appendChild(separator);
+        }
+
+        const headerEl = document.createElement('h4');
+        headerEl.className = 'scoreboard-header';
+        headerEl.innerText = '--- 명예의 전당 (최종 기록) ---';
+        listEl.appendChild(headerEl);
+
+        const top10 = scores.slice(0, 10);
+
+        top10.forEach((entry, index) => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'scoreboard-item';
+
+            // 1위 강조
+            if (index === 0) {
+                itemEl.classList.add('top-ranker');
+            }
+            // 현재 로그인한 유저의 최고 기록을 강조 표시
+            if (currentUsername && entry.username === currentUsername) {
+                itemEl.classList.add('current-user-score');
+            }
+
+            const flagHtml = getFlagImgHtml(entry.country);
+
+            // 3. 랭커가 현재 게임을 진행 중인 경우, 그 기록을 옆에 표시
+            let progressHtml = '';
+            // 서버에서 받은 liveFloor 데이터 사용
+            if (entry.liveFloor && entry.liveFloor > 0) {
+                 // 만약 랭커가 '나'라면, 가장 정확한 로컬 'floor' 변수 사용
+                const liveFloor = (currentUsername && entry.username === currentUsername && isMyGameActive) ? floor : entry.liveFloor;
+                progressHtml = `<span class="score-progress" style="color: #fde047; margin-left: 8px;">(현재 ${liveFloor}층)</span>`;
+            }
+
+            const rankDisplay = index === 0 ? '👑' : `#${index + 1}`;
+            const rankColor = index === 0 ? '#ffd700' : '#fbbf24';
+
+            itemEl.innerHTML = `
+                <div>
+                    <span class="rank" style="color: ${rankColor};">${rankDisplay}</span> <span class="name">${flagHtml} ${entry.username}</span> <span class="score" style="margin-left: 8px;">(${entry.score} 층)</span>
+                    ${progressHtml}
+                </div>
+            `;
+            listEl.appendChild(itemEl);
+        });
+    }
+
+    // 표시할 내용이 아무것도 없을 경우
+    if (listEl.children.length === 0) {
+        listEl.innerHTML = '<div class="scoreboard-item" style="justify-content: center;">기록된 점수가 없습니다.</div>';
+    }
 }
 
 /**
