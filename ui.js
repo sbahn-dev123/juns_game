@@ -326,9 +326,12 @@ function renderStatUpModal() {
 
     // 전리품 보너스 계산 (미리보기용)
     const lootBonuses = { str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0 };
+    let lootGoldBonus = 0; // 골드 보너스 전리품을 위한 변수 추가
     player.lootInventory.forEach(loot => {
         if (loot.type === 'permanent_stat' && lootBonuses.hasOwnProperty(loot.stat)) {
             lootBonuses[loot.stat] += loot.value;
+        } else if (loot.type === 'gold_bonus') { // 골드 보너스 타입 처리
+            lootGoldBonus += loot.value;
         }
     });
 
@@ -338,7 +341,7 @@ function renderStatUpModal() {
     const currentMaxMp = player.baseMaxMp + ((player.mnd + lootBonuses.mnd) * 5);
     const currentCritChance = 11 + ((player.luk + lootBonuses.luk) * 0.7);
     const currentEvasionChance = 4 + ((player.agi + lootBonuses.agi) * 2);
-    const currentGoldBonus = 1 + ((player.int + lootBonuses.int) * 0.02);
+    const currentGoldBonus = 1 + ((player.int + lootBonuses.int) * 0.02) + lootGoldBonus;
     const currentBlackFlashChance = 0.008 + ((player.fcs + lootBonuses.fcs) * 0.004);
 
     // "임시" 값 (스탯 분배 후 + 전리품 효과 포함)
@@ -347,12 +350,12 @@ function renderStatUpModal() {
     const tempMaxMp = player.baseMaxMp + ((tempStats.mnd + lootBonuses.mnd) * 5);
     const tempCritChance = 11 + ((tempStats.luk + lootBonuses.luk) * 0.7);
     const tempEvasionChance = 4 + ((tempStats.agi + lootBonuses.agi) * 2);
-    const tempGoldBonus = 1 + ((tempStats.int + lootBonuses.int) * 0.02);
+    const tempGoldBonus = 1 + ((tempStats.int + lootBonuses.int) * 0.02) + lootGoldBonus;
     const tempBlackFlashChance = 0.008 + ((tempStats.fcs + lootBonuses.fcs) * 0.004);
 
     // --- 스킬 추가 피해 미리보기 계산 ---
-    const currentMagicDamageBonus = ((player.mag + lootBonuses.mag) * 3.5);
-    const tempMagicDamageBonus = ((tempStats.mag + lootBonuses.mag) * 3.5);
+    const currentMagicDamageBonus = ((player.mag + lootBonuses.mag) * 2.0);
+    const tempMagicDamageBonus = ((tempStats.mag + lootBonuses.mag) * 2.0);
 
     currentValuesEl.innerHTML = `
         공격력: ${currentAtk} → ${tempAtk} | 최대체력: ${currentMaxHp} → ${tempMaxHp}<br>

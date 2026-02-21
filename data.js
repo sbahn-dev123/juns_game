@@ -180,10 +180,10 @@ const critPotionList = [
 const statInfo = {
     str: { name: '힘', description: '공격력을 2 증가시킵니다.' },
     vit: { name: '체력', description: '최대 체력을 5 증가시킵니다.' },
-    mag: { name: '마력', description: '층 이동 시 MP 회복량을 3 증가시킵니다.' },
+    mag: { name: '마력', description: '스킬 추가 피해량을 2.0, 층 이동 시 MP 회복량을 2 증가시킵니다.' },
     mnd: { name: '정신력', description: '최대 MP를 5 증가시킵니다.' },
-    agi: { name: '민첩', description: '회피 확률 4%를 증가시킵니다.' },
-    int: { name: '지혜', description: '골드 획득량을 3% 증가시킵니다.' },
-    luk: { name: '집중', description: '치명타 확률을 0.1% 증가시킵니다.' },
-    fcs: { name: '고도의 집중', description: '흑섬 확률을 0.3% 증가시킵니다.'}
+    agi: { name: '민첩', description: '회피 확률을 2% 증가시킵니다.' },
+    int: { name: '지혜', description: '골드 획득량을 2% 증가시킵니다.' },
+    luk: { name: '집중', description: '치명타 확률을 0.7% 증가시킵니다.' },
+    fcs: { name: '고도의 집중', description: '흑섬 확률을 0.4% 증가시킵니다.'}
 };

@@ -981,7 +981,7 @@ function nextFloor() {
         .filter(loot => loot.type === 'permanent_stat' && loot.stat === 'mag')
         .reduce((sum, loot) => sum + loot.value, 0);
     const finalMag = player.mag + lootMagBonus;
-    const totalMpRecovery = baseMpRecovery + Math.floor(finalMag * 2.5); // 마력 1당 2.5 MP 추가 회복
+    const totalMpRecovery = baseMpRecovery + Math.floor(finalMag * 2); // 마력 1당 2 MP 추가 회복
     player.mp = Math.min(player.maxMp, player.mp + totalMpRecovery);
     log(`다음 층으로 이동하며 마나가 ${totalMpRecovery}만큼 회복되었습니다.`, 'log-system');
 
@@ -1236,7 +1236,7 @@ function recalculatePlayerStats() {
     player.critDamage = 2;
     player.goldBonus = 1 + (finalInt * 0.02) + lootGoldBonus;
     player.blackFlashChance = 0.008 + (finalFcs * 0.004);
-    player.magicDamageBonus = finalMag * 3.5;
+    player.magicDamageBonus = finalMag * 2.0;
 
     // 흑섬 버프 적용
     if (player.blackFlashBuff.active) {
