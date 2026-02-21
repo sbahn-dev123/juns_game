@@ -47,49 +47,49 @@ const monsterList = [
 //* 중간 보스 몬스터 도감: 10층, 30층, 50층 등 20층 간격으로 등장하는 특별한 몬스터입니다.
 const midBossList = [
     // 10층 보스
-    { name: "오크 족장", emoji: "🗿", hp: 100, atk: 15, xp: 380, dropCoins: 200, specialDrop: { type: 'permanent_stat', stat: 'str', value: 5, name: '족장의 전투도끼', sellPrice: 700 } },
+    { name: "오크 족장", emoji: "🗿", hp: 115, atk: 22, xp: 380, dropCoins: 200, specialDrop: { type: 'permanent_stat', stat: 'str', value: 5, name: '족장의 전투도끼', sellPrice: 700 } },
     // 30층 보스
-    { name: "미노타우르스", emoji: "🐃", hp: 420, atk: 38, xp: 1400, dropCoins: 900, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 7, name: '미노타우르스의 돌심장', sellPrice: 1800 } },
+    { name: "미노타우르스", emoji: "🐃", hp: 480, atk: 42, xp: 1400, dropCoins: 900, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 7, name: '미노타우르스의 돌심장', sellPrice: 1800 } },
     // 50층 보스
-    { name: "키메라", emoji: "🦁", hp: 1200, atk: 95, xp: 3500, dropCoins: 2200, specialDrop: { type: 'xp_bonus', value: 0.30, name: '키메라의 지혜', sellPrice: 4000 } },
+    { name: "키메라", emoji: "🦁", hp: 1380, atk: 105, xp: 3500, dropCoins: 2200, specialDrop: { type: 'xp_bonus', value: 0.30, name: '키메라의 지혜', sellPrice: 4000 } },
     // 70층 보스
-    { name: "나가 여왕", emoji: "🐍", hp: 1700, atk: 115, xp: 5500, dropCoins: 3400, specialDrop: { type: 'permanent_stat', stat: 'mnd', value: 10, name: '나가 여왕의 영롱한 비늘', sellPrice: 6500 } },
+    { name: "나가 여왕", emoji: "🐍", hp: 1950, atk: 127, xp: 5500, dropCoins: 3400, specialDrop: { type: 'permanent_stat', stat: 'mnd', value: 10, name: '나가 여왕의 영롱한 비늘', sellPrice: 6500 } },
     // 90층 보스
-    { name: "언데드 소서러", emoji: "💀", hp: 2300, atk: 125, xp: 9000, dropCoins: 5500, specialDrop: { type: 'permanent_stat', stat: 'int', value: 10, name: '리치의 영혼석', sellPrice: 10000 } },
+    { name: "언데드 소서러", emoji: "💀", hp: 2650, atk: 138, xp: 9000, dropCoins: 5500, specialDrop: { type: 'permanent_stat', stat: 'int', value: 10, name: '리치의 영혼석', sellPrice: 10000 } },
     // 110층 보스
-    { name: "용암 골렘", emoji: "🌋", hp: 3100, atk: 140, xp: 14500, dropCoins: 8500, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 15, name: '펄펄 끓는 용암의 핵', sellPrice: 15000 } },
+    { name: "용암 골렘", emoji: "🌋", hp: 3570, atk: 154, xp: 14500, dropCoins: 8500, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 15, name: '펄펄 끓는 용암의 핵', sellPrice: 15000 } },
     // 130층 보스
-    { name: "사막의 폭군", emoji: "🦂", hp: 3900, atk: 165, xp: 20000, dropCoins: 12500, specialDrop: { type: 'permanent_stat', stat: 'agi', value: 15, name: '사막의 신기루', sellPrice: 21000 } },
+    { name: "사막의 폭군", emoji: "🦂", hp: 4490, atk: 182, xp: 20000, dropCoins: 12500, specialDrop: { type: 'permanent_stat', stat: 'agi', value: 15, name: '사막의 신기루', sellPrice: 21000 } },
     // 150층 보스
-    { name: "심해의 지배자", emoji: "🦑", hp: 5400, atk: 210, xp: 30000, dropCoins: 19000, specialDrop: { type: 'permanent_stat', stat: 'mnd', value: 18, name: '심해 지배자의 왕관', sellPrice: 33000 } },
+    { name: "심해의 지배자", emoji: "🦑", hp: 6210, atk: 231, xp: 30000, dropCoins: 19000, specialDrop: { type: 'permanent_stat', stat: 'mnd', value: 18, name: '심해 지배자의 왕관', sellPrice: 33000 } },
     // 170층 보스
-    { name: "별의 포식자", emoji: "🌠", hp: 7200, atk: 270, xp: 46000, dropCoins: 28000, specialDrop: { type: 'permanent_stat', stat: 'fcs', value: 18, name: '삼켜진 별의 조각', sellPrice: 48000 } },
+    { name: "별의 포식자", emoji: "🌠", hp: 8280, atk: 297, xp: 46000, dropCoins: 28000, specialDrop: { type: 'permanent_stat', stat: 'fcs', value: 18, name: '삼켜진 별의 조각', sellPrice: 48000 } },
     // 190층 보스
-    { name: "차원의 방랑자", emoji: "💠", hp: 9200, atk: 350, xp: 68000, dropCoins: 46000, specialDrop: { type: 'permanent_stat', stat: 'luk', value: 18, name: '뒤틀린 차원의 균열', sellPrice: 72000 } },
+    { name: "차원의 방랑자", emoji: "💠", hp: 10580, atk: 385, xp: 68000, dropCoins: 46000, specialDrop: { type: 'permanent_stat', stat: 'luk', value: 18, name: '뒤틀린 차원의 균열', sellPrice: 72000 } },
 ];
 
 //* 메인 보스 몬스터 도감: 20층, 40층, 60층 등 20층마다 등장하는 강력한 몬스터입니다.
 const bossList = [
     // 20층 보스
-    { name: "거대 고블린 왕", emoji: "👑", hp: 300, atk: 27, xp: 1000, dropCoins: 650, skill: { type: 'stun', chance: 0.32, name: '왕의 철퇴' }, specialDrop: { type: 'gold_bonus', value: 0.30, name: '빛나는 탐욕의 왕관', sellPrice: 2000 } },
+    { name: "거대 고블린 왕", emoji: "👑", hp: 345, atk: 30, xp: 1000, dropCoins: 650, skill: { type: 'stun', chance: 0.32, name: '왕의 철퇴' }, specialDrop: { type: 'gold_bonus', value: 0.30, name: '빛나는 탐욕의 왕관', sellPrice: 2000 } },
     // 40층 보스
-    { name: "어둠의 기사", emoji: "⚔️", hp: 650, atk: 52, xp: 1900, dropCoins: 1200, skill: { type: 'charge_attack', chance: 0.4, power: 2.5, name: '어둠의 검격' }, specialDrop: { type: 'crit_damage_bonus', value: 0.25, name: '기사의 부서진 검', sellPrice: 3000 } },
+    { name: "어둠의 기사", emoji: "⚔️", hp: 750, atk: 57, xp: 1900, dropCoins: 1200, skill: { type: 'charge_attack', chance: 0.4, power: 2.5, name: '어둠의 검격' }, specialDrop: { type: 'crit_damage_bonus', value: 0.25, name: '기사의 부서진 검', sellPrice: 3000 } },
     // 60층 보스
-    { name: "고대 드래곤", emoji: "🐉", hp: 1800, atk: 110, xp: 4500, dropCoins: 3000, skill: { type: 'charge_attack', chance: 0.45, power: 3, name: '고대의 드래곤 브레스' }, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 18, name: '고대 드래곤의 굳건한 심장', sellPrice: 6000 } },
+    { name: "고대 드래곤", emoji: "🐉", hp: 2070, atk: 121, xp: 4500, dropCoins: 3000, skill: { type: 'charge_attack', chance: 0.45, power: 3, name: '고대의 드래곤 브레스' }, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 18, name: '고대 드래곤의 굳건한 심장', sellPrice: 6000 } },
     // 80층 보스
-    { name: "심연의 군주", emoji: "😈", hp: 2700, atk: 130, xp: 7000, dropCoins: 4500, skill: { type: 'mp_drain', chance: 0.55, power: 100, name: '깊은 심연의 속삭임' }, specialDrop: { type: 'hp_regen_per_turn', value: 15, name: '심연의 재생 반지', sellPrice: 9000 } },
+    { name: "심연의 군주", emoji: "😈", hp: 3105, atk: 143, xp: 7000, dropCoins: 4500, skill: { type: 'mp_drain', chance: 0.55, power: 100, name: '깊은 심연의 속삭임' }, specialDrop: { type: 'hp_regen_per_turn', value: 15, name: '심연의 재생 반지', sellPrice: 9000 } },
     // 100층 보스
-    { name: "세계의 파괴자", emoji: "☄️", hp: 3400, atk: 140, xp: 12000, dropCoins: 7000, skill: { type: 'charge_attack', chance: 0.55, power: 3.8, name: '멸망의 운석' }, specialDrop: { type: 'permanent_stat', stat: 'str', value: 18, name: '세계 파괴자의 핵', sellPrice: 15000 } },
+    { name: "세계의 파괴자", emoji: "☄️", hp: 3910, atk: 154, xp: 12000, dropCoins: 7000, skill: { type: 'charge_attack', chance: 0.55, power: 3.8, name: '멸망의 운석' }, specialDrop: { type: 'permanent_stat', stat: 'str', value: 18, name: '세계 파괴자의 핵', sellPrice: 15000 } },
     // 120층 보스
-    { name: "타락한 천사", emoji: "👼", hp: 4500, atk: 160, xp: 17000, dropCoins: 10000, skill: { type: 'drain', chance: 0.45, name: '타락의 권능' }, specialDrop: { type: 'bonus_stat_points', value: 1, name: '타락한 천사의 축복', sellPrice: 20000 } },
+    { name: "타락한 천사", emoji: "👼", hp: 5175, atk: 176, xp: 17000, dropCoins: 10000, skill: { type: 'drain', chance: 0.45, name: '타락의 권능' }, specialDrop: { type: 'bonus_stat_points', value: 1, name: '타락한 천사의 축복', sellPrice: 20000 } },
     // 140층 보스
-    { name: "강철의 거신병", emoji: "🤖", hp: 6000, atk: 195, xp: 26000, dropCoins: 15000, skill: { type: 'stun', chance: 0.6, name: '초진동 강철 주먹' }, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 25, name: '오버클럭된 거신병의 동력원', sellPrice: 28000 } },
+    { name: "강철의 거신병", emoji: "🤖", hp: 6900, atk: 215, xp: 26000, dropCoins: 15000, skill: { type: 'stun', chance: 0.6, name: '초진동 강철 주먹' }, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 25, name: '오버클럭된 거신병의 동력원', sellPrice: 28000 } },
     // 160층 보스
-    { name: "우주 장로", emoji: "🐙", hp: 8300, atk: 245, xp: 37000, dropCoins: 22000, skill: { type: 'charge_attack', chance: 0.65, power: 4.2, name: '우주 붕괴' }, specialDrop: { type: 'mp_cost_reduction', value: 0.15, name: '우주의 근원', sellPrice: 45000 } },
+    { name: "우주 장로", emoji: "🐙", hp: 9545, atk: 270, xp: 37000, dropCoins: 22000, skill: { type: 'charge_attack', chance: 0.65, power: 4.2, name: '우주 붕괴' }, specialDrop: { type: 'mp_cost_reduction', value: 0.15, name: '우주의 근원', sellPrice: 45000 } },
     // 180층 보스
-    { name: "혼돈의 화신", emoji: "🌀", hp: 10500, atk: 310, xp: 54000, dropCoins: 34000, skill: { type: 'mp_drain', chance: 0.75, power: 250, name: '혼돈의 소용돌이' }, specialDrop: { type: 'debuff_resistance', value: 0.30, name: '혼돈의 방패', sellPrice: 65000 } },
+    { name: "혼돈의 화신", emoji: "🌀", hp: 12075, atk: 341, xp: 54000, dropCoins: 34000, skill: { type: 'mp_drain', chance: 0.75, power: 250, name: '혼돈의 소용돌이' }, specialDrop: { type: 'debuff_resistance', value: 0.30, name: '혼돈의 방패', sellPrice: 65000 } },
     // 200층 보스
-    { name: "종언의 창조주", emoji: "🌌", hp: 15000, atk: 400, xp: 85000, dropCoins: 60000, skill: { type: 'charge_attack', chance: 0.8, power: 5, name: '초신성' }, specialDrop: { type: 'permanent_stat', stat: 'fcs', value: 50, name: '창조주의 절대 권능', sellPrice: 100000 } },
+    { name: "종언의 창조주", emoji: "🌌", hp: 17250, atk: 440, xp: 85000, dropCoins: 60000, skill: { type: 'charge_attack', chance: 0.8, power: 5, name: '초신성' }, specialDrop: { type: 'permanent_stat', stat: 'fcs', value: 50, name: '창조주의 절대 권능', sellPrice: 100000 } },
 ];
 
 //* 상점에서 판매하는 방어구 목록: 티어가 높아질수록 성능과 가격이 증가합니다.
