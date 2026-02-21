@@ -1023,6 +1023,11 @@ function nextFloor() {
 
     updateUI();
     toggleControls(true);
+
+    // 자동 저장 기능: 다음 층으로 이동 시 게임 상태를 자동으로 저장합니다.
+    if (isLoggedIn()) {
+        saveGame(true); // UI를 블록하지 않도록 await 없이 호출
+    }
 }
 
 /**
@@ -1592,10 +1597,12 @@ async function saveGame(isSilent = false) {
         const result = await handleApiResponse(response);
         if (result === null) return; // 인증 오류 처리됨
 
-        log("💾 게임 상태를 서버에 저장했습니다.", "log-system");
         if (!isSilent) {
+            log("💾 게임 상태를 서버에 저장했습니다.", "log-system");
             alert("게임이 저장되었습니다. 시작 화면으로 돌아갑니다.");
             showStartMenu();
+        } else {
+            log("💾 자동 저장 완료.", "log-system");
         }
     } catch (error) {
         if (!isSilent) alert(`게임 저장 중 오류가 발생했습니다: ${error.message}`);
