@@ -88,6 +88,11 @@ app.use('/api/users', require(path.join(__dirname, 'users')));
 app.use('/api/game', require(path.join(__dirname, 'game')));
 app.use('/api/scores', require(path.join(__dirname, 'scores')));
 
+// 관리자 페이지 라우트. 정적 파일 및 SPA 폴백보다 먼저 위치해야 합니다.
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'admin.html'));
+});
+
 //! ============================================================
 //! 동적 설정 제공
 //! ============================================================
