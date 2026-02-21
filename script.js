@@ -1381,8 +1381,6 @@ function buyItem(type, cost, data) {
  * @param {object|null} [loadedState=null] - 불러온 게임 상태. null이면 초기 상태로 시작.
  */
 function startGame(loadedState = null) {
-    // 플레이어 스탯을 초기 계산하고, 체력/마나를 가득 채웁니다.
-    recalculatePlayerStats();
     if (loadedState) {
         // 불러온 데이터로 게임 상태 복원
         Object.assign(player, loadedState.player);
@@ -1394,9 +1392,26 @@ function startGame(loadedState = null) {
         log("💾 저장된 게임을 이어합니다.", "log-system");
     } else {
         // 새 게임
+        // (player object는 startNewGame에서 초기화됨)
+        monsters = generateMonstersForFloor(floor);
+    }
+
+    // --- 데이터 호환성 및 무결성 보장 ---
+    // 불러온 데이터나 초기 데이터의 배열 속성이 undefined가 되지 않도록 보장합니다.
+    // 이는 이전 버전의 저장 파일과 호환성을 유지하기 위함입니다.
+    player.inventory = player.inventory || [];
+    player.armorInventory = player.armorInventory || [];
+    player.weaponInventory = player.weaponInventory || [];
+    player.lootInventory = player.lootInventory || [];
+    monsters = monsters || [];
+
+    // 플레이어 스탯을 현재 상태(장비, 전리품 등)에 맞게 재계산합니다.
+    recalculatePlayerStats();
+
+    // 새 게임일 경우에만 체력/마나를 가득 채웁니다. (불러오기 시에는 저장된 값 유지)
+    if (!loadedState) {
         player.hp = player.maxHp;
         player.mp = player.maxMp;
-        monsters = generateMonstersForFloor(floor);
     }
     updateUI();
     toggleControls(isPlayerTurn);
@@ -1443,8 +1458,7 @@ function startNewGame(isNew = false) {
 //** 8. 서버 통신
 //** ============================================================ **//
 
-/** @const {string} 백엔드 API 서버의 기본 URL */
-const API_URL = '/api';
+// API_URL은 index.html에 포함된 config.js에서 전역 변수(window.API_URL)로 설정됩니다.
 
 /**
  * 로그인 상태인지 확인하는 함수
