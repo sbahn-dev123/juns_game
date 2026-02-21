@@ -714,7 +714,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* 로그인/회원가입/프로필수정 공통 모달 스타일 */
 #login-modal,
 #register-modal,
-#edit-profile-modal {
+#edit-profile-modal,
+#find-account-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -731,7 +732,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 #login-modal.visible,
 #register-modal.visible,
-#edit-profile-modal.visible {
+#edit-profile-modal.visible,
+#find-account-modal.visible {
     opacity: 1;
 }
 
@@ -750,12 +752,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 #login-modal.visible .login-content,
 #register-modal.visible .login-content,
-#edit-profile-modal.visible .login-content {
+#edit-profile-modal.visible .login-content,
+#find-account-modal.visible .login-content {
     transform: scale(1);
 }
 
 #login-form,
-#register-form {
+#register-form,
+#find-account-form {
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -781,6 +785,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 #login-form input,
 #register-form input,
 #edit-profile-form input,
+#find-account-form input,
 #login-form select,
 #register-form select,
 #edit-profile-form select {
@@ -789,7 +794,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 #login-form input[type="date"],
 #register-form input[type="date"],
-#edit-profile-form input[type="date"] { color-scheme: dark; }
+#edit-profile-form input[type="date"],
+#find-account-form input[type="date"] { color-scheme: dark; }
 .login-buttons { display: flex; gap: 10px; }
 .login-buttons button {
     flex: 1;
@@ -809,6 +815,18 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     cursor: pointer;
 }
 .switch-auth-msg a:hover { text-decoration: underline; }
+
+/* 아이디/비번찾기 결과 표시 영역 */
+#find-account-result {
+    display: none; /* JS로 제어 */
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: rgba(0,0,0,0.2);
+    font-weight: bold;
+    line-height: 1.5;
+    word-break: break-all; /* 긴 비밀번호 줄바꿈 처리 */
+}
 
 /* 스코어보드 팝업 모달 스타일 */
 #scoreboard-modal {

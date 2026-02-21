@@ -528,6 +528,139 @@ function switchToLoginModal(event) {
 }
 
 /**
+ * 아이디/비밀번호 찾기 모달을 엽니다.
+ */
+function openFindAccountModal() {
+    playSound('click');
+    const modal = document.getElementById('find-account-modal');
+    
+    // 이전 입력값과 결과 메시지 초기화
+    document.getElementById('find-email').value = '';
+    document.getElementById('find-birthdate').value = '';
+    const resultEl = document.getElementById('find-account-result');
+    resultEl.style.display = 'none';
+    resultEl.innerText = '';
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('visible'), 10);
+}
+
+/**
+ * 아이디/비밀번호 찾기 모달을 닫습니다.
+ */
+function closeFindAccountModal() {
+    playSound('click');
+    const modal = document.getElementById('find-account-modal');
+    modal.classList.remove('visible');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        document.getElementById('find-account-result').style.display = 'none';
+    }, 300);
+}
+
+/**
+ * 로그인 창에서 아이디/비밀번호 찾기 창으로 전환합니다.
+ */
+function switchToFindAccountModal(event) {
+    event.preventDefault();
+    closeLoginModal();
+    setTimeout(openFindAccountModal, 350);
+}
+
+/**
+ * 아이디/비밀번호 찾기 창에서 로그인 창으로 전환합니다.
+ */
+function switchToLoginFromFind(event) {
+    event.preventDefault();
+    closeFindAccountModal();
+    setTimeout(openLoginModal, 350);
+}
+
+/**
+ * 이메일과 생년월일로 아이디를 찾는 요청을 보냅니다.
+ */
+async function handleFindId() {
+    const email = document.getElementById('find-email').value;
+    const birthdate = document.getElementById('find-birthdate').value;
+    const resultEl = document.getElementById('find-account-result');
+
+    if (!email || !birthdate) {
+        resultEl.style.display = 'block';
+        resultEl.style.color = '#ef4444'; // red
+        resultEl.innerText = '이메일과 생년월일을 모두 입력해주세요.';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${window.API_URL}/users/find-id`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, birthdate }),
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            resultEl.style.display = 'block';
+            resultEl.style.color = '#22c55e'; // green
+            resultEl.innerText = `회원님의 아이디는 [ ${data.username} ] 입니다.`;
+        } else {
+            resultEl.style.display = 'block';
+            resultEl.style.color = '#ef4444'; // red
+            resultEl.innerText = data.message || '일치하는 사용자 정보가 없습니다.';
+        }
+    } catch (error) {
+        console.error('아이디 찾기 요청 오류:', error);
+        resultEl.style.display = 'block';
+        resultEl.style.color = '#ef4444';
+        resultEl.innerText = '요청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+    }
+}
+
+/**
+ * 이메일과 생년월일로 비밀번호를 초기화하는 요청을 보냅니다.
+ */
+async function handleResetPassword() {
+    const email = document.getElementById('find-email').value;
+    const birthdate = document.getElementById('find-birthdate').value;
+    const resultEl = document.getElementById('find-account-result');
+
+    if (!email || !birthdate) {
+        resultEl.style.display = 'block';
+        resultEl.style.color = '#ef4444';
+        resultEl.innerText = '이메일과 생년월일을 모두 입력해주세요.';
+        return;
+    }
+    
+    if (!confirm('비밀번호를 초기화하시겠습니까?\n초기화된 비밀번호는 화면에 표시됩니다.\n로그인 후 반드시 비밀번호를 변경해주세요.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${window.API_URL}/users/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, birthdate }),
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            resultEl.style.display = 'block';
+            resultEl.style.color = '#fbbf24'; // yellow
+            resultEl.innerHTML = `새로운 비밀번호는 [ <span style="user-select: text; color: white;">${data.newPassword}</span> ] 입니다.<br>로그인 후 반드시 비밀번호를 변경해주세요.`;
+        } else {
+            resultEl.style.display = 'block';
+            resultEl.style.color = '#ef4444';
+            resultEl.innerText = data.message || '일치하는 사용자 정보가 없습니다.';
+        }
+    } catch (error) {
+        console.error('비밀번호 초기화 요청 오류:', error);
+        resultEl.style.display = 'block';
+        resultEl.style.color = '#ef4444';
+        resultEl.innerText = '요청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+    }
+}
+
+/**
  * 회원정보 수정 모달을 엽니다.
  * - 모달을 열기 전에 서버에서 현재 사용자 정보를 가져와 폼을 채웁니다.
  */

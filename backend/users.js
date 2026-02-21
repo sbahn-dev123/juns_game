@@ -241,4 +241,68 @@ router.delete('/admin/:id', admin, async (req, res) => {
     }
 });
 
+/**
+ * POST /api/users/find-id
+ * 이메일과 생년월일로 아이디를 찾습니다.
+ */
+router.post('/find-id', async (req, res) => {
+    const { email, birthdate } = req.body;
+
+    if (!email || !birthdate) {
+        return res.status(400).json({ success: false, message: '이메일과 생년월일을 모두 입력해주세요.' });
+    }
+
+    try {
+        const user = await User.findOne({ email, birthdate });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: '일치하는 사용자 정보가 없습니다.' });
+        }
+
+        res.json({ success: true, username: user.username });
+
+    } catch (error) {
+        console.error('아이디 찾기 중 서버 오류:', error);
+        res.status(500).json({ success: false, message: '서버에서 오류가 발생했습니다.' });
+    }
+});
+
+/**
+ * POST /api/users/reset-password
+ * 이메일과 생년월일로 비밀번호를 초기화합니다.
+ */
+router.post('/reset-password', async (req, res) => {
+    const { email, birthdate } = req.body;
+
+    if (!email || !birthdate) {
+        return res.status(400).json({ success: false, message: '이메일과 생년월일을 모두 입력해주세요.' });
+    }
+
+    try {
+        const user = await User.findOne({ email, birthdate });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: '일치하는 사용자 정보가 없습니다.' });
+        }
+
+        // 1. 8자리의 임시 비밀번호 생성
+        const newPassword = Math.random().toString(36).slice(-8);
+
+        // 2. 비밀번호를 안전하게 해싱
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // 3. DB에 해시된 비밀번호로 업데이트
+        user.password = hashedPassword;
+        await user.save();
+
+        // 4. 생성된 임시 비밀번호(평문)를 프론트엔드로 전송
+        res.json({ success: true, newPassword: newPassword });
+
+    } catch (error) {
+        console.error('비밀번호 초기화 중 서버 오류:', error);
+        res.status(500).json({ success: false, message: '서버에서 오류가 발생했습니다.' });
+    }
+});
+
 module.exports = router;

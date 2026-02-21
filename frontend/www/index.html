@@ -222,8 +222,31 @@
                 <div id="login-error-msg" style="color: #ef4444; text-align: center; display: none;"></div>
                 <button type="button" class="btn-attack" style="padding: 15px; font-size: 18px;" onclick="handleLogin()">로그인</button>
                 <p class="switch-auth-msg">아직 회원이 아니신가요? <a href="#" onclick="switchToRegisterModal(event)">회원가입</a></p>
+                <p class="switch-auth-msg" style="margin-top: 8px;">
+                    <a href="#" onclick="switchToFindAccountModal(event)">아이디/비밀번호를 잊으셨나요?</a>
+                </p>
             </div>
             <button class="modal-close-btn" onclick="closeLoginModal()">닫기</button>
+        </div>
+    </div>
+
+    <!-- 아이디/비밀번호 찾기 모달 -->
+    <div id="find-account-modal" style="display: none;">
+        <div class="login-content">
+            <div class="shop-title">아이디/비밀번호 찾기</div>
+            <div id="find-account-form">
+                <input type="email" id="find-email" placeholder="가입한 이메일" required>
+                <input type="text" id="find-birthdate" placeholder="생년월일 (YYYY-MM-DD)" onfocus="(this.type='date')" onblur="(this.type='text')" required>
+                <div id="find-account-result" style="display: none;"></div>
+                <div class="login-buttons">
+                    <button class="btn-buff" onclick="handleFindId()">아이디 찾기</button>
+                    <button class="btn-attack" onclick="handleResetPassword()">비밀번호 초기화</button>
+                </div>
+                <p class="switch-auth-msg">
+                    <a href="#" onclick="switchToLoginFromFind(event)">로그인으로 돌아가기</a>
+                </p>
+            </div>
+            <button class="modal-close-btn" onclick="closeFindAccountModal()">닫기</button>
         </div>
     </div>
 
