@@ -40,7 +40,8 @@ router.get('/', async (req, res) => {
                     score: 1,
                     date: 1,
                     country: { $arrayElemAt: ['$userDetails.country', 0] },
-                    gameState: { $arrayElemAt: ['$gameDetails.gameState', 0] }
+                    gameState: { $arrayElemAt: ['$gameDetails.gameState', 0] },
+                    liveDate: { $arrayElemAt: ['$gameDetails.last_saved', 0] } // Get the save date of the live game
                 }
             }
         ]);
@@ -54,7 +55,8 @@ router.get('/', async (req, res) => {
             // Check if game state exists and player is alive to determine liveFloor
             liveFloor: (score.gameState && score.gameState.player && score.gameState.player.hp > 0)
                 ? score.gameState.floor
-                : 0
+                : 0,
+            liveDate: score.liveDate // Pass the live game's save date
         }));
 
         res.json(formattedScores);

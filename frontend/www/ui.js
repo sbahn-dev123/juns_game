@@ -683,10 +683,13 @@ function renderScoreboard(scores) {
         // 만약 실시간 1위가 '나'라면, 가장 정확한 로컬 'floor' 변수 사용
         const liveFloor = (currentUsername && topLivePlayer.username === currentUsername && isMyGameActive) ? floor : topLivePlayer.liveFloor;
 
+        const timeAgo = formatTimeAgo(topLivePlayer.liveDate);
+
         liveRecordEl.innerHTML = `
             <div>
                 <span class="rank" style="color: #fde047;">🔥</span> <span class="name">${flagHtml} ${topLivePlayer.username}</span> <span class="score" style="color: #fde047; margin-left: 8px;">(${liveFloor}층 진행 중)</span>
             </div>
+            <div class="score-time" style="color: #9ca3af; font-size: 14px; align-self: center;">${timeAgo}</div>
         `;
         listEl.appendChild(liveRecordEl);
     }
