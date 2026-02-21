@@ -884,9 +884,6 @@ function useInventoryItem(index) {
  * 현재 타겟 몬스터가 죽었을 경우, 다음 살아있는 몬스터를 자동으로 타겟으로 지정하는 함수.
  */
 function findNextTarget() {
-    const livingMonsterIndex = monsters.findIndex(m => m.hp > 0);
-    if (livingMonsterIndex !== -1) {
-        player.targetIndex = livingMonsterIndex;
     let maxHp = -1;
     let nextTargetIndex = -1;
 
