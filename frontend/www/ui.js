@@ -179,7 +179,7 @@ function showMainControls() {
     if (isGameOver) return;
     const controlsPanel = document.getElementById('controls-panel');
     controlsPanel.classList.remove('skill-view');
-    const saveButton = isLoggedIn() ? `<button class="btn-buff" onclick="saveGame()">💾 저장</button>` : `<button class="btn-buff" disabled title="로그인 시 사용 가능">💾 저장</button>`;
+    const saveButton = isLoggedIn() ? `<button class="btn-buff" onclick="saveGame()">💾 저장&종료</button>` : `<button class="btn-buff" onclick="goHomeAndConfirm()">💾 홈으로</button>`;
     controlsPanel.innerHTML = `
         <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬</button>
         <button class="btn-heal" onclick="showAllPotions()">🧪 물약</button>
@@ -188,6 +188,17 @@ function showMainControls() {
         <button class="btn-inventory" onclick="openInventoryModal('loot')">💎 전리품</button>
         <button class="btn-buff" onclick="openInventoryModal('stats')">📊 스탯</button>
     `;
+}
+
+/**
+ * 게임을 중단하고 홈 화면으로 돌아갈지 확인한 후 이동합니다.
+ * 비로그인 상태에서 사용됩니다.
+ */
+function goHomeAndConfirm() {
+    // 진행 상황이 저장되지 않음을 알리고 확인을 받습니다.
+    if (confirm("정말로 게임을 종료하고 홈 화면으로 돌아가시겠습니까?\n현재 진행 상황은 저장되지 않습니다.")) {
+        showStartMenu();
+    }
 }
 
 /**
@@ -687,9 +698,10 @@ function renderScoreboard(scores) {
 
         liveRecordEl.innerHTML = `
             <div>
-                <span class="rank" style="color: #fde047;">🔥</span> <span class="name">${flagHtml} ${topLivePlayer.username}</span> <span class="score" style="color: #fde047; margin-left: 8px;">(${liveFloor}층 진행 중)</span>
+                <div><span class="rank" style="color: #fde047;">🔥</span> <span class="name">${flagHtml} ${topLivePlayer.username}</span></div>
+                <div class="score" style="color: #fde047; font-size: 13px; padding-left: 28px; margin-top: 2px;">(${liveFloor}층 진행 중)</div>
             </div>
-            <div class="score-time" style="color: #9ca3af; font-size: 14px; align-self: center;">${timeAgo}</div>
+            <div class="score-time" style="color: #9ca3af; font-size: 14px;">${timeAgo}</div>
         `;
         listEl.appendChild(liveRecordEl);
     }
@@ -732,7 +744,7 @@ function renderScoreboard(scores) {
             if (entry.liveFloor && entry.liveFloor > 0) {
                  // 만약 랭커가 '나'라면, 가장 정확한 로컬 'floor' 변수 사용
                 const liveFloor = (currentUsername && entry.username === currentUsername && isMyGameActive) ? floor : entry.liveFloor;
-                progressHtml = `<span class="score-progress" style="color: #fde047; margin-left: 8px;">(현재 ${liveFloor}층)</span>`;
+                progressHtml = `<div class="score-progress" style="color: #fde047; font-size: 13px; padding-left: 38px; margin-top: 2px;">(현재 ${liveFloor}층)</div>`;
             }
 
             const rankDisplay = index === 0 ? '👑' : `#${index + 1}`;
@@ -742,10 +754,10 @@ function renderScoreboard(scores) {
 
             itemEl.innerHTML = `
                 <div>
-                    <span class="rank" style="color: ${rankColor};">${rankDisplay}</span> <span class="name">${flagHtml} ${entry.username}</span> <span class="score" style="margin-left: 8px;">(${entry.score} 층)</span>
+                    <div><span class="rank" style="color: ${rankColor};">${rankDisplay}</span> <span class="name">${flagHtml} ${entry.username}</span> <span class="score" style="margin-left: 8px;">(${entry.score} 층)</span></div>
                     ${progressHtml}
                 </div>
-                <div class="score-time" style="color: #9ca3af; font-size: 14px; align-self: center;">${timeAgo}</div>
+                <div class="score-time" style="color: #9ca3af; font-size: 14px;">${timeAgo}</div>
             `;
             listEl.appendChild(itemEl);
         });
@@ -943,7 +955,7 @@ function openInventoryModal(activeTab) {
         lootSection.id = 'loot-management-section';
         lootSection.className = 'management-section';
         lootSection.innerHTML = `
-            <h3>전리품 (스크롤 가능)</h3>
+            <h3>전리품</h3>
             <div id="loot-inventory-list" class="equipment-list" style="max-height: 60vh; overflow-y: auto;"></div>
         `;
         // 스탯 섹션 앞에 전리품 섹션 삽입
