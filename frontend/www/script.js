@@ -580,6 +580,16 @@ function executePowerAttack() {
     const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
     const targetMonsterElement = monsterWrappers[player.targetIndex];
 
+    // --- 몬스터 회피 체크 (5% 확률) ---
+    // MP를 사용하는 스킬도 빗나갈 수 있으며, 빗나가도 MP는 소모됩니다.
+    if (Math.random() < 0.05) {
+        log(`💥 강 공격! 하지만 ${targetMonster.name}이(가) 공격을 회피했다! (MISS)`, 'log-monster');
+        showFloatingText('MISS', targetMonsterElement, 'miss');
+        updateUI(); // MP 감소를 UI에 즉시 반영
+        setTimeout(monstersAttack, 800);
+        return;
+    }
+
     // --- 흑섬(Black Flash) 발동 체크 (강공격 시 3% 고정 확률) ---
     if (Math.random() < 0.03) {
         playSound('black-flash');
