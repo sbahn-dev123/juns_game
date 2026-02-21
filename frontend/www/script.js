@@ -1034,7 +1034,7 @@ function nextFloor() {
         .filter(loot => loot.type === 'permanent_stat' && loot.stat === 'mag')
         .reduce((sum, loot) => sum + loot.value, 0);
     const finalMag = player.mag + lootMagBonus;
-    const totalMpRecovery = baseMpRecovery + Math.floor(finalMag * 2); // 마력 1당 2 MP 추가 회복
+    const totalMpRecovery = baseMpRecovery + Math.floor(finalMag * 3); // 마력 1당 3 MP 추가 회복
     player.mp = Math.min(player.maxMp, player.mp + totalMpRecovery);
     log(`다음 층으로 이동하며 마나가 ${totalMpRecovery}만큼 회복되었습니다.`, 'log-system');
 
@@ -1315,7 +1315,7 @@ function recalculatePlayerStats() {
     player.maxHp = player.baseMaxHp + (finalVit * 5) + armorBonus;
     player.maxMp = player.baseMaxMp + (finalMnd * 5);
     player.critChance = 11 + (finalLuk * 0.7) + player.critBuff.bonus;
-    player.evasionChance = 4 + (finalAgi * 2);
+    player.evasionChance = 4 + (finalAgi * 0.5);
     player.critDamage = 2 + player.critDamageBonus;
     player.goldBonus = 1 + (finalInt * 0.02) + lootGoldBonus;
     player.blackFlashChance = 0.008 + (finalFcs * 0.004);
