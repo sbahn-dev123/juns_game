@@ -1315,7 +1315,7 @@ function recalculatePlayerStats() {
     player.maxHp = player.baseMaxHp + (finalVit * 5) + armorBonus;
     player.maxMp = player.baseMaxMp + (finalMnd * 5);
     player.critChance = 11 + (finalLuk * 0.7) + player.critBuff.bonus;
-    player.evasionChance = 4 + (finalAgi * 0.5);
+    player.evasionChance = 4 + (finalAgi * 1);
     player.critDamage = 2 + player.critDamageBonus;
     player.goldBonus = 1 + (finalInt * 0.02) + lootGoldBonus;
     player.blackFlashChance = 0.008 + (finalFcs * 0.004);
