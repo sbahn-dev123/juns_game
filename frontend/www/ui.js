@@ -340,7 +340,7 @@ function renderStatUpModal() {
     const currentMaxHp = player.baseMaxHp + ((player.vit + lootBonuses.vit) * 5) + armorBonus;
     const currentMaxMp = player.baseMaxMp + ((player.mnd + lootBonuses.mnd) * 5);
     const currentCritChance = 11 + ((player.luk + lootBonuses.luk) * 0.7);
-    const currentEvasionChance = 4 + ((player.agi + lootBonuses.agi) * 2);
+    const currentEvasionChance = 4 + ((player.agi + lootBonuses.agi) * 0.5);
     const currentGoldBonus = 1 + ((player.int + lootBonuses.int) * 0.02) + lootGoldBonus;
     const currentBlackFlashChance = 0.008 + ((player.fcs + lootBonuses.fcs) * 0.004);
 
@@ -349,7 +349,7 @@ function renderStatUpModal() {
     const tempMaxHp = player.baseMaxHp + ((tempStats.vit + lootBonuses.vit) * 5) + armorBonus;
     const tempMaxMp = player.baseMaxMp + ((tempStats.mnd + lootBonuses.mnd) * 5);
     const tempCritChance = 11 + ((tempStats.luk + lootBonuses.luk) * 0.7);
-    const tempEvasionChance = 4 + ((tempStats.agi + lootBonuses.agi) * 2);
+    const tempEvasionChance = 4 + ((tempStats.agi + lootBonuses.agi) * 0.5);
     const tempGoldBonus = 1 + ((tempStats.int + lootBonuses.int) * 0.02) + lootGoldBonus;
     const tempBlackFlashChance = 0.008 + ((tempStats.fcs + lootBonuses.fcs) * 0.004);
 

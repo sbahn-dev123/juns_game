@@ -410,12 +410,12 @@ function monstersAttack() {
                                 dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
                                 if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
                             }
-                            const healedAmount = Math.floor(dmg * skill.power);
+                            const healedAmount = dmg; // 입힌 피해량만큼 그대로 회복합니다.
                             player.hp -= dmg;
                             playSound('hit');
                             monster.hp = Math.min(monster.maxHp, monster.hp + healedAmount);
                             const skillName = skill.name || '생명력 흡수';
-                            log(`🩸 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입고, ${monster.name}은(는) ${healedAmount}의 체력을 회복합니다.`, 'log-monster');
+                            log(`🩸 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입고 자신의 체력을 ${healedAmount}만큼 회복합니다.`, 'log-monster');
                             showFloatingText(dmg, playerElement, 'damage');
                             if(monsterElement) showFloatingText(`+${healedAmount}`, monsterElement, 'heal');
                             break;

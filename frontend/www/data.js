@@ -17,7 +17,7 @@ const monsterList = [
     { name: "리자드맨", emoji: "🦎", hp: 100, atk: 12 },
     { name: "하피", emoji: "🦅", hp: 110, atk: 12 },
     { name: "돌 골렘", emoji: "🗿", hp: 120, atk: 14, skill: { type: 'stun', chance: 0.25 } },
-    { name: "뱀파이어", emoji: "🧛", hp: 130, atk: 14, skill: { type: 'drain', chance: 0.3, power: 0.5 } },
+    { name: "뱀파이어", emoji: "🧛", hp: 130, atk: 14, skill: { type: 'drain', chance: 0.3 } },
     { name: "늑대인간", emoji: "🐺", hp: 140, atk: 15 },
     { name: "오크 전사", emoji: "👹", hp: 150, atk: 15 },
     { name: "외눈박이 거인", emoji: "👁️", hp: 160, atk: 17 },
@@ -35,7 +35,7 @@ const monsterList = [
     { name: "지옥의 사냥개", emoji: "🐕", hp: 320, atk: 32 },
     { name: "그리폰", emoji: "🦅", hp: 340, atk: 34 },
     { name: "골렘 파수꾼", emoji: "🗿", hp: 360, atk: 36 },
-    { name: "서큐버스", emoji: "💋", hp: 380, atk: 38, skill: { type: 'drain', chance: 0.3, power: 0.5 } },
+    { name: "서큐버스", emoji: "💋", hp: 380, atk: 38, skill: { type: 'drain', chance: 0.3 } },
     { name: "베히모스", emoji: "🦏", hp: 400, atk: 40 },
     { name: "사신", emoji: "💀", hp: 420, atk: 42 },
     { name: "고대의 정령", emoji: "✨", hp: 440, atk: 44 },
@@ -81,7 +81,7 @@ const bossList = [
     // 100층 보스
     { name: "세계의 파괴자", emoji: "☄️", hp: 3400, atk: 140, xp: 12000, dropCoins: 7000, skill: { type: 'charge_attack', chance: 0.55, power: 3.8, name: '멸망의 운석' }, specialDrop: { type: 'permanent_stat', stat: 'str', value: 18, name: '세계 파괴자의 핵', sellPrice: 15000 } },
     // 120층 보스
-    { name: "타락한 천사", emoji: "👼", hp: 4500, atk: 160, xp: 17000, dropCoins: 10000, skill: { type: 'drain', chance: 0.45, power: 0.9, name: '타락의 권능' }, specialDrop: { type: 'bonus_stat_points', value: 1, name: '타락한 천사의 축복', sellPrice: 20000 } },
+    { name: "타락한 천사", emoji: "👼", hp: 4500, atk: 160, xp: 17000, dropCoins: 10000, skill: { type: 'drain', chance: 0.45, name: '타락의 권능' }, specialDrop: { type: 'bonus_stat_points', value: 1, name: '타락한 천사의 축복', sellPrice: 20000 } },
     // 140층 보스
     { name: "강철의 거신병", emoji: "🤖", hp: 6000, atk: 195, xp: 26000, dropCoins: 15000, skill: { type: 'stun', chance: 0.6, name: '초진동 강철 주먹' }, specialDrop: { type: 'permanent_stat', stat: 'vit', value: 25, name: '오버클럭된 거신병의 동력원', sellPrice: 28000 } },
     // 160층 보스
@@ -182,7 +182,7 @@ const statInfo = {
     vit: { name: '체력', description: '최대 체력을 5 증가시킵니다.' },
     mag: { name: '마력', description: '스킬 추가 피해량을 2.0, 층 이동 시 MP 회복량을 3 증가시킵니다.' },
     mnd: { name: '정신력', description: '최대 MP를 5 증가시킵니다.' },
-    agi: { name: '민첩', description: '회피 확률을 4% 증가시킵니다.' },
+    agi: { name: '민첩', description: '회피 확률을 0.5% 증가시킵니다.' },
     int: { name: '지혜', description: '골드 획득량을 2% 증가시킵니다.' },
     luk: { name: '집중', description: '치명타 확률을 0.7% 증가시킵니다.' },
     fcs: { name: '고도의 집중', description: '흑섬 확률을 0.4% 증가시킵니다.'}
