@@ -77,6 +77,26 @@ body {
     width: 220px;
     background: #4b5563;
     box-shadow: 0 4px 0 #374151;
+    position: relative; /* 'N' 배지 위치의 기준점 */
+}
+
+/* 새로운 콘텐츠 알림 'N' 배지 스타일 */
+.new-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #ef4444; /* 빨간색 */
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex; /* 내부 텍스트 중앙 정렬을 위해 flex 사용 */
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
+    line-height: 1; /* 'N' 텍스트의 수직 정렬을 위함 */
 }
 
 /* 로그인 시 환영 메시지 스타일 */

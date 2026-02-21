@@ -17,16 +17,16 @@
         <div id="guest-menu">
             <button class="start-btn" onclick="startNewGame()">새 게임 시작</button>
             <button class="start-btn" onclick="openLoginModal()">로그인 / 회원가입</button>
-            <button class="start-btn" onclick="fetchAndShowNotices()">공지사항</button>
-            <button class="start-btn" onclick="fetchAndShowScores()">스코어보드</button>
+            <button class="start-btn" onclick="fetchAndShowNotices()">공지사항<span class="new-badge" id="notice-new-badge-guest" style="display: none;">N</span></button>
+            <button class="start-btn" onclick="fetchAndShowScores()">스코어보드<span class="new-badge" id="scoreboard-new-badge-guest" style="display: none;">N</span></button>
         </div>
         <div id="logged-in-menu" style="display: none;">
             <p class="welcome-msg"><span id="logged-in-user"></span>님, 환영합니다!</p>
             <button class="start-btn" onclick="loadGame()">게임 이어하기</button>
             <button class="start-btn" onclick="startNewGame(true)">새 게임 시작</button>
-            <button class="start-btn" onclick="fetchAndShowNotices()">공지사항</button>
+            <button class="start-btn" onclick="fetchAndShowNotices()">공지사항<span class="new-badge" id="notice-new-badge-loggedin" style="display: none;">N</span></button>
             <button class="start-btn" onclick="openEditProfileModal()">회원정보 수정</button>
-            <button class="start-btn" onclick="fetchAndShowScores()">스코어보드</button>
+            <button class="start-btn" onclick="fetchAndShowScores()">스코어보드<span class="new-badge" id="scoreboard-new-badge-loggedin" style="display: none;">N</span></button>
             <a id="admin-link" href="/admin" class="start-btn" style="display: none; text-decoration: none; align-items: center; justify-content: center;">관리자 페이지</a>
             <button class="start-btn" onclick="logout()">로그아웃</button>
         </div>

@@ -1771,12 +1771,33 @@ async function submitScore() {
  * 서버에서 전체 사용자 랭킹(스코어보드)을 가져와 표시하는 함수.
  */
 async function fetchAndShowScores() {
+    // 'N' 배지를 숨기고, 확인했다는 플래그를 저장합니다.
+    const scoreboardBadgeGuest = document.getElementById('scoreboard-new-badge-guest');
+    const scoreboardBadgeLoggedIn = document.getElementById('scoreboard-new-badge-loggedin');
+    if (scoreboardBadgeGuest) scoreboardBadgeGuest.style.display = 'none';
+    if (scoreboardBadgeLoggedIn) scoreboardBadgeLoggedIn.style.display = 'none';
+    localStorage.setItem('showScoreboardNewBadge', 'false');
+
     try {
         const response = await fetch(`${API_URL}/scores`);
         if (!response.ok) {
             throw new Error('스코어보드를 불러오는데 실패했습니다.');
         }
         const scores = await response.json();
+
+        // --- 실시간 1위 기록을 '확인했음'으로 저장 ---
+        const liveGames = scores.filter(s => s.liveFloor && s.liveFloor > 0);
+        if (liveGames.length > 0) {
+            liveGames.sort((a, b) => b.liveFloor - a.liveFloor);
+            const topLivePlayer = liveGames[0];
+            // username과 liveFloor를 함께 저장
+            localStorage.setItem('lastSeenTopLivePlayer', JSON.stringify(topLivePlayer));
+        } else {
+            // 실시간 게임이 없으면 확인 기록도 삭제
+            localStorage.removeItem('lastSeenTopLivePlayer');
+        }
+        // --- 저장 로직 끝 ---
+
         renderScoreboard(scores);
         openScoreboardModal();
     } catch (error) {
@@ -1788,6 +1809,16 @@ async function fetchAndShowScores() {
  * `updates.js` 파일에 정의된 공지사항 데이터를 가져와 모달에 표시하는 함수.
  */
 function fetchAndShowNotices() {
+    // 'N' 배지를 숨기고, 확인한 최신 버전을 저장합니다.
+    const noticeBadgeGuest = document.getElementById('notice-new-badge-guest');
+    const noticeBadgeLoggedIn = document.getElementById('notice-new-badge-loggedin');
+    if (noticeBadgeGuest) noticeBadgeGuest.style.display = 'none';
+    if (noticeBadgeLoggedIn) noticeBadgeLoggedIn.style.display = 'none';
+    
+    if (updateHistory.length > 0) {
+        localStorage.setItem('lastSeenNoticeVersion', updateHistory[0].version);
+    }
+
     // updates.js 파일에서 updateHistory 변수를 전역으로 사용합니다.
     if (typeof updateHistory !== 'undefined' && updateHistory.length > 0) {
         renderNotices(updateHistory);
@@ -1903,6 +1934,7 @@ async function init() {
     const username = localStorage.getItem('username');
     updateLoginStatus(username);
     updateVolumeButtons(); // 페이지 로드 시 볼륨 버튼 상태 초기화
+    checkNewContent(); // 새로운 콘텐츠 확인 및 'N' 배지 표시
 
     // BGM 자동 재생 실패 시 복구를 위한 이벤트 리스너 (최초 1회만 실행)
     document.body.addEventListener('click', tryResumeBGM, { once: true });

@@ -717,6 +717,58 @@ function renderScoreboard(scores) {
 }
 
 /**
+ * 새로운 공지나 업데이트가 있는지 확인하고 'N' 배지를 표시합니다.
+ * - 페이지 로드 시 한 번 호출됩니다.
+ */
+async function checkNewContent() {
+    // 1. 공지사항 확인
+    const latestVersion = updateHistory.length > 0 ? updateHistory[0].version : null;
+    const lastSeenVersion = localStorage.getItem('lastSeenNoticeVersion');
+    const hasNewNotice = latestVersion && latestVersion !== lastSeenVersion;
+ 
+    const noticeBadgeGuest = document.getElementById('notice-new-badge-guest');
+    const noticeBadgeLoggedIn = document.getElementById('notice-new-badge-loggedin');
+    const scoreboardBadgeGuest = document.getElementById('scoreboard-new-badge-guest');
+    const scoreboardBadgeLoggedIn = document.getElementById('scoreboard-new-badge-loggedin');
+ 
+    if (hasNewNotice) {
+        // 공지 'N' 배지 표시
+        if (noticeBadgeGuest) noticeBadgeGuest.style.display = 'flex';
+        if (noticeBadgeLoggedIn) noticeBadgeLoggedIn.style.display = 'flex';
+ 
+        // 새로운 공지가 있으면 스코어보드도 확인하도록 플래그 설정
+        localStorage.setItem('showScoreboardNewBadge', 'true');
+    }
+ 
+    // 2. 실시간 랭킹 변동 확인
+    try {
+        const response = await fetch(`${window.API_URL}/scores`);
+        if (response.ok) {
+            const scores = await response.json();
+            const liveGames = scores.filter(s => s.liveFloor && s.liveFloor > 0);
+            if (liveGames.length > 0) {
+                liveGames.sort((a, b) => b.liveFloor - a.liveFloor);
+                const topLivePlayer = liveGames[0];
+
+                const lastSeen = JSON.parse(localStorage.getItem('lastSeenTopLivePlayer') || '{}');
+                // 실시간 1위 유저가 바뀌었거나, 층수가 갱신되었을 때 'N' 표시 플래그 설정
+                if (lastSeen.username !== topLivePlayer.username || lastSeen.liveFloor < topLivePlayer.liveFloor) {
+                    localStorage.setItem('showScoreboardNewBadge', 'true');
+                }
+            }
+        }
+    } catch (error) {
+        console.error("실시간 랭킹 확인 중 오류:", error);
+    }
+ 
+    // 3. 스코어보드 배지 최종 표시 결정
+    if (localStorage.getItem('showScoreboardNewBadge') === 'true') {
+        if (scoreboardBadgeGuest) scoreboardBadgeGuest.style.display = 'flex';
+        if (scoreboardBadgeLoggedIn) scoreboardBadgeLoggedIn.style.display = 'flex';
+    }
+}
+
+/**
  * 공지사항 모달을 엽니다.
  */
 function openNoticeModal() {
