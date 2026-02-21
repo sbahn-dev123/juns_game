@@ -8,6 +8,7 @@ const admin = require('./admin'); // 관리자 미들웨어 추가
 // User Model
 const User = require('./User');
 
+
 // @route   POST api/users/register
 // @desc    Register new user
 // @access  Public

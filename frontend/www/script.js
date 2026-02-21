@@ -1896,30 +1896,51 @@ async function handleUpdateProfile() {
     const country = document.getElementById('edit-country').value;
     const birthdate = document.getElementById('edit-birthdate').value;
     const currentPassword = document.getElementById('edit-current-password').value;
+    const newPassword = document.getElementById('edit-new-password').value;
+    const confirmPassword = document.getElementById('edit-confirm-password').value;
     const errorMsgEl = document.getElementById('edit-profile-error-msg');
+
+    errorMsgEl.style.display = 'none';
+
+    // 새 비밀번호 유효성 검사
+    if (newPassword !== confirmPassword) {
+        errorMsgEl.textContent = '새 비밀번호가 일치하지 않습니다.';
+        errorMsgEl.style.display = 'block';
+        return;
+    }
 
     const payload = {
         email,
         country,
         birthdate,
-        currentPassword
+        currentPassword,
     };
 
+    // 새 비밀번호가 입력된 경우에만 payload에 추가
+    if (newPassword) {
+        payload.newPassword = newPassword;
+    }
+
     try {
-        const response = await fetch(`${API_URL}/users/profile`, {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${window.API_URL}/users/profile`, {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify(payload),
         });
 
-        const data = await handleApiResponse(response);
-        if (data === null) return; // 인증 오류는 handleApiResponse에서 처리됨
+        const data = await response.json();
 
-        alert('회원정보가 성공적으로 수정되었습니다.');
-        closeEditProfileModal();
-
+        if (response.ok) {
+            alert('회원정보가 성공적으로 수정되었습니다.');
+            closeEditProfileModal();
+        } else {
+            errorMsgEl.textContent = data.message || '정보 수정에 실패했습니다.';
+            errorMsgEl.style.display = 'block';
+        }
     } catch (error) {
-        errorMsgEl.textContent = error.message;
+        console.error('회원정보 수정 요청 오류:', error);
+        errorMsgEl.textContent = '요청 중 오류가 발생했습니다.';
         errorMsgEl.style.display = 'block';
     }
 }
