@@ -551,6 +551,7 @@ async function openManualModal() {
                 <div id="manual-content">
                     로딩 중...
                 </div>
+                <button class="modal-close-btn" onclick="closeManualModal()">닫기</button>
             </div>
         `;
         document.body.appendChild(modal);
