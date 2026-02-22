@@ -78,8 +78,8 @@ app.get('/config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   const isProduction = process.env.NODE_ENV === 'production';
   const apiUrl = isProduction 
-    ? (process.env.PROD_API_URL || 'http://35.199.151.16/api')
-    : 'http://localhost:3000/api';
+    ? (process.env.PROD_API_URL)
+    : 'http://localhost:3000';
   res.send(`window.API_URL = "${apiUrl}";`);
 });
 
