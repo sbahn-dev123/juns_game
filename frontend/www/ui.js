@@ -431,7 +431,7 @@ function renderStatUpModal() {
 
     currentValuesEl.innerHTML = `
         공격력: ${currentAtk} → ${tempAtk} | 최대체력: ${currentMaxHp} → ${tempMaxHp}<br>
-        최대MP: ${currentMaxMp} → ${tempMaxMp} | 회피: ${currentEvasionChance.toFixed(1)}% → <span style="${evasionNextValueStyle}">${tempEvasionChance.toFixed(1)}%</span> (최대 60%)<br>
+        최대MP: ${currentMaxMp} → ${tempMaxMp} | 회피: ${currentEvasionChance.toFixed(1)}% → <span style="${evasionNextValueStyle}">${tempEvasionChance.toFixed(1)}%</span> (최대 50%)<br>
         치명타: ${currentCritChance.toFixed(1)}% → ${tempCritChance.toFixed(1)}% | 골드 보너스: ${((currentGoldBonus - 1) * 100).toFixed(0)}% → ${((tempGoldBonus - 1) * 100).toFixed(0)}%<br>
         흑섬 확률: ${(currentBlackFlashChance * 100).toFixed(1)}% → ${(tempBlackFlashChance * 100).toFixed(1)}% | 스킬 추가 피해: ${currentMagicDamageBonus.toFixed(1)} → <span style="color: #f87171; font-weight: bold;">${tempMagicDamageBonus.toFixed(1)}</span>
         ${specialEffectsHtml}
