@@ -663,6 +663,64 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 /* --- 8. 로그인/회원가입/스코어보드/공지사항 모달 --- */
+/* 공통 모달 배경 스타일 (동적으로 생성되는 모달 포함) */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none; /* JS로 제어 */
+    align-items: center;
+    justify-content: center; /* 콘텐츠를 중앙에 정렬 */
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal.visible {
+    opacity: 1;
+}
+
+/* 게임 설명서 모달 내부 컨텐츠 스타일 */
+#manual-content {
+    display: block;
+    white-space: normal; /* pre-wrap에서 normal로 변경 */
+    font-family: 'Noto Serif KR', serif; /* monospace에서 기본 폰트로 변경 */
+    background: #111;
+    padding: 15px 25px;
+    border-radius: 5px;
+    text-align: left;
+}
+
+#manual-content h1,
+#manual-content h2,
+#manual-content h3 {
+    color: #a78bfa;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+}
+
+#manual-content h1 { font-size: 1.8em; }
+#manual-content h2 { font-size: 1.5em; }
+#manual-content h3 { font-size: 1.2em; }
+
+#manual-content p { line-height: 1.7; margin-bottom: 10px; color: #ddd; }
+
+#manual-content blockquote { border-left: 4px solid #7c3aed; padding-left: 15px; margin: 15px 0; color: #ccc; font-style: italic; }
+
+#manual-content ul { list-style-position: inside; padding-left: 0; margin: 10px 0; }
+
+#manual-content li { margin-bottom: 8px; line-height: 1.6; color: #ddd; }
+
+#manual-content code { background-color: #333; color: #f59e0b; padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+
+#manual-content strong { color: #fbbf24; font-weight: bold; }
+
+
 /* 스코어보드 목록 아이템 스타일 */
 .scoreboard-item {
     display: flex;
@@ -1026,9 +1084,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
         gap: 8px; /* 캐릭터 간 간격 축소 */
         padding: 5px; /* 전투 필드 여백 축소 */
     }
-    .emoji { font-size: 65px; } /* 캐릭터 이모지 크기 축소 */
-    .name { font-size: 15px; margin-top: 4px; } /* 이름 폰트 축소 */
-    .hp-bar-bg { width: 90px; height: 15px; margin-top: 4px; } /* 체력바 크기 축소 */
+    .emoji { font-size: 52px; } /* 캐릭터 이모지 크기 추가 축소 (기존 65px에서 약 20% 감소) */
+    .name { font-size: 14px; margin-top: 4px; } /* 이름 폰트 축소 */
+    .hp-bar-bg { width: 80px; height: 15px; margin-top: 4px; } /* 체력바 크기 축소 */
     .potion-container {
             flex-direction: column; /* 모바일에서는 세로로 쌓이도록 변경 */
             overflow-y: auto; /* 세로 스크롤 활성화 */
@@ -1039,7 +1097,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
             max-height: none;
             overflow-y: visible;
         }
-    .hp-text { font-size: 13px; margin-top: 2px; } /* 체력 텍스트 축소 */
+    .hp-text { font-size: 12px; margin-top: 2px; } /* 체력 텍스트 축소 */
     .log-box {
         height: 90px; /* 로그 박스 높이 추가 축소 */
         font-size: 13px;
@@ -1127,7 +1185,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     .start-btn { width: 200px; font-size: 18px; }
     .floor-badge { font-size: 12px; padding: 6px 10px; }
     .header { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
-    .emoji { font-size: 55px; }
+    .emoji { font-size: 44px; } /* 캐릭터 이모지 크기 추가 축소 (기존 55px에서 약 20% 감소) */
     .log-box { font-size: 12px; height: 80px; }
     .xp-bar-container, .mp-bar-container { padding: 5px; }
     .xp-bar-bg { height: 15px; }

@@ -361,12 +361,29 @@ function renderStatUpModal() {
 
     // 전리품 보너스 계산 (미리보기용)
     const lootBonuses = { str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0 };
-    let lootGoldBonus = 0; // 골드 보너스 전리품을 위한 변수 추가
+    let lootGoldBonus = 0;
+    // --- 추가: 특별 효과 전리품 변수 ---
+    let critDamageBonus = 0;
+    let hpRegen = 0;
+    let mpCostReduction = 0;
+    let bonusStatPoints = 0;
+    let debuffResistance = 0;
+
     player.lootInventory.forEach(loot => {
         if (loot.type === 'permanent_stat' && lootBonuses.hasOwnProperty(loot.stat)) {
             lootBonuses[loot.stat] += loot.value;
         } else if (loot.type === 'gold_bonus') { // 골드 보너스 타입 처리
             lootGoldBonus += loot.value;
+        } else if (loot.type === 'crit_damage_bonus') {
+            critDamageBonus += loot.value;
+        } else if (loot.type === 'hp_regen_per_turn') {
+            hpRegen += loot.value;
+        } else if (loot.type === 'mp_cost_reduction') {
+            mpCostReduction += loot.value;
+        } else if (loot.type === 'bonus_stat_points') {
+            bonusStatPoints += loot.value;
+        } else if (loot.type === 'debuff_resistance') {
+            debuffResistance += loot.value;
         }
     });
 
@@ -375,7 +392,7 @@ function renderStatUpModal() {
     const currentMaxHp = player.baseMaxHp + ((player.vit + lootBonuses.vit) * 5) + armorBonus;
     const currentMaxMp = player.baseMaxMp + ((player.mnd + lootBonuses.mnd) * 5);
     const currentCritChance = 11 + ((player.luk + lootBonuses.luk) * 0.7);
-    const currentEvasionChance = 4 + ((player.agi + lootBonuses.agi) * 3);
+    const currentEvasionChance = Math.min(60, 4 + ((player.agi + lootBonuses.agi) * 3));
     const currentGoldBonus = 1 + ((player.int + lootBonuses.int) * 0.02) + lootGoldBonus;
     const currentBlackFlashChance = 0.008 + ((player.fcs + lootBonuses.fcs) * 0.004);
 
@@ -384,7 +401,7 @@ function renderStatUpModal() {
     const tempMaxHp = player.baseMaxHp + ((tempStats.vit + lootBonuses.vit) * 5) + armorBonus;
     const tempMaxMp = player.baseMaxMp + ((tempStats.mnd + lootBonuses.mnd) * 5);
     const tempCritChance = 11 + ((tempStats.luk + lootBonuses.luk) * 0.7);
-    const tempEvasionChance = 4 + ((tempStats.agi + lootBonuses.agi) * 3);
+    const tempEvasionChance = Math.min(60, 4 + ((tempStats.agi + lootBonuses.agi) * 3));
     const tempGoldBonus = 1 + ((tempStats.int + lootBonuses.int) * 0.02) + lootGoldBonus;
     const tempBlackFlashChance = 0.008 + ((tempStats.fcs + lootBonuses.fcs) * 0.004);
 
@@ -392,11 +409,29 @@ function renderStatUpModal() {
     const currentMagicDamageBonus = ((player.mag + lootBonuses.mag) * 2.0);
     const tempMagicDamageBonus = ((tempStats.mag + lootBonuses.mag) * 2.0);
 
+    // --- 특별 효과 텍스트 생성 ---
+    let specialEffectsHtml = '';
+    const effects = [];
+    if (critDamageBonus > 0) effects.push(`치명타 피해 +${(critDamageBonus * 100).toFixed(0)}%`);
+    if (hpRegen > 0) effects.push(`턴당 체력 회복 +${hpRegen}`);
+    if (mpCostReduction > 0) effects.push(`MP 소모 감소 -${(mpCostReduction * 100).toFixed(0)}%`);
+    if (bonusStatPoints > 0) effects.push(`레벨업당 추가 스탯 +${bonusStatPoints}`);
+    if (debuffResistance > 0) effects.push(`상태이상 저항 +${(debuffResistance * 100).toFixed(0)}%`);
+
+    if (effects.length > 0) {
+        specialEffectsHtml = `
+            <hr style="border-color: #444; margin: 8px 0;">
+            <div style="color: #a78bfa; font-weight: bold;">✨ 전리품 특별 효과</div>
+            <div style="font-size: 14px; color: #ccc; line-height: 1.6;">${effects.join(' | ')}</div>
+        `;
+    }
+
     currentValuesEl.innerHTML = `
         공격력: ${currentAtk} → ${tempAtk} | 최대체력: ${currentMaxHp} → ${tempMaxHp}<br>
         최대MP: ${currentMaxMp} → ${tempMaxMp} | 회피: ${currentEvasionChance.toFixed(1)}% → ${tempEvasionChance.toFixed(1)}%<br>
         치명타: ${currentCritChance.toFixed(1)}% → ${tempCritChance.toFixed(1)}% | 골드 보너스: ${((currentGoldBonus - 1) * 100).toFixed(0)}% → ${((tempGoldBonus - 1) * 100).toFixed(0)}%<br>
         흑섬 확률: ${(currentBlackFlashChance * 100).toFixed(1)}% → ${(tempBlackFlashChance * 100).toFixed(1)}% | 스킬 추가 피해: ${currentMagicDamageBonus.toFixed(1)} → <span style="color: #f87171; font-weight: bold;">${tempMagicDamageBonus.toFixed(1)}</span>
+        ${specialEffectsHtml}
     `;
 }
 
@@ -434,6 +469,148 @@ function showStartMenu() {
     playBGM('main-theme'); // 시작 메뉴 BGM 재생
     document.getElementById('start-menu').style.display = 'block';
     document.getElementById('game-wrapper').style.display = 'none';
+}
+
+/**
+ * 간단한 마크다운 텍스트를 HTML로 변환합니다.
+ * 지원하는 문법: #, ##, ### (제목), - (목록), > (인용), **bold**, `code`
+ * @param {string} markdown - 변환할 마크다운 텍스트.
+ * @returns {string} - 변환된 HTML 문자열.
+ */
+function markdownToHtml(markdown) {
+    const lines = markdown.split('\n');
+    let html = '';
+    let inList = false;
+
+    const processInline = (text) => {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/`(.*?)`/g, '<code>$1</code>');
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+
+        // Headers
+        if (line.startsWith('# ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<h1>${processInline(line.substring(2))}</h1>`;
+            continue;
+        }
+        if (line.startsWith('## ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<h2>${processInline(line.substring(3))}</h2>`;
+            continue;
+        }
+        if (line.startsWith('### ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<h3>${processInline(line.substring(4))}</h3>`;
+            continue;
+        }
+        // Blockquote
+        if (line.startsWith('> ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<blockquote>${processInline(line.substring(2))}</blockquote>`;
+            continue;
+        }
+        // Unordered List
+        if (line.startsWith('- ')) {
+            if (!inList) { html += '<ul>'; inList = true; }
+            html += `<li>${processInline(line.substring(2))}</li>`;
+            continue;
+        }
+
+        if (inList) { html += '</ul>'; inList = false; }
+        if (line.trim() !== '') html += `<p>${processInline(line)}</p>`;
+    }
+    if (inList) html += '</ul>';
+    return html;
+}
+
+/**
+ * 게임 설명서 모달을 엽니다.
+ * - 모달이 없으면 동적으로 생성하고, 'manual.md' 파일 내용을 불러와 표시합니다.
+ */
+async function openManualModal() {
+    playSound('click');
+    let modal = document.getElementById('manual-modal');
+
+    // 모달이 없으면 동적으로 생성
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'manual-modal';
+        modal.className = 'modal'; // .modal 클래스를 사용하여 CSS 적용
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-content notice-content">
+                <span class="close-btn" onclick="closeManualModal()">&times;</span>
+                <h2>📜 게임 설명서</h2>
+                <div id="manual-content">
+                    로딩 중...
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // 모달 컨텐츠 스크롤 스타일 적용
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxHeight = '85vh';
+        modalContent.style.overflowY = 'auto';
+    }
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('visible'), 10);
+
+    // 'manual.md' 파일 내용 불러오기
+    const contentEl = document.getElementById('manual-content');
+    // 내용이 이미 로드되었으면 다시 로드하지 않음
+    if (contentEl.innerText !== '로딩 중...') return;
+
+    try {
+        const response = await fetch('manual.md');
+        if (!response.ok) throw new Error('설명서를 불러올 수 없습니다.');
+        const markdownText = await response.text();
+        contentEl.innerHTML = markdownToHtml(markdownText); // 마크다운을 HTML로 변환하여 삽입
+    } catch (error) {
+        contentEl.textContent = error.message;
+    }
+}
+
+/**
+ * 게임 설명서 모달을 닫습니다.
+ */
+function closeManualModal() {
+    playSound('click');
+    const modal = document.getElementById('manual-modal');
+    if (modal) {
+        modal.classList.remove('visible');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
+}
+
+/**
+ * 시작 메뉴에 '게임 설명서' 링크를 추가합니다.
+ * - 이 함수는 게임 초기화 시 한 번만 호출됩니다.
+ */
+function addManualLinkToStartMenu() {
+    const guestMenu = document.getElementById('guest-menu');
+    const loggedInMenu = document.getElementById('logged-in-menu');
+
+    const createButton = () => {
+        const button = document.createElement('button');
+        button.className = 'start-btn';
+        button.textContent = '📜 게임설명서';
+        button.onclick = openManualModal;
+        return button;
+    };
+
+    // 버튼이 이미 추가되었는지 확인하여 중복 추가 방지
+    if (guestMenu && !guestMenu.querySelector('.start-btn[onclick="openManualModal()"]')) guestMenu.appendChild(createButton());
+    if (loggedInMenu && !loggedInMenu.querySelector('.start-btn[onclick="openManualModal()"]')) loggedInMenu.appendChild(createButton());
 }
 
 /**

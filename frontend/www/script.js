@@ -1333,6 +1333,9 @@ function recalculatePlayerStats() {
         player.magicDamageBonus = player.magicDamageBonus * 1.6;
     }
 
+    // 회피율 최대치(60%) 적용
+    player.evasionChance = Math.min(player.evasionChance, 60);
+
     // 체력이 최대 체력을 초과하지 않도록 조정
     if (player.hp > player.maxHp) player.hp = player.maxHp;
     if (player.mp > player.maxMp) player.mp = player.maxMp;
@@ -1956,6 +1959,7 @@ async function init() {
     updateLoginStatus(username);
     updateVolumeButtons(); // 페이지 로드 시 볼륨 버튼 상태 초기화
     checkNewContent(); // 새로운 콘텐츠 확인 및 'N' 배지 표시
+    addManualLinkToStartMenu(); // 게임 설명서 링크 추가
 
     // BGM 자동 재생 실패 시 복구를 위한 이벤트 리스너 (최초 1회만 실행)
     document.body.addEventListener('click', tryResumeBGM, { once: true });
