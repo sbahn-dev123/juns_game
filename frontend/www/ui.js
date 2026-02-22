@@ -392,7 +392,7 @@ function renderStatUpModal() {
     const currentMaxHp = player.baseMaxHp + ((player.vit + lootBonuses.vit) * 5) + armorBonus;
     const currentMaxMp = player.baseMaxMp + ((player.mnd + lootBonuses.mnd) * 5);
     const currentCritChance = 11 + ((player.luk + lootBonuses.luk) * 0.7);
-    const currentEvasionChance = Math.min(60, 4 + ((player.agi + lootBonuses.agi) * 3));
+    const currentEvasionChance = Math.min(50, 4 + ((player.agi + lootBonuses.agi) * 3));
     const currentGoldBonus = 1 + ((player.int + lootBonuses.int) * 0.02) + lootGoldBonus;
     const currentBlackFlashChance = 0.008 + ((player.fcs + lootBonuses.fcs) * 0.004);
 
@@ -401,7 +401,7 @@ function renderStatUpModal() {
     const tempMaxHp = player.baseMaxHp + ((tempStats.vit + lootBonuses.vit) * 5) + armorBonus;
     const tempMaxMp = player.baseMaxMp + ((tempStats.mnd + lootBonuses.mnd) * 5);
     const tempCritChance = 11 + ((tempStats.luk + lootBonuses.luk) * 0.7);
-    const tempEvasionChance = Math.min(60, 4 + ((tempStats.agi + lootBonuses.agi) * 3));
+    const tempEvasionChance = Math.min(50, 4 + ((tempStats.agi + lootBonuses.agi) * 3));
     const tempGoldBonus = 1 + ((tempStats.int + lootBonuses.int) * 0.02) + lootGoldBonus;
     const tempBlackFlashChance = 0.008 + ((tempStats.fcs + lootBonuses.fcs) * 0.004);
 
@@ -427,7 +427,7 @@ function renderStatUpModal() {
     }
 
     // --- 회피율 최대치 도달 시 강조 표시 ---
-    const evasionNextValueStyle = tempEvasionChance >= 60 ? 'color: #fbbf24; font-weight: bold;' : '';
+    const evasionNextValueStyle = tempEvasionChance >= 50 ? 'color: #fbbf24; font-weight: bold;' : '';
 
     currentValuesEl.innerHTML = `
         공격력: ${currentAtk} → ${tempAtk} | 최대체력: ${currentMaxHp} → ${tempMaxHp}<br>
