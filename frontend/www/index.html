@@ -15,7 +15,7 @@
         </div>
         <h1 class="game-title">준혁의 동굴 RPG</h1>
         <div id="guest-menu">
-            <button class="start-btn" onclick="startNewGame()">새 게임 시작</button>
+            <button class="start-btn" onclick="openCharacterSelectModal(false)">새 게임 시작</button>
             <button class="start-btn" onclick="openLoginModal()">로그인 / 회원가입</button>
             <button class="start-btn" onclick="fetchAndShowNotices()">공지사항<span class="new-badge" id="notice-new-badge-guest" style="display: none;">N</span></button>
             <button class="start-btn" onclick="fetchAndShowScores()">스코어보드<span class="new-badge" id="scoreboard-new-badge-guest" style="display: none;">N</span></button>
@@ -23,7 +23,7 @@
         <div id="logged-in-menu" style="display: none;">
             <p class="welcome-msg"><span id="logged-in-user"></span>님, 환영합니다!</p>
             <button class="start-btn" onclick="loadGame()">게임 이어하기</button>
-            <button class="start-btn" onclick="startNewGame(true)">새 게임 시작</button>
+            <button class="start-btn" onclick="openCharacterSelectModal(true)">새 게임 시작</button>
             <button class="start-btn" onclick="fetchAndShowNotices()">공지사항<span class="new-badge" id="notice-new-badge-loggedin" style="display: none;">N</span></button>
             <button class="start-btn" onclick="openEditProfileModal()">회원정보 수정</button>
             <button class="start-btn" onclick="fetchAndShowScores()">스코어보드<span class="new-badge" id="scoreboard-new-badge-loggedin" style="display: none;">N</span></button>
@@ -353,6 +353,31 @@
             <div style="display: flex; gap: 15px; margin-top: 30px;">
                 <button class="btn-attack" style="flex: 1; font-size: 18px; padding: 15px;" onclick="handleNewGameFromGameOver()">새 게임</button>
                 <button class="btn-inventory" style="flex: 1; font-size: 18px; padding: 15px;" onclick="handleToMainFromGameOver()">메인으로</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 캐릭터 선택 모달 -->
+    <div id="character-select-modal" style="display: none;">
+        <div class="character-select-content">
+            <div class="shop-title">⚔️ 용사 선택</div>
+            <div id="character-list">
+                <!-- 캐릭터 카드가 여기에 동적으로 생성되거나 하드코딩됩니다. -->
+                <div class="character-card selected" data-character-id="hero" onclick="selectCharacter('hero')">
+                    <div class="character-card-emoji">🧑</div>
+                    <h3 class="character-card-name">기본 용사</h3>
+                    <p class="character-card-desc">균형 잡힌 능력을 가진, 모험을 막 시작한 용사입니다.</p>
+                </div>
+                <div class="character-card" data-character-id="wizard" onclick="selectCharacter('wizard')">
+                    <div class="character-card-emoji">🧙</div>
+                    <h3 class="character-card-name">마법사</h3>
+                    <p class="character-card-desc">강력한 원소 마법으로 적을 섬멸하는 지혜로운 마법사입니다.</p>
+                </div>
+                <!-- 추후 다른 캐릭터 추가 공간 -->
+            </div>
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button class="btn-attack" style="flex: 1; font-size: 18px; padding: 15px;" onclick="confirmCharacterSelectionAndStart()">모험 시작</button>
+                <button class="btn-inventory" style="flex: 1; font-size: 18px; padding: 15px;" onclick="closeCharacterSelectModal()">메인으로</button>
             </div>
         </div>
     </div>

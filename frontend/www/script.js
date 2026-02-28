@@ -26,8 +26,8 @@ const player = {
     baseMaxMp: 40,      // 기본 최대 마나
     maxMp: 40,          // 현재 최대 마나
     mp: 40,             // 현재 마나
-    baseAtk: 8,        // 기본 공격력 (스탯, 장비 미적용)
-    atk: 8,            // 현재 공격력 (스탯, 장비 적용)
+    baseAtk: 10,        // 기본 공격력 (스탯, 장비 미적용)
+    atk: 10,            // 현재 공격력 (스탯, 장비 적용)
     level: 1,           // 현재 레벨
     xp: 0,              // 현재 경험치
     xpToNextLevel: 100, // 다음 레벨까지 필요한 경험치
@@ -36,6 +36,7 @@ const player = {
     str: 0,             // 힘 스탯 (공격력에 영향)
     vit: 0,             // 체력 스탯 (최대 체력에 영향)
     mag: 0,             // 마력 스탯 (스킬 피해량 증폭)
+    characterClass: 'hero', // 캐릭터 클래스 ('hero', 'wizard')
     mnd: 0,             // 정신력 스탯 (최대 MP에 영향)
     agi: 0,             // 민첩 스탯 (회피 확률에 영향)
     int: 0,             // 지혜 스탯 (골드 획득량에 영향)
@@ -61,10 +62,10 @@ const player = {
     hpRegen: 0,          // 턴 종료 시 HP 회복량
     bonusStatPointsPerLevel: 0, // 레벨업 시 추가 스탯 포인트
     debuffResistance: 0, // 상태이상(기절 등) 저항 확률
-    // --- 재화 및 장비 ---
+    // --- 재화, 장비, 캐릭터 정보 ---
     coins: 0,           // 보유 골드
-    baseEmoji: '🧙‍♂️',   // 기본 이모지
-    emoji: '🧙‍♂️',       // 현재 이모지 (장비에 따라 변경)
+    baseEmoji: '🧑',   // 기본 이모지
+    emoji: '🧑',       // 현재 이모지 (장비에 따라 변경)
     // --- 인벤토리 ---
     equippedArmor: null, // 현재 착용한 방어구
     equippedWeapon: null,// 현재 착용한 무기
@@ -308,6 +309,28 @@ function monstersAttack() {
     livingMonsters.forEach((monster, i) => {
         setTimeout(() => { // 몬스터 공격 간 딜레이
             if (isGameOver) return;
+
+            const monsterIndex = monsters.findIndex(m => m === monster);
+            const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
+
+            // --- 화상(Burn) 데미지 처리 ---
+            if (monster.burn && monster.burn.turns > 0) {
+                const burnDamage = monster.burn.damage;
+                monster.hp -= burnDamage;
+                monster.burn.turns--;
+                log(`🔥 ${monster.name}이(가) 화상으로 ${burnDamage}의 피해를 입었습니다. (남은 턴: ${monster.burn.turns})`, 'log-monster');
+                if(monsterElement) showFloatingText(burnDamage, monsterElement, 'burn');
+
+                if (monster.hp <= 0) {
+                    log(`${monster.name}이(가) 화상 피해로 쓰러졌다!`, 'log-monster');
+                    playSound('monster-die');
+                    gainXP(monster.xp);
+                    updateUI();
+                    if (i === livingMonsters.length - 1) { endMonstersTurn(); }
+                    return; // 이 몬스터의 턴은 종료
+                }
+            }
+            // --- 화상 데미지 처리 끝 ---
 
             const monsterIndex = monsters.findIndex(m => m === monster);
             const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
@@ -819,6 +842,249 @@ function toggleDefenseStance() {
 }
 
 /**
+ * '마나 블래스터' 스킬을 실행하는 함수 (마법사 전용).
+ * - 단일 대상에게 마법 피해를 줍니다. (MP 20 소모)
+ */
+function executeManaBlaster() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('heal'); // 마법 효과음으로 재사용
+
+    const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
+    const targetMonsterElement = monsterWrappers[player.targetIndex];
+
+    let dmg = Math.floor(player.atk * 1.5 + player.magicDamageBonus);
+    log(`💧 마나 블래스터! ${targetMonster.name}에게 ${dmg}의 마법 피해를 입혔습니다!`, 'log-player');
+    showFloatingText(dmg, targetMonsterElement, 'mana-blast');
+
+    targetMonster.hp -= dmg;
+
+    if (targetMonsterElement) {
+        const emojiElement = targetMonsterElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+
+    updateUI();
+
+    const allDead = monsters.every(m => m.hp <= 0);
+    if (allDead) {
+        if (targetMonster.hp <= 0) {
+            playSound('monster-die');
+            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            gainXP(targetMonster.xp);
+        }
+        winBattle();
+    } else {
+        if (targetMonster.hp <= 0) {
+            playSound('monster-die');
+            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            gainXP(targetMonster.xp);
+            findNextTarget();
+        }
+        setTimeout(monstersAttack, 800);
+    }
+}
+
+/**
+ * '파이어볼' 스킬을 실행하는 함수 (마법사 전용).
+ * - 단일 대상에게 강력한 화염 피해를 줍니다. (MP 25 소모)
+ */
+function executeFireball() {
+    // --- 기본 조건 검사 ---
+    if (isGameOver || !isPlayerTurn) return;
+
+    const totalMpCost = Math.floor(20 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    // --- 턴 및 MP 처리 ---
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('crit'); // 강력한 효과음으로 재사용
+
+    // --- 다중 타겟 선정 로직 ---
+    const targets = [targetMonster];
+    const otherLivingMonsters = monsters.filter(m => m.hp > 0 && m !== targetMonster);
+    // 다른 몬스터들을 무작위로 섞음
+    for (let i = otherLivingMonsters.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [otherLivingMonsters[i], otherLivingMonsters[j]] = [otherLivingMonsters[j], otherLivingMonsters[i]];
+    }
+    // 최대 2마리의 추가 타겟을 선정
+    const additionalTargets = otherLivingMonsters.slice(0, 2);
+    targets.push(...additionalTargets);
+    // --- 타겟 선정 끝 ---
+
+    log(`🔥 파이어볼! ${targets.map(t => t.name).join(', ')}에게 화염구를 날립니다!`, 'log-player');
+
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
+    let totalXpGained = 0;
+
+    targets.forEach((monster, index) => {
+        setTimeout(() => {
+            const monsterIndexInAll = monsters.findIndex(m => m === monster);
+            const targetElement = monsterElements[monsterIndexInAll];
+
+            // --- 데미지 및 화상 효과 적용 ---
+            let dmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
+            let burnDmg = Math.floor(player.magicDamageBonus * 1.2); // 화상 데미지는 마력에 비례
+
+            showFloatingText(dmg, targetElement, 'fireball');
+            monster.hp -= dmg;
+
+            // 화상 효과 적용
+            if (burnDmg > 0) {
+                monster.burn = { turns: 3, damage: burnDmg };
+                log(`${monster.name}이(가) 화상 상태가 되었다! (3턴 동안 턴마다 ${burnDmg} 피해)`, 'log-monster');
+            }
+
+            if (targetElement) {
+                const emojiElement = targetElement.querySelector('.emoji');
+                emojiElement.classList.add('hit');
+                setTimeout(() => emojiElement.classList.remove('hit'), 300);
+            }
+
+            if (monster.hp <= 0) {
+                playSound('monster-die');
+                log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+                totalXpGained += monster.xp;
+            }
+
+            // 마지막 타겟 공격 후 턴 종료 처리
+            if (index === targets.length - 1) {
+                if (totalXpGained > 0) gainXP(totalXpGained);
+                updateUI();
+                const allDead = monsters.every(m => m.hp <= 0);
+                if (allDead) winBattle();
+                else { findNextTarget(); setTimeout(monstersAttack, 800); }
+            }
+        }, index * 150); // 순차적으로 공격하는 것처럼 보이게 함
+    });
+    updateUI();
+}
+
+/**
+ * '일렉트로닉 빔' 스킬을 실행하는 함수 (마법사 전용).
+ * - 단일 적에게 피해를 주고, 20% 확률로 기절시킵니다.
+ * - 60% 확률로 인접한 다른 적에게 연쇄 공격을 가합니다. (MP 25 소모)
+ */
+function executeElectronicBeam() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const totalMpCost = Math.floor(25 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    const primaryTarget = monsters[player.targetIndex];
+    if (primaryTarget.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('black-flash'); // 광역 효과음으로 재사용
+
+    log(`⚡ 일렉트로닉 빔! ${primaryTarget.name}에게 전기를 방출합니다!`, 'log-player');
+
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
+    let totalXpGained = 0;
+    const targets = [primaryTarget];
+
+    // --- 연쇄 공격(Chain Attack) 대상 찾기 ---
+    if (Math.random() < 0.6) {
+        const adjacentIndices = [player.targetIndex - 1, player.targetIndex + 1];
+        const validChainTargets = adjacentIndices
+            .map(i => monsters[i])
+            .filter(m => m && m.hp > 0);
+
+        if (validChainTargets.length > 0) {
+            const chainTarget = validChainTargets[Math.floor(Math.random() * validChainTargets.length)];
+            targets.push(chainTarget);
+            log(`⚡ 빔이 ${chainTarget.name}에게 연쇄됩니다!`, 'log-player');
+        }
+    }
+
+    // --- 대상들에게 공격 및 효과 적용 ---
+    const attackTarget = (monster, isChain) => {
+        let dmg = Math.floor(player.atk * 2.5 + player.magicDamageBonus);
+        const monsterIndex = monsters.findIndex(m => m === monster);
+        const targetElement = monsterElements[monsterIndex];
+
+        showFloatingText(dmg, targetElement, 'beam');
+        monster.hp -= dmg;
+
+        // 기절 효과 (20% 확률)
+        if (Math.random() < 0.2) {
+            if (Math.random() >= player.debuffResistance) {
+                monster.isStunned = true;
+                log(`${monster.name}이(가) 감전되어 기절했습니다!`, 'log-monster');
+                showFloatingText('STUN', targetElement, 'stun');
+            } else {
+                log(`${monster.name}이(가) 감전되었지만, 기절에 저항했습니다!`, 'log-player');
+                showFloatingText('RESIST', targetElement, 'buff');
+            }
+        }
+
+        if (targetElement) {
+            const emojiElement = targetElement.querySelector('.emoji');
+            emojiElement.classList.add('hit');
+            setTimeout(() => emojiElement.classList.remove('hit'), 300);
+        }
+
+        if (monster.hp <= 0) {
+            playSound('monster-die');
+            log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            totalXpGained += monster.xp;
+        }
+    };
+
+    attackTarget(targets[0], false);
+    if (targets.length > 1) {
+        setTimeout(() => attackTarget(targets[1], true), 200);
+    }
+
+    // --- 턴 종료 처리 ---
+    setTimeout(() => {
+        if (totalXpGained > 0) gainXP(totalXpGained);
+        updateUI();
+        const allDead = monsters.every(m => m.hp <= 0);
+        if (allDead) winBattle();
+        else { findNextTarget(); setTimeout(monstersAttack, 800); }
+    }, targets.length > 1 ? 400 : 200);
+    
+    updateUI();
+}
+
+/**
  * 인벤토리의 소비 아이템(물약)을 사용하는 함수.
  * - 아이템 종류(회복, 버프 등)에 따라 적절한 효과를 적용하고 인벤토리에서 제거합니다.
  * @param {number} index - 사용할 아이템의 player.inventory 배열 인덱스
@@ -1029,7 +1295,8 @@ function nextFloor() {
     
     // --- 플레이어 상태 회복 및 버프 턴 감소 ---
     player.hp = player.maxHp; // 다음 층 이동 시 체력은 완전 회복
-    const baseMpRecovery = 20;
+    // 캐릭터 클래스에 따라 기본 MP 회복량 설정
+    const baseMpRecovery = (player.characterClass === 'wizard') ? 30 : 20;
     const lootMagBonus = player.lootInventory
         .filter(loot => loot.type === 'permanent_stat' && loot.stat === 'mag')
         .reduce((sum, loot) => sum + loot.value, 0);
@@ -1183,6 +1450,7 @@ function createMonster(template, multiplier) {
         xp: xpDrop,
         isStunned: false,
         isCharging: false,
+        burn: { turns: 0, damage: 0 },
     };
 }
 
@@ -1509,19 +1777,20 @@ function startGame(loadedState = null) {
  * - 모든 게임 상태를 초기값으로 리셋합니다.
  * @param {boolean} [isNew=false] - 로그인 상태에서 '새 게임' 버튼을 눌렀는지 여부 (경고창 표시용).
  */
-function startNewGame(isNew = false) {
+function startNewGame(isNew = false, characterId = 'hero') {
     if (isNew && isLoggedIn() && !confirm("정말로 새로운 게임을 시작하시겠습니까? 기존에 저장된 데이터는 덮어씌워집니다.")) {
         return;
     }
     // 게임 상태 초기화
     const initialPlayerState = {
-        baseMaxHp: 35, maxHp: 35, hp: 35, baseMaxMp: 40, maxMp: 40, mp: 40,
-        baseAtk: 8, atk: 10, level: 1, xp: 0, xpToNextLevel: 100, statPoints: 0,
+        baseMaxHp: 35, maxHp: 35, hp: 35, baseMaxMp: 40, maxMp: 40, mp: 40, 
+        baseAtk: 10, atk: 10, level: 1, xp: 0, xpToNextLevel: 100, statPoints: 0,
         str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0,
+        characterClass: 'hero',
         blackFlashBuff: { active: false, duration: 0 }, critBuff: { turns: 0, bonus: 0 },
         guaranteedCrit: false, defenseBuff: { turns: 0, reduction: 0.6 },
         defenseStance: false, isStunned: false, evasionChance: 4, critChance: 11,
-        critDamage: 2, goldBonus: 1, coins: 0, baseEmoji: '🧙‍♂️', emoji: '🧙‍♂️',
+        critDamage: 2, goldBonus: 1, coins: 0, baseEmoji: '', emoji: '🧑',
         equippedArmor: null, equippedWeapon: null, armorInventory: [],
         weaponInventory: [], lootInventory: [], targetIndex: 0,
         buff: { turns: 0, multiplier: 1.5 },
@@ -1529,9 +1798,34 @@ function startNewGame(isNew = false) {
             { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
             { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
             { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
-        ]
+        ],
+        // 전리품 효과 초기화
+        critDamageBonus: 0, mpCostMultiplier: 1, hpRegen: 0,
+        bonusStatPointsPerLevel: 0, debuffResistance: 0,
     };
     Object.assign(player, initialPlayerState);
+
+    // 선택한 캐릭터에 따라 초기 스탯 설정
+    if (characterId === 'wizard') {
+        player.characterClass = 'wizard';
+        player.baseMaxHp = 30;
+        player.maxHp = 30;
+        player.hp = 30;
+        player.baseMaxMp = 60;
+        player.maxMp = 60;
+        player.mp = 60;
+        player.baseAtk = 6;
+        player.atk = 6;
+        player.baseEmoji = '🧙';
+        player.emoji = '🧙';
+        // 마법사는 마나 물약을 가지고 시작
+        player.inventory = [
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
+            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
+        ];
+    }
+
     floor = 1;
     turn = 1;
     isPlayerTurn = true;
@@ -1539,6 +1833,44 @@ function startNewGame(isNew = false) {
 
     showGameScreen();
     startGame();
+}
+
+/**
+ * 캐릭터 선택 창에서 캐릭터를 선택하는 함수.
+ * @param {string} characterId - 선택된 캐릭터의 ID ('hero', 'wizard').
+ */
+function selectCharacter(characterId) {
+    // 모든 카드의 'selected' 클래스 제거
+    const allCards = document.querySelectorAll('.character-card');
+    allCards.forEach(card => card.classList.remove('selected'));
+
+    // 클릭된 카드에 'selected' 클래스 추가
+    const selectedCard = document.querySelector(`.character-card[data-character-id="${characterId}"]`);
+    if (selectedCard) {
+        selectedCard.classList.add('selected');
+    }
+    playSound('click');
+}
+
+/**
+ * '모험 시작' 버튼 클릭 시 호출될 함수
+ * - 캐릭터 선택을 확정하고 게임을 시작합니다.
+ */
+function confirmCharacterSelectionAndStart() {
+    const selectedCharacterCard = document.querySelector('.character-card.selected');
+    if (!selectedCharacterCard) {
+        alert('용사를 선택해주세요.');
+        return;
+    }
+
+    const characterId = selectedCharacterCard.dataset.characterId;
+    
+    // HTML의 onclick에서 전달한 로그인 상태(isLoggedIn)를 사용합니다.
+    // 이 값은 openCharacterSelectModal 함수에서 window 객체에 저장되었습니다.
+    startNewGame(window.isNewGameForLoggedInUser, characterId); 
+    
+    // 모달을 닫습니다. (ui.js에 정의된 함수)
+    closeCharacterSelectModal();
 }
 
 //** ============================================================ **//

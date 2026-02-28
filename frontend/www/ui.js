@@ -125,6 +125,7 @@ function updateUI() {
         const isTargeted = index === player.targetIndex;
         const isDead = monster.hp <= 0;
         const isStunned = monster.isStunned;
+        const isBurned = monster.burn && monster.burn.turns > 0;
 
         const monsterWrapper = document.createElement('div');
         monsterWrapper.className = 'monster-wrapper';
@@ -136,6 +137,7 @@ function updateUI() {
 
         monsterWrapper.innerHTML = `
             <div class="stun-indicator ${isStunned ? 'visible' : ''}">💫</div>
+            <div class="burn-indicator ${isBurned ? 'visible' : ''}">🔥</div>
             <div class="target-indicator">🔻</div>
             <div class="character">
                 <div class="emoji">${isDead ? '💀' : monster.emoji}</div>
@@ -166,17 +168,32 @@ function showSkillSelection() {
     controlsPanel.classList.add('skill-view');
     const defenseBtnClass = player.defenseStance ? 'btn-defend-active' : 'btn-defend';
 
-    // 스킬 데미지 계산 (마력 스탯 적용)
-    const powerAttackDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
-    const sweepAttackDmg = Math.floor(player.atk * 0.8 + player.magicDamageBonus); // 휩쓸기는 광역이라 기본 공격력의 80%로 표시
+    if (player.characterClass === 'wizard') {
+        // 마법사 스킬 데미지 계산
+        const manaBlasterDmg = Math.floor(player.atk * 1.5 + player.magicDamageBonus);
+        const fireballDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
+        const beamDmg = Math.floor(player.atk * 2.5 + player.magicDamageBonus);
 
-    controlsPanel.innerHTML = `
-        <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
-        <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span class="skill-desc">(MP 15 / 피해량: ${powerAttackDmg})</span></button>
-        <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span class="skill-desc">(MP 25 / 피해량: ${sweepAttackDmg})</span></button>
-        <button class="${defenseBtnClass}" onclick="toggleDefenseStance()">🛡️ 방어 태세<br><span class="skill-desc">(MP 10)</span></button>
-        <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
-    `;
+        controlsPanel.innerHTML = `
+            <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
+            <button class="btn-attack" style="background-color: #3b82f6;" onclick="executeManaBlaster()">💧 마나 블래스터<br><span class="skill-desc">(MP 10 / 피해량: ${manaBlasterDmg})</span></button>
+            <button class="btn-attack" style="background-color: #dc2626;" onclick="executeFireball()">🔥 파이어볼<br><span class="skill-desc">(MP 20 / 피해량: ${fireballDmg})</span></button>
+            <button class="btn-attack" style="background-color: #f59e0b;" onclick="executeElectronicBeam()">⚡ 일렉트로닉 빔<br><span class="skill-desc">(MP 25 / 피해량: ${beamDmg} / 연쇄,기절)</span></button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
+        `;
+    } else {
+        // 기본 용사 스킬 데미지 계산
+        const powerAttackDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
+        const sweepAttackDmg = Math.floor(player.atk * 0.8 + player.magicDamageBonus);
+
+        controlsPanel.innerHTML = `
+            <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
+            <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span class="skill-desc">(MP 15 / 피해량: ${powerAttackDmg})</span></button>
+            <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span class="skill-desc">(MP 25 / 피해량: ${sweepAttackDmg})</span></button>
+            <button class="${defenseBtnClass}" onclick="toggleDefenseStance()">🛡️ 방어 태세<br><span class="skill-desc">(MP 10)</span></button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
+        `;
+    }
 }
 
 /**
@@ -1285,7 +1302,8 @@ function closeGameOverModal() {
  */
 function handleNewGameFromGameOver() {
     closeGameOverModal();
-    startNewGame(true); // script.js에 정의된 함수
+    // 캐릭터 선택창을 열도록 수정 (isLoggedIn()은 script.js에 정의됨)
+    openCharacterSelectModal(isLoggedIn());
 }
 
 /**
@@ -1294,6 +1312,29 @@ function handleNewGameFromGameOver() {
 function handleToMainFromGameOver() {
     closeGameOverModal();
     showStartMenu();
+}
+
+/**
+ * 캐릭터 선택 창을 여는 함수
+ * @param {boolean} isLoggedIn - 로그인 상태 여부
+ */
+function openCharacterSelectModal(isLoggedIn) {
+    playSound('click');
+    // '모험 시작' 버튼이 startNewGame을 올바르게 호출하도록 플래그를 window 객체에 저장합니다.
+    window.isNewGameForLoggedInUser = isLoggedIn;
+
+    const modal = document.getElementById('character-select-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('visible'), 10);
+}
+
+/**
+ * 캐릭터 선택 창을 닫는 함수
+ */
+function closeCharacterSelectModal() {
+    const modal = document.getElementById('character-select-modal');
+    modal.classList.remove('visible');
+    setTimeout(() => modal.style.display = 'none', 300);
 }
 
 /**
