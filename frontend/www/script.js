@@ -40,7 +40,7 @@ const player = {
     mnd: 0,             // 정신력 스탯 (최대 MP에 영향)
     agi: 0,             // 민첩 스탯 (회피 확률에 영향)
     int: 0,             // 지혜 스탯 (골드 획득량에 영향)
-    luk: 0,             // 운 스탯 (치명타 확률에 영향)
+    luk: 0,             // 집중 스탯 (치명타 확률에 영향)
     fcs: 0,             // 고도의 집중 스탯 (흑섬 확률에 영향)
     // --- 버프 및 상태 ---
     blackFlashBuff: { active: false, duration: 0 }, // 흑섬 버프 상태 (활성화 여부, 남은 층 수)
@@ -48,6 +48,7 @@ const player = {
     guaranteedCrit: false, // 다음 공격이 확정 치명타인지 여부 (흑섬 발동 시 활성화)
     defenseBuff: { turns: 0, reduction: 0.6 }, // 방어 성공 시 받는 피해량 감소 버프 (남은 턴, 피해 감소율)
     defenseStance: false, // 방어 태세 활성화 여부 (토글 스킬)
+    poisonBuff: { turns: 0, damage: 0 }, // 독 바르기 버프
     isStunned: false,   // 플레이어의 기절 상태 여부
     // --- 계산된 스탯 ---
     evasionChance: 4,   // 최종 회피 확률 (%)
@@ -253,6 +254,7 @@ function executeNormalAttack() {
         }
 
         targetMonster.hp -= dmg;
+        applyPoisonEffect(targetMonster);
 
         // 3% 확률로 몬스터에게 기절 효과 부여
         if (Math.random() < 0.03) {
@@ -308,10 +310,10 @@ function monstersAttack() {
 
     livingMonsters.forEach((monster, i) => {
         setTimeout(() => { // 몬스터 공격 간 딜레이
-            if (isGameOver) return;
-
+            // Declare monsterIndex and monsterElement once at the beginning of the loop iteration
             const monsterIndex = monsters.findIndex(m => m === monster);
             const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
+            if (isGameOver) return;
 
             // --- 화상(Burn) 데미지 처리 ---
             if (monster.burn && monster.burn.turns > 0) {
@@ -326,14 +328,46 @@ function monstersAttack() {
                     playSound('monster-die');
                     gainXP(monster.xp);
                     updateUI();
-                    if (i === livingMonsters.length - 1) { endMonstersTurn(); }
+
+                    // 모든 몬스터가 죽었는지 확인
+                    const allDead = monsters.every(m => m.hp <= 0);
+                    if (allDead) {
+                        winBattle(); // 전투 승리 처리
+                        return; // 추가 진행 중단
+                    }
+
+                    // 이 몬스터가 루프의 마지막 몬스터였다면 턴 종료
+                    if (i === livingMonsters.length - 1) {
+                        endMonstersTurn();
+                    }
                     return; // 이 몬스터의 턴은 종료
                 }
             }
             // --- 화상 데미지 처리 끝 ---
 
-            const monsterIndex = monsters.findIndex(m => m === monster);
-            const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
+            // --- 독(Poison) 데미지 처리 ---
+            if (monster.poison && monster.poison.turns > 0) {
+                const poisonDamage = monster.poison.damage;
+                monster.hp -= poisonDamage;
+                monster.poison.turns--;
+                log(`☠️ ${monster.name}이(가) 중독으로 ${poisonDamage}의 피해를 입었습니다. (남은 턴: ${monster.poison.turns})`, 'log-monster');
+                if(monsterElement) showFloatingText(poisonDamage, monsterElement, 'poison');
+
+                if (monster.hp <= 0) {
+                    log(`${monster.name}이(가) 중독 피해로 쓰러졌다!`, 'log-monster');
+                    playSound('monster-die');
+                    gainXP(monster.xp);
+                    updateUI();
+                    const allDead = monsters.every(m => m.hp <= 0);
+                    if (allDead) {
+                        winBattle();
+                        return;
+                    }
+                    if (i === livingMonsters.length - 1) { endMonstersTurn(); }
+                    return; // 이 몬스터의 턴은 종료
+                }
+            }
+            // --- 독 데미지 처리 끝 ---
 
             // --- 보스 궁극기(Charge Attack) 발동 ---
             if (monster.isCharging) {
@@ -515,6 +549,14 @@ function endMonstersTurn() {
         // 방어 버프 턴 감소
         if (player.defenseBuff.turns > 0) {
             player.defenseBuff.turns--;
+        }
+
+        // 독 바르기 버프 턴 감소
+        if (player.poisonBuff.turns > 0) {
+            player.poisonBuff.turns--;
+            if (player.poisonBuff.turns === 0) {
+                log('무기에 바른 독의 효과가 사라졌습니다.', 'log-system');
+            }
         }
 
         // 전리품 효과: 턴 종료 시 체력 회복
@@ -780,6 +822,7 @@ function executeSweepAttack() {
             }
             
             monster.hp -= dmg;
+            applyPoisonEffect(monster);
 
             // 몬스터 피격 애니메이션
             if (targetElement) {
@@ -952,8 +995,8 @@ function executeFireball() {
 
             // --- 데미지 및 화상 효과 적용 ---
             let dmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
-            let burnDmg = Math.floor(player.magicDamageBonus * 1.2); // 화상 데미지는 마력에 비례
-
+            // 화상 데미지를 파이어볼 초기 피해량의 15%로 설정
+            let burnDmg = Math.floor(dmg * 0.15); 
             showFloatingText(dmg, targetElement, 'fireball');
             monster.hp -= dmg;
 
@@ -1082,6 +1125,132 @@ function executeElectronicBeam() {
     }, targets.length > 1 ? 400 : 200);
     
     updateUI();
+}
+
+/**
+ * '독 바르기' 스킬을 실행하는 함수 (도적 전용).
+ * - 5턴간 자신의 공격에 독 효과를 부여합니다. (MP 15 소모)
+ */
+function executeApplyPoison() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('heal'); // 버프 사운드 재사용
+
+    // 독 데미지는 민첩(agi)과 마력(mag)에 비례
+    const poisonDamage = Math.floor((player.agi + player.mag) * 0.5 + 5);
+    player.poisonBuff = { turns: 5, damage: poisonDamage };
+
+    log(`☠️ 독 바르기! 5턴 동안 공격 시 ${poisonDamage}의 독 피해를 추가로 입힙니다.`, 'log-player');
+    showFloatingText('독 바르기!', document.getElementById('player-character'), 'poison-buff');
+    
+    updateUI();
+    setTimeout(monstersAttack, 800); // 턴 종료
+}
+
+/**
+ * '급소 찌르기' 스킬을 실행하는 함수 (도적 전용).
+ * - 단일 대상에게 피해를 주며, 중독 상태일 경우 추가 피해를 줍니다. (MP 20 소모)
+ */
+function executeVitalStrike() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(20 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+
+    const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
+    const targetMonsterElement = monsterWrappers[player.targetIndex];
+
+    let dmg = Math.floor(player.atk * 1.2 + player.magicDamageBonus);
+    const isAlreadyPoisoned = targetMonster.poison && targetMonster.poison.turns > 0;
+
+    // --- 치명타 체크 (급소 찌르기는 기본 치명타율 + 15% 보너스) ---
+    let isCrit = false;
+    const critChanceForSkill = player.critChance + 15;
+    if (player.guaranteedCrit) {
+        isCrit = true;
+        player.guaranteedCrit = false; // 사용 후 플래그 해제
+    } else if (Math.random() < critChanceForSkill / 100) {
+        isCrit = true;
+    }
+
+    // --- 데미지 계산 ---
+    if (isAlreadyPoisoned) {
+        const extraDamage = Math.floor(dmg * 1.5 + targetMonster.poison.damage * 2);
+        dmg += extraDamage;
+    }
+
+    if (isCrit) {
+        playSound('crit');
+        dmg = Math.floor(dmg * player.critDamage);
+        log(`🩸 치명적인 급소 찌르기! ${isAlreadyPoisoned ? `중독된 ${targetMonster.name}의 약점을 파고들어` : `${targetMonster.name}에게`} ${dmg}의 폭발적인 피해를 입혔습니다!`, 'log-player');
+        showFloatingText(dmg, targetMonsterElement, 'crit');
+    } else {
+        playSound('attack');
+        log(`🩸 급소 찌르기! ${isAlreadyPoisoned ? `중독된 ${targetMonster.name}의 약점을 파고들어` : `${targetMonster.name}에게`} ${dmg}의 피해를 입혔습니다.`, 'log-player');
+        showFloatingText(dmg, targetMonsterElement, 'damage');
+    }
+
+    // --- 독 바르기 효과 적용 ---
+    if (player.poisonBuff.turns > 0) {
+        let appliedPoisonDamage = player.poisonBuff.damage;
+        if (isCrit) {
+            appliedPoisonDamage *= 2;
+            log(`☠️ 치명타 효과로 더욱 강력한 독이 스며듭니다! (피해량 2배)`, 'log-player');
+        }
+        targetMonster.poison = { turns: 3, damage: appliedPoisonDamage };
+        log(`☠️ ${targetMonster.name}에게 독을 묻혔습니다!`, 'log-player');
+        if (targetMonsterElement) showFloatingText('POISON', targetMonsterElement, 'poison-buff');
+    }
+
+    targetMonster.hp -= dmg;
+
+    if (targetMonsterElement) {
+        const emojiElement = targetMonsterElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+
+    updateUI();
+
+    const allDead = monsters.every(m => m.hp <= 0);
+    if (allDead) {
+        if (targetMonster.hp <= 0) {
+            playSound('monster-die');
+            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            gainXP(targetMonster.xp);
+        }
+        winBattle();
+    } else {
+        if (targetMonster.hp <= 0) {
+            playSound('monster-die');
+            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            gainXP(targetMonster.xp);
+            findNextTarget();
+        }
+        setTimeout(monstersAttack, 800);
+    }
 }
 
 /**
@@ -1450,6 +1619,7 @@ function createMonster(template, multiplier) {
         xp: xpDrop,
         isStunned: false,
         isCharging: false,
+        poison: { turns: 0, damage: 0 },
         burn: { turns: 0, damage: 0 },
     };
 }
@@ -1787,6 +1957,7 @@ function startNewGame(isNew = false, characterId = 'hero') {
         baseAtk: 10, atk: 10, level: 1, xp: 0, xpToNextLevel: 100, statPoints: 0,
         str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0,
         characterClass: 'hero',
+        poisonBuff: { turns: 0, damage: 0 },
         blackFlashBuff: { active: false, duration: 0 }, critBuff: { turns: 0, bonus: 0 },
         guaranteedCrit: false, defenseBuff: { turns: 0, reduction: 0.6 },
         defenseStance: false, isStunned: false, evasionChance: 4, critChance: 11,
@@ -1824,6 +1995,23 @@ function startNewGame(isNew = false, characterId = 'hero') {
             { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
             { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
         ];
+    } else if (characterId === 'rogue') {
+        player.characterClass = 'rogue';
+        player.baseMaxHp = 32;
+        player.maxHp = 32;
+        player.hp = 32;
+        player.baseMaxMp = 35;
+        player.maxMp = 35;
+        player.mp = 35;
+        player.baseAtk = 12;
+        player.atk = 12;
+        player.baseEmoji = '🥷';
+        player.emoji = '🥷';
+        // 도적은 민첩과 집중이 높게 시작
+        player.agi = 5;
+        player.luk = 5;
+        recalculatePlayerStats(); // 스탯 적용
+        player.inventory = [ { type: 'heal', name: '기본 회복 물약', healAmount: 20 }, { type: 'heal', name: '기본 회복 물약', healAmount: 20 }, ];
     }
 
     floor = 1;
@@ -2257,7 +2445,6 @@ async function handleUpdateProfile() {
     }
 
     try {
-        const token = localStorage.getItem('token');
         const response = await fetch(`${window.API_URL}/users/profile`, {
             method: 'PUT',
             headers: getAuthHeaders(),

@@ -125,6 +125,7 @@ function updateUI() {
         const isTargeted = index === player.targetIndex;
         const isDead = monster.hp <= 0;
         const isStunned = monster.isStunned;
+        const isPoisoned = monster.poison && monster.poison.turns > 0;
         const isBurned = monster.burn && monster.burn.turns > 0;
 
         const monsterWrapper = document.createElement('div');
@@ -138,6 +139,7 @@ function updateUI() {
         monsterWrapper.innerHTML = `
             <div class="stun-indicator ${isStunned ? 'visible' : ''}">💫</div>
             <div class="burn-indicator ${isBurned ? 'visible' : ''}">🔥</div>
+            <div class="poison-indicator ${isPoisoned ? 'visible' : ''}">☠️</div>
             <div class="target-indicator">🔻</div>
             <div class="character">
                 <div class="emoji">${isDead ? '💀' : monster.emoji}</div>
@@ -179,6 +181,19 @@ function showSkillSelection() {
             <button class="btn-attack" style="background-color: #3b82f6;" onclick="executeManaBlaster()">💧 마나 블래스터<br><span class="skill-desc">(MP 10 / 피해량: ${manaBlasterDmg})</span></button>
             <button class="btn-attack" style="background-color: #dc2626;" onclick="executeFireball()">🔥 파이어볼<br><span class="skill-desc">(MP 20 / 피해량: ${fireballDmg})</span></button>
             <button class="btn-attack" style="background-color: #f59e0b;" onclick="executeElectronicBeam()">⚡ 일렉트로닉 빔<br><span class="skill-desc">(MP 25 / 피해량: ${beamDmg} / 연쇄,기절)</span></button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
+        `;
+    } else if (player.characterClass === 'rogue') {
+        // 도적 스킬 UI
+        const poisonBuffActive = player.poisonBuff && player.poisonBuff.turns > 0;
+        // 독 바르기 버프가 활성화 상태면 버튼 색을 진하게 변경
+        const applyPoisonBtnStyle = poisonBuffActive ? 'background-color: #581c87;' : 'background-color: #8b5cf6;';
+        const vitalStrikeDmg = Math.floor(player.atk * 1.2 + player.magicDamageBonus); // 기본 피해량만 표시
+
+        controlsPanel.innerHTML = `
+            <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
+            <button class="btn-buff" style="${applyPoisonBtnStyle}" onclick="executeApplyPoison()">☠️ 독 바르기<br><span class="skill-desc">(MP 15 / 5턴 지속)</span></button>
+            <button class="btn-attack" style="background-color: #be123c;" onclick="executeVitalStrike()">🩸 급소 찌르기<br><span class="skill-desc">(MP 20 / 피해량: ${vitalStrikeDmg}+)</span></button>
             <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
         `;
     } else {
