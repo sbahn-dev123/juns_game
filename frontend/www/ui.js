@@ -73,6 +73,8 @@ function updateUI() {
     document.getElementById('player-emoji').innerText = player.emoji;
     document.getElementById('player-hp-bar').style.width = (player.hp / player.maxHp * 100) + '%';
 
+    // 쉴드 UI 업데이트 로직 제거
+
     // 경험치 바 UI 업데이트
     document.getElementById('player-level').innerText = player.level;
     document.getElementById('player-xp').innerText = player.xp;
@@ -104,6 +106,14 @@ function updateUI() {
         document.getElementById('black-flash-turns').innerText = player.blackFlashBuff.duration;
     } else {
         document.getElementById('black-flash-badge').style.display = 'none';
+    }
+
+    // 성기사 신성한 방패 버프 UI 업데이트
+    if (player.divineShieldBuff.active) {
+        document.getElementById('divine-shield-badge').style.display = 'inline-block';
+        document.getElementById('divine-shield-turns').innerText = player.divineShieldBuff.turns;
+    } else {
+        document.getElementById('divine-shield-badge').style.display = 'none';
     }
 
     // 가호(전리품) 버프 상태 UI 업데이트
@@ -194,6 +204,18 @@ function showSkillSelection() {
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
             <button class="btn-buff" style="${applyPoisonBtnStyle}" onclick="executeApplyPoison()">☠️ 독 바르기<br><span class="skill-desc">(MP 15 / 5턴 지속)</span></button>
             <button class="btn-attack" style="background-color: #be123c;" onclick="executeVitalStrike()">🩸 급소 찌르기<br><span class="skill-desc">(MP 20 / 피해량: ${vitalStrikeDmg}+)</span></button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
+        `;
+    } else if (player.characterClass === 'paladin') {
+        // 성기사 스킬 UI
+        const judgmentDesc = '적 현재 체력 30%';
+        const earthShatterDmg = Math.floor(player.atk * 2.0);
+
+        controlsPanel.innerHTML = `
+            <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
+            <button class="btn-defend" onclick="executeDivineShield()">🛡️ 신성한 방패<br><span class="skill-desc">(MP 15 / 1턴간 피해 반사&감소)</span></button>
+            <button class="btn-attack" style="background-color: #f59e0b;" onclick="executeJudgment()">⚖️ 심판<br><span class="skill-desc">(MP 25 / 피해량: ${judgmentDesc})</span></button>
+            <button class="btn-attack" style="background-color: #a16207;" onclick="executeEarthShatteringSwordAura()">💥 대지를 가르는 검기<br><span class="skill-desc">(MP 30 / 피해량: ${earthShatterDmg})</span></button>
             <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
         `;
     } else {
@@ -1098,6 +1120,20 @@ function formatTimeAgo(dateString) {
 }
 
 /**
+ * 캐릭터 클래스에 맞는 이모지 아이콘을 반환합니다.
+ * @param {string} characterClass - 'hero', 'wizard' 등의 캐릭터 클래스 문자열.
+ * @returns {string} - 이모지 문자열.
+ */
+function getCharacterEmoji(characterClass) {
+    switch (characterClass) {
+        case 'hero': return '🧑';
+        case 'wizard': return '🧙';
+        case 'rogue': return '🥷';
+        case 'paladin': return '🛡️';
+        default: return '';
+    }
+}
+/**
  * 서버에서 받은 스코어보드 데이터를 UI에 렌더링합니다.
  * @param {Array<object>} scores - `{ username: string, score: number, country: string }` 형태의 배열.
  */
@@ -1121,6 +1157,7 @@ function renderScoreboard(scores) {
         listEl.appendChild(headerEl);
 
         const flagHtml = getFlagImgHtml(topLivePlayer.country);
+        const characterEmoji = getCharacterEmoji(topLivePlayer.characterClass);
         const liveRecordEl = document.createElement('div');
         liveRecordEl.className = 'scoreboard-item current-run'; // 강조 스타일 재사용
         
@@ -1131,7 +1168,7 @@ function renderScoreboard(scores) {
 
         liveRecordEl.innerHTML = `
             <div>
-                <div><span class="rank" style="color: #fde047;">🔥</span> <span class="name">${flagHtml} ${topLivePlayer.username}</span></div>
+                <div><span class="rank" style="color: #fde047;">🔥</span> <span class="name">${characterEmoji} ${flagHtml} ${topLivePlayer.username}</span></div>
                 <div class="score" style="color: #fde047; font-size: 13px; padding-left: 28px; margin-top: 2px;">(${liveFloor}층 진행 중)</div>
             </div>
             <div class="score-time" style="color: #9ca3af; font-size: 14px;">${timeAgo}</div>
@@ -1170,6 +1207,7 @@ function renderScoreboard(scores) {
             }
 
             const flagHtml = getFlagImgHtml(entry.country);
+            const characterEmoji = getCharacterEmoji(entry.characterClass);
 
             // 3. 랭커가 현재 게임을 진행 중인 경우, 그 기록을 옆에 표시
             let progressHtml = '';
@@ -1187,7 +1225,7 @@ function renderScoreboard(scores) {
 
             itemEl.innerHTML = `
                 <div>
-                    <div><span class="rank" style="color: ${rankColor};">${rankDisplay}</span> <span class="name">${flagHtml} ${entry.username}</span> <span class="score" style="margin-left: 8px;">(${entry.score} 층)</span></div>
+                    <div><span class="rank" style="color: ${rankColor};">${rankDisplay}</span> <span class="name">${characterEmoji} ${flagHtml} ${entry.username}</span> <span class="score" style="margin-left: 8px;">(${entry.score} 층)</span></div>
                     ${progressHtml}
                 </div>
                 <div class="score-time" style="color: #9ca3af; font-size: 14px;">${timeAgo}</div>

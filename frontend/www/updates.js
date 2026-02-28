@@ -1,5 +1,11 @@
 const updateHistory = [
     {
+        version: 'v1.0.4',
+        date: '2026-02-23',
+        summary: '성기사 스킬 대규모 개편 및 스코어보드 기능이 개선되었습니다.',
+        file: 'update/v1.0.4.md'
+    },
+    {
         version: 'v1.0.3',
         date: '2026-02-22',
         summary: '보스 밸런스 조정 및 물약 정보 표시 기능이 개선되었습니다.',

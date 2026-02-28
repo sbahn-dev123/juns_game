@@ -199,15 +199,31 @@ body {
 .name { font-size: 22px; margin-top: 10px; color: #ccc; font-weight: bold; }
 
 /* 체력바 */
-.hp-bar-bg {
-    width: 180px; height: 20px; background: #333;
+.hp-bar-bg { 
+    width: 180px; height: 20px; background: #333; 
     border-radius: 10px; margin: 10px auto; overflow: hidden;
+    position: relative; /* 쉴드 바 위치의 기준점 */
 }
 .hp-bar-fill {
     height: 100%; background: #ef4444; width: 100%;
     transition: width 0.3s ease;
 }
+/* 쉴드 바 */
+.shield-bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.4); /* 반투명 흰색 */
+    width: 0%; /* JS로 제어 */
+    transition: width 0.3s ease;
+    z-index: 1; /* 체력바 위에 표시 */
+}
 .hp-text { font-size: 18px; color: #aaa; margin-top: 5px; }
+#player-shield-text {
+    color: #e5e7eb; /* 밝은 회색 */
+    font-weight: bold;
+}
 
 /* ==================== 5. 애니메이션 및 효과 ==================== */
 /* 피격 시 흔들림 효과 */

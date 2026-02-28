@@ -49,6 +49,7 @@ const player = {
     defenseBuff: { turns: 0, reduction: 0.6 }, // 방어 성공 시 받는 피해량 감소 버프 (남은 턴, 피해 감소율)
     defenseStance: false, // 방어 태세 활성화 여부 (토글 스킬)
     poisonBuff: { turns: 0, damage: 0 }, // 독 바르기 버프
+    divineShieldBuff: { active: false, turns: 0 }, // 성기사 신성한 방패 버프
     isStunned: false,   // 플레이어의 기절 상태 여부
     // --- 계산된 스탯 ---
     evasionChance: 4,   // 최종 회피 확률 (%)
@@ -241,12 +242,12 @@ function executeNormalAttack() {
             log('⚡ 흑섬의 여파로 확정 치명타가 발동됩니다!', 'log-player');
         } else if (Math.random() < player.critChance / 100) {
             isCrit = true;
-            log(`⚡ 치명타! 용사가 ${targetMonster.name}에게 ${dmg}의 폭발적인 피해를 입혔습니다!`, 'log-player');
         }
 
         if (isCrit) {
             playSound('crit');
             dmg = Math.floor(dmg * player.critDamage);
+            log(`⚡ 치명타! 용사가 ${targetMonster.name}에게 ${dmg}의 폭발적인 피해를 입혔습니다!`, 'log-player');
             showFloatingText(dmg, targetMonsterElement, 'crit');
         } else {
             log(`용사가 ${targetMonster.name}에게 ${dmg}의 피해를 입혔습니다!`, 'log-player');
@@ -372,17 +373,28 @@ function monstersAttack() {
             // --- 보스 궁극기(Charge Attack) 발동 ---
             if (monster.isCharging) {
                 const skill = monster.skill;
-                let dmg = Math.floor(monster.atk * skill.power);
+                let chargeDmg = Math.floor(monster.atk * skill.power);
+                const originalDmg = chargeDmg;
+
+                // 신성한 방패 버프 적용
+                if (player.divineShieldBuff.active) {
+                    const reflectedDmg = Math.floor(originalDmg * 0.7);
+                    monster.hp -= reflectedDmg;
+                    log(`🛡️ 신성한 방패가 ${monster.name}에게 ${reflectedDmg}의 피해를 반사했습니다!`, 'log-player');
+                    if(monsterElement) showFloatingText(reflectedDmg, monsterElement, 'damage');
+                    chargeDmg = Math.floor(originalDmg * 0.2); // 80% 피해 감소
+                }
+
                 // 방어 버프가 활성화된 경우 데미지 감소
                 if (player.defenseBuff.turns > 0) {
-                    dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
+                    chargeDmg = Math.floor(chargeDmg * (1 - player.defenseBuff.reduction));
                     if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
                 }
-                player.hp -= dmg;
+                if (chargeDmg > 0) player.hp -= chargeDmg;
                 playSound('hit');
                 monster.isCharging = false;
-                log(`🔥 ${monster.name}의 ${skill.name}! ${dmg}의 엄청난 피해를 입었습니다!`, 'log-monster');
-                showFloatingText(dmg, playerElement, 'crit');
+                log(`🔥 ${monster.name}의 ${skill.name}! ${chargeDmg}의 엄청난 피해를 입었습니다!`, 'log-monster');
+                showFloatingText(chargeDmg, playerElement, 'crit');
 
                 const pEmoji = document.getElementById('player-emoji');
                 pEmoji.classList.add('hit');
@@ -438,16 +450,27 @@ function monstersAttack() {
                             // 공격하지 않고 충전만 함
                             break;
                         case 'stun': {
-                            let dmg = Math.floor(monster.atk * 1.2); // 스킬은 약간 더 강하게
+                            let stunDmg = Math.floor(monster.atk * 1.2); // 스킬은 약간 더 강하게
+                            const originalDmg = stunDmg;
+
+                            // 신성한 방패 버프 적용
+                            if (player.divineShieldBuff.active) {
+                                const reflectedDmg = Math.floor(originalDmg * 0.7);
+                                monster.hp -= reflectedDmg;
+                                log(`🛡️ 신성한 방패가 ${monster.name}에게 ${reflectedDmg}의 피해를 반사했습니다!`, 'log-player');
+                                if(monsterElement) showFloatingText(reflectedDmg, monsterElement, 'damage');
+                                stunDmg = Math.floor(originalDmg * 0.2); // 80% 피해 감소
+                            }
+
                             // 방어 버프 적용
                             if (player.defenseBuff.turns > 0) {
-                                dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
+                                stunDmg = Math.floor(stunDmg * (1 - player.defenseBuff.reduction));
                                 if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
                             }
-                            player.hp -= dmg;
+                            if (stunDmg > 0) player.hp -= stunDmg;
                             playSound('hit');                            
                             const skillName = skill.name || '강타';
-                            showFloatingText(dmg, playerElement, 'crit');
+                            showFloatingText(stunDmg, playerElement, 'crit');
 
                             // 기절 저항 체크
                             if (Math.random() < player.debuffResistance) {
@@ -455,26 +478,35 @@ function monstersAttack() {
                                 showFloatingText('RESIST', playerElement, 'buff');
                             } else {
                                 player.isStunned = true;
-                                log(`💥 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입고 기절했습니다!`, 'log-monster');
+                                log(`💥 ${monster.name}의 ${skillName}! ${stunDmg}의 피해를 입고 기절했습니다!`, 'log-monster');
                                 showFloatingText('STUN', playerElement, 'stun');
                             }
                             break;
                         }
                         case 'drain': {
-                            let dmg = monster.atk;
-                            // 방어 버프 적용
+                            let drainDmg = monster.atk;
+                            const originalDmg = drainDmg; // 회복량은 원래 데미지 기준
+
+                            // 신성한 방패 버프 적용
+                            if (player.divineShieldBuff.active) {
+                                const reflectedDmg = Math.floor(originalDmg * 0.7);
+                                monster.hp -= reflectedDmg;
+                                log(`🛡️ 신성한 방패가 ${monster.name}에게 ${reflectedDmg}의 피해를 반사했습니다!`, 'log-player');
+                                if(monsterElement) showFloatingText(reflectedDmg, monsterElement, 'damage');
+                                drainDmg = Math.floor(originalDmg * 0.2); // 80% 피해 감소
+                            }
+
                             if (player.defenseBuff.turns > 0) {
-                                dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
+                                drainDmg = Math.floor(drainDmg * (1 - player.defenseBuff.reduction));
                                 if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
                             }
-                            const healedAmount = dmg; // 입힌 피해량만큼 그대로 회복합니다.
-                            player.hp -= dmg;
+                            if (drainDmg > 0) player.hp -= drainDmg;
                             playSound('hit');
-                            monster.hp = Math.min(monster.maxHp, monster.hp + healedAmount);
+                            monster.hp = Math.min(monster.maxHp, monster.hp + originalDmg);
                             const skillName = skill.name || '생명력 흡수';
-                            log(`🩸 ${monster.name}의 ${skillName}! ${dmg}의 피해를 입고 자신의 체력을 ${healedAmount}만큼 회복합니다.`, 'log-monster');
-                            showFloatingText(dmg, playerElement, 'damage');
-                            if(monsterElement) showFloatingText(`+${healedAmount}`, monsterElement, 'heal');
+                            log(`🩸 ${monster.name}의 ${skillName}! ${drainDmg}의 피해를 입고 자신의 체력을 ${originalDmg}만큼 회복합니다.`, 'log-monster');
+                            showFloatingText(drainDmg, playerElement, 'damage');
+                            if(monsterElement) showFloatingText(`+${originalDmg}`, monsterElement, 'heal');
                             break;
                         }
                         case 'mp_drain': {
@@ -499,15 +531,21 @@ function monstersAttack() {
                 // --- 몬스터 일반 공격 ---
                 if (!usedSkill) {
                     let dmg = Math.floor(Math.random() * 3) + monster.atk;
+                    let isCrit = false;
                     // 몬스터 치명타 (17% 확률, 1.6배 데미지)
                     if (Math.random() < 0.17) {
-                        playSound('crit');
-                        dmg = Math.floor(dmg * 1.6);
-                        log(`⚡ 치명타! ${monster.name}의 강력한 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
-                        showFloatingText(dmg, playerElement, 'crit');
-                    } else {
-                        log(`${monster.name}의 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
-                        showFloatingText(dmg, playerElement, 'damage');
+                        isCrit = true;
+                        dmg = Math.floor(dmg * 1.6); // 데미지 계산 먼저
+                    }
+                    const originalDmg = dmg;
+
+                    // 신성한 방패 버프 적용
+                    if (player.divineShieldBuff.active) {
+                        const reflectedDmg = Math.floor(originalDmg * 0.7);
+                        monster.hp -= reflectedDmg;
+                        log(`🛡️ 신성한 방패가 ${monster.name}에게 ${reflectedDmg}의 피해를 반사했습니다!`, 'log-player');
+                        if(monsterElement) showFloatingText(reflectedDmg, monsterElement, 'damage');
+                        dmg = Math.floor(originalDmg * 0.2); // 80% 피해 감소
                     }
 
                     // 방어 버프 적용
@@ -516,8 +554,18 @@ function monstersAttack() {
                         if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
                     }
 
-                    player.hp -= dmg;
-                    playSound('hit');
+                    if (dmg > 0) {
+                        player.hp -= dmg;
+                        playSound('hit');
+                    }
+
+                    if (isCrit) {
+                        log(`⚡ 치명타! ${monster.name}의 강력한 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
+                        showFloatingText(dmg, playerElement, 'crit');
+                    } else {
+                        log(`${monster.name}의 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
+                        showFloatingText(dmg, playerElement, 'damage');
+                    }
                 }
 
                 // 플레이어 피격 애니메이션
@@ -556,6 +604,15 @@ function endMonstersTurn() {
             player.poisonBuff.turns--;
             if (player.poisonBuff.turns === 0) {
                 log('무기에 바른 독의 효과가 사라졌습니다.', 'log-system');
+            }
+        }
+
+        // 신성한 방패 버프 턴 감소
+        if (player.divineShieldBuff.active && player.divineShieldBuff.turns > 0) {
+            player.divineShieldBuff.turns--;
+            if (player.divineShieldBuff.turns === 0) {
+                player.divineShieldBuff.active = false;
+                log('신성한 방패의 기운이 사라졌습니다.', 'log-system');
             }
         }
 
@@ -691,6 +748,7 @@ function executePowerAttack() {
         showFloatingText(dmg, targetMonsterElement, 'crit'); // 강공격은 항상 crit 스타일로 표시
 
         targetMonster.hp -= dmg;
+        applyPoisonEffect(targetMonster);
 
         // 3% 확률로 몬스터 기절 (강공격은 2배 확률)
         if (Math.random() < 0.06) {
@@ -882,6 +940,28 @@ function toggleDefenseStance() {
     }
 
     showSkillSelection(); // 버튼 색상 등 UI 갱신
+}
+
+/**
+ * 공격 시 '독 바르기' 버프가 활성화되어 있으면 대상에게 독 효과를 적용합니다.
+ * @param {object} monster - 독을 적용할 몬스터 객체.
+ */
+function applyPoisonEffect(monster) {
+    // 도적의 '독 바르기' 버프가 활성화 상태일 때만 작동
+    if (player.characterClass === 'rogue' && player.poisonBuff.turns > 0) {
+        // 이미 중독 상태면 턴만 갱신, 아니면 새로 적용
+        if (monster.poison && monster.poison.turns > 0) {
+            monster.poison.turns = 3;
+        } else {
+            monster.poison = { turns: 3, damage: player.poisonBuff.damage };
+        }
+        
+        const monsterIndex = monsters.findIndex(m => m === monster);
+        const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
+        
+        log(`☠️ ${monster.name}에게 독을 묻혔습니다!`, 'log-player');
+        if (monsterElement) showFloatingText('POISON', monsterElement, 'poison-buff');
+    }
 }
 
 /**
@@ -1251,6 +1331,151 @@ function executeVitalStrike() {
         }
         setTimeout(monstersAttack, 800);
     }
+}
+
+/**
+ * '신성한 방패' 스킬을 실행하는 함수 (성기사 전용).
+ * - 1턴 동안 받는 피해를 80% 감소시키고, 받은 피해의 70%를 반사합니다. (MP 15 소모)
+ */
+function executeDivineShield() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('heal');
+
+    player.divineShieldBuff = { active: true, turns: 1 };
+
+    log(`🛡️ 신성한 방패! 1턴 동안 받는 피해를 감소시키고 일부를 적에게 반사합니다.`, 'log-player');
+    showFloatingText('신성한 방패!', document.getElementById('player-character'), 'buff');
+    
+    updateUI();
+    setTimeout(monstersAttack, 800); // 턴 종료
+}
+
+/**
+ * '심판' 스킬을 실행하는 함수 (성기사 전용).
+ * - 대상의 현재 체력 30%만큼 신성 피해를 줍니다. (MP 25 소모)
+ */
+function executeJudgment() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(25 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('crit');
+
+    const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
+    const targetMonsterElement = monsterWrappers[player.targetIndex];
+
+    let dmg = Math.floor(targetMonster.hp * 0.3);
+    log(`⚖️ 심판! ${targetMonster.name}의 현재 체력의 30%인 ${dmg}의 신성한 피해를 입혔습니다!`, 'log-player');
+    showFloatingText(dmg, targetMonsterElement, 'crit');
+
+    targetMonster.hp -= dmg;
+
+    if (targetMonsterElement) {
+        const emojiElement = targetMonsterElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+
+    updateUI();
+
+    const allDead = monsters.every(m => m.hp <= 0);
+    if (allDead) {
+        if (targetMonster.hp <= 0) {
+            playSound('monster-die');
+            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            gainXP(targetMonster.xp);
+        }
+        winBattle();
+    } else {
+        if (targetMonster.hp <= 0) {
+            playSound('monster-die');
+            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            gainXP(targetMonster.xp);
+            findNextTarget();
+        }
+        setTimeout(monstersAttack, 800);
+    }
+}
+
+/**
+ * '대지를 가르는 검기' 스킬을 실행하는 함수 (성기사 전용).
+ * - 모든 적에게 공격력의 200%만큼 광역 피해를 줍니다. (MP 30 소모)
+ */
+function executeEarthShatteringSwordAura() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const totalMpCost = Math.floor(30 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('black-flash');
+
+    log('💥 대지를 가르는 검기! 모든 적을 공격합니다!', 'log-player');
+
+    const livingMonsters = monsters.filter(m => m.hp > 0);
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
+    let totalXpGained = 0;
+
+    livingMonsters.forEach((monster, index) => {
+        setTimeout(() => {
+            let dmg = Math.floor(player.atk * 2.0);
+            const monsterIndexInAll = monsters.findIndex(m => m === monster);
+            const targetElement = monsterElements[monsterIndexInAll];
+            
+            showFloatingText(dmg, targetElement, 'damage');
+            monster.hp -= dmg;
+
+            if (targetElement) {
+                const emojiElement = targetElement.querySelector('.emoji');
+                emojiElement.classList.add('hit');
+                setTimeout(() => emojiElement.classList.remove('hit'), 300);
+            }
+
+            if (monster.hp <= 0) {
+                playSound('monster-die');
+                log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+                totalXpGained += monster.xp;
+            }
+
+            if (index === livingMonsters.length - 1) {
+                if (totalXpGained > 0) gainXP(totalXpGained);
+                updateUI();
+                const allDead = monsters.every(m => m.hp <= 0);
+                if (allDead) winBattle();
+                else { findNextTarget(); setTimeout(monstersAttack, 800); }
+            }
+        }, index * 150);
+    });
+
+    updateUI();
 }
 
 /**
@@ -1958,6 +2183,7 @@ function startNewGame(isNew = false, characterId = 'hero') {
         str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0,
         characterClass: 'hero',
         poisonBuff: { turns: 0, damage: 0 },
+        divineShieldBuff: { active: false, turns: 0 },
         blackFlashBuff: { active: false, duration: 0 }, critBuff: { turns: 0, bonus: 0 },
         guaranteedCrit: false, defenseBuff: { turns: 0, reduction: 0.6 },
         defenseStance: false, isStunned: false, evasionChance: 4, critChance: 11,
@@ -1997,9 +2223,9 @@ function startNewGame(isNew = false, characterId = 'hero') {
         ];
     } else if (characterId === 'rogue') {
         player.characterClass = 'rogue';
-        player.baseMaxHp = 32;
-        player.maxHp = 32;
-        player.hp = 32;
+        player.baseMaxHp = 30;
+        player.maxHp = 30;
+        player.hp = 30;
         player.baseMaxMp = 35;
         player.maxMp = 35;
         player.mp = 35;
@@ -2012,6 +2238,23 @@ function startNewGame(isNew = false, characterId = 'hero') {
         player.luk = 5;
         recalculatePlayerStats(); // 스탯 적용
         player.inventory = [ { type: 'heal', name: '기본 회복 물약', healAmount: 20 }, { type: 'heal', name: '기본 회복 물약', healAmount: 20 }, ];
+    } else if (characterId === 'paladin') {
+        player.characterClass = 'paladin';
+        player.baseMaxHp = 45;
+        player.maxHp = 45;
+        player.hp = 45;
+        player.baseMaxMp = 30;
+        player.maxMp = 30;
+        player.mp = 30;
+        player.baseAtk = 9;
+        player.atk = 9;
+        player.baseEmoji = '🛡️';
+        player.emoji = '🛡️';
+        player.inventory = [
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
+        ];
     }
 
     floor = 1;
@@ -2279,7 +2522,7 @@ async function submitScore() {
         const response = await fetch(`${API_URL}/scores`, {
             method: 'POST',
             headers: getAuthHeaders(),
-            body: JSON.stringify({ score }),
+            body: JSON.stringify({ score, characterClass: player.characterClass }),
         });
         const result = await handleApiResponse(response);
         if (result === null) return; // 인증 오류 처리됨
