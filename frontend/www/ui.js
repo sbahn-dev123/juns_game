@@ -234,7 +234,7 @@ function showSkillSelection() {
     } else if (player.characterClass === 'paladin') {
         // 성기사 스킬 UI
         const judgmentDesc = '적 현재 체력 30%';
-        const earthShatterDmg = Math.floor(player.atk * 2.0);
+        const earthShatterDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
 
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
@@ -249,8 +249,8 @@ function showSkillSelection() {
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
             <button class="btn-attack" style="background-color: #c12828;" onclick="executeSoulPunch()">👊 영혼 펀치<br><span class="skill-desc">(MP 10 / 피해량: ${soulPunchDmg})</span></button>
-            <button class="btn-heal" style="background-color: #14532d;" onclick="executeSpiritAbsorption()">🌀 영체 흡수<br><span class="skill-desc">(MP 30 / 적 포획)</span></button>
-            <button class="btn-buff" style="background-color: #581c87;" onclick="executeSummonSpirit()">👻 영체 소환/보관<br><span class="skill-desc">(MP 10)</span></button>
+            <button class="btn-heal" style="background-color: #14532d;" onclick="executeSpiritAbsorption()">🌀 영체 흡수<br><span class="skill-desc">(MP 25 / HP < ATK인 적 포획)</span></button>
+            <button class="btn-buff" style="background-color: #581c87;" onclick="executeSummonSpirit()">👻 영체 소환/보관<br><span class="skill-desc">(MP 0)</span></button>
             <button class="btn-attack" style="background-color: #7f1d1d;" onclick="executeSpiritExplosion()">💥 영체 폭발<br><span class="skill-desc">(MP 10 / 소환수 자폭)</span></button>
             <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기${emptyDesc}</button>
         `;
@@ -1609,6 +1609,14 @@ function closeCharacterSelectModal() {
 }
 
 /**
+ * 캐릭터 선택 창에서 메인 메뉴로 돌아가는 함수.
+ */
+function goBackToMainMenuFromCharSelect() {
+    closeCharacterSelectModal();
+    showStartMenu();
+}
+
+/**
  * `updates.js`의 공지사항 데이터를 받아 UI에 렌더링합니다.
  * @param {Array<object>} notices - `{ version, date, summary, file }` 형태의 배열.
  */
@@ -1807,11 +1815,18 @@ function renderEquipment() {
             const isEquipped = player.equippedArmor && player.equippedArmor.name === armor.name;
             const itemEl = document.createElement('div');
             itemEl.className = 'inventory-item';
+
+            let buttonsHtml = `<button class="btn-use" onclick="equipItem('armor', ${index})" ${isEquipped ? 'disabled' : ''}>${isEquipped ? '착용중' : '착용'}</button>`;
+            if (!isEquipped) {
+                const sellPrice = Math.floor(armor.cost * 0.8);
+                buttonsHtml += `<button class="btn-sell" onclick="sellEquipment('armor', ${index})">판매 (${sellPrice}G)</button>`;
+            }
+
             itemEl.innerHTML = `
                 <div class="item-info">${armor.emoji} ${armor.name} (+체력 ${armor.maxHpBonus})</div>
-                <button class="btn-use" onclick="equipItem('armor', ${index})" ${isEquipped ? 'disabled' : ''}>
-                    ${isEquipped ? '착용중' : '착용'}
-                </button>
+                <div class="item-buttons">
+                    ${buttonsHtml}
+                </div>
             `;
             armorListEl.appendChild(itemEl);
         });
@@ -1830,11 +1845,16 @@ function renderEquipment() {
             const isEquipped = player.equippedWeapon && player.equippedWeapon.name === weapon.name;
             const itemEl = document.createElement('div');
             itemEl.className = 'inventory-item';
+
+            let buttonsHtml = `<button class="btn-use" onclick="equipItem('weapon', ${index})" ${isEquipped ? 'disabled' : ''}>${isEquipped ? '착용중' : '착용'}</button>`;
+            if (!isEquipped) {
+                const sellPrice = Math.floor(weapon.cost * 0.8);
+                buttonsHtml += `<button class="btn-sell" onclick="sellEquipment('weapon', ${index})">판매 (${sellPrice}G)</button>`;
+            }
+
             itemEl.innerHTML = `
                 <div class="item-info">${weapon.emoji} ${weapon.name} (+공격력 ${weapon.atkBonus})</div>
-                <button class="btn-use" onclick="equipItem('weapon', ${index})" ${isEquipped ? 'disabled' : ''}>
-                    ${isEquipped ? '착용중' : '착용'}
-                </button>
+                <div class="item-buttons">${buttonsHtml}</div>
             `;
             weaponListEl.appendChild(itemEl);
         });

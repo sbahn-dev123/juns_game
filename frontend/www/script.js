@@ -1101,7 +1101,7 @@ function executeManaBlaster() {
         return;
     }
 
-    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    const totalMpCost = Math.floor(0 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
@@ -1518,14 +1518,14 @@ function confirmSummonSpirit(spiritIndex) {
     spiritData.isSummoned = true;
 
     // 소환될 영체의 능력치를 흡수한 몬스터 스펙의 80%로 설정
-    const minionHp = Math.floor(spiritData.baseHp * 0.8);
     const minionAtk = Math.floor(spiritData.baseAtk * 0.8);
 
     const newMinion = {
         name: `${spiritData.name}의 영체`,
         emoji: spiritData.emoji,
-        hp: minionHp,
-        maxHp: minionHp,
+        // 보관된 체력을 사용하고, 없으면 최대 체력으로 소환
+        hp: spiritData.currentHp !== undefined ? spiritData.currentHp : spiritData.maxHp,
+        maxHp: spiritData.maxHp,
         atk: minionAtk,
         sourceId: spiritData.id, // Link to original spirit data
     };
@@ -1556,6 +1556,7 @@ function confirmRecallSpirit(spiritIndex) {
     const minionIndex = player.minions.findIndex(m => m.sourceId === spiritData.id);
     if (minionIndex > -1) {
         const recalledMinion = player.minions.splice(minionIndex, 1)[0];
+        spiritData.currentHp = recalledMinion.hp; // 보관 시 현재 체력 저장
         log(`👻 ${recalledMinion.name}을(를) 다시 영체 보관함으로 돌려보냅니다.`, 'log-player');
     }
 
@@ -1653,12 +1654,12 @@ function executeSpiritAbsorption() {
         return;
     }
 
-    if (targetMonster.hp > targetMonster.maxHp * 0.10) {
-        log("대상의 체력이 너무 많아 흡수할 수 없습니다.", 'log-system');
+    if (targetMonster.hp >= player.atk) {
+        log(`대상의 남은 체력(${targetMonster.hp})이 당신의 공격력(${player.atk})보다 많거나 같아 흡수할 수 없습니다.`, 'log-system');
         return; // 조건 미달 시 스킬 사용 불가 (턴, MP 소모 없음)
     }
 
-    const totalMpCost = Math.floor(30 * player.mpCostMultiplier);
+    const totalMpCost = Math.floor(25 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
@@ -1668,17 +1669,20 @@ function executeSpiritAbsorption() {
     toggleControls(false);
     player.mp -= totalMpCost;
 
-    const successRate = targetMonster.isBoss ? 0.55 : 0.80;
+    const successRate = targetMonster.isBoss ? 0.70 : 0.80;
     if (Math.random() < successRate) {
         playSound('level-up');
+        const spiritMaxHp = Math.floor(targetMonster.maxHp * 0.8);
         const spiritData = {
             id: Date.now() + Math.random(), // Add unique ID
             name: targetMonster.name,
             emoji: targetMonster.emoji,
             baseHp: targetMonster.maxHp,
             baseAtk: targetMonster.atk,
-            isSummoned: false, // Add isSummoned flag
-            cooldownUntilFloor: 0, // Add cooldown flag
+            maxHp: spiritMaxHp, // 최대 체력 저장
+            currentHp: spiritMaxHp, // 현재 체력 저장 (처음엔 최대)
+            isSummoned: false,
+            cooldownUntilFloor: 0,
         };
         player.capturedSpirits.push(spiritData);
         log(`👻 ${targetMonster.name}의 영체를 흡수했습니다!`, 'log-player');
@@ -1866,7 +1870,7 @@ function executeEarthShatteringSwordAura() {
 
     livingMonsters.forEach((monster, index) => {
         setTimeout(() => {
-            let dmg = Math.floor(player.atk * 2.0);
+            let dmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
             const monsterIndexInAll = monsters.findIndex(m => m === monster);
             const targetElement = monsterElements[monsterIndexInAll];
             
@@ -1974,13 +1978,13 @@ function useInventoryItem(index) {
  * 현재 타겟 몬스터가 죽었을 경우, 다음 살아있는 몬스터를 자동으로 타겟으로 지정하는 함수.
  */
 function findNextTarget() {
-    let maxHp = -1;
+    let maxAtk = -1;
     let nextTargetIndex = -1;
 
-    // 살아있는 몬스터 중에서 HP가 가장 높은 몬스터를 찾습니다.
+    // 살아있는 몬스터 중에서 공격력이 가장 높은 몬스터를 찾습니다.
     monsters.forEach((monster, index) => {
-        if (monster.hp > 0 && monster.hp > maxHp) {
-            maxHp = monster.hp;
+        if (monster.hp > 0 && monster.atk > maxAtk) {
+            maxAtk = monster.atk;
             nextTargetIndex = index;
         }
     });
@@ -2120,6 +2124,21 @@ function nextFloor() {
     player.mp = Math.min(player.maxMp, player.mp + totalMpRecovery);
     log(`다음 층으로 이동하며 마나가 ${totalMpRecovery}만큼 회복되었습니다.`, 'log-system');
 
+    // --- 영체 회복 로직 추가 ---
+    if (player.characterClass === 'necromancer') {
+        // 필드에 소환된 영체들 회복
+        player.minions.forEach(minion => {
+            minion.hp = minion.maxHp;
+        });
+        // 보관함에 있는 모든 영체의 HP 데이터도 리셋
+        player.capturedSpirits.forEach(spirit => {
+            if (spirit.maxHp) { // maxHp가 있는 영체만 (구 데이터 호환성)
+                spirit.currentHp = spirit.maxHp;
+            }
+        });
+        log('👻 모든 영체들의 체력이 완전히 회복되었습니다.', 'log-system');
+    }
+
     // 흑섬 버프 지속 층 감소
     if (player.blackFlashBuff.active) {
         player.blackFlashBuff.duration--;
@@ -2156,10 +2175,10 @@ function nextFloor() {
     // --- 새로운 층의 몬스터 생성 및 UI 업데이트 ---
     monsters = generateMonstersForFloor(floor);
 
-    // HP가 가장 높은 몬스터를 자동으로 타겟팅
+    // 공격력이 가장 높은 몬스터를 자동으로 타겟팅
     if (monsters.length > 0) {
         player.targetIndex = monsters.reduce((maxIndex, monster, currentIndex, arr) => {
-            return monster.hp > arr[maxIndex].hp ? currentIndex : maxIndex;
+            return monster.atk > arr[maxIndex].atk ? currentIndex : maxIndex;
         }, 0);
     }
 
