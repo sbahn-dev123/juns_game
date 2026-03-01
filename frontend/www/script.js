@@ -1156,7 +1156,7 @@ function executeFireball() {
     // --- 기본 조건 검사 ---
     if (isGameOver || !isPlayerTurn) return;
 
-    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
+    const totalMpCost = Math.floor(20 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
