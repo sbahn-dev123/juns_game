@@ -73,6 +73,8 @@ const player = {
     equippedWeapon: null,// 현재 착용한 무기
     armorInventory: [], // 보유 중인 모든 방어구 목록
     weaponInventory: [],// 보유 중인 모든 무기 목록
+    capturedSpirits: [],// 흡수한 영체 목록 (네크로맨서용)
+    minions: [],        // 현재 소환된 소환수 목록 (네크로맨서용)
     lootInventory: [],  // 보유 중인 모든 전리품 목록 (패시브 효과)
     targetIndex: 0,     // 현재 공격 대상으로 지정된 몬스터의 인덱스
     buff: { turns: 0, multiplier: 1.5 }, // 공격력 강화 물약 버프 (남은 턴, 공격력 배율)
@@ -149,7 +151,7 @@ function executeNormalAttack() {
     if (player.isStunned) {
         log("플레이어가 기절해서 움직일 수 없습니다!", 'log-player');
         player.isStunned = false; // 턴을 넘기면서 기절 해제
-        setTimeout(monstersAttack, 800);
+        setTimeout(playerTurnEnd, 800);
         return;
     }
 
@@ -210,7 +212,7 @@ function executeNormalAttack() {
         if (Math.random() < 0.05) {
             log(`${targetMonster.name}이(가) 공격을 회피했다! (MISS)`, 'log-monster');
             showFloatingText('MISS', targetMonsterElement, 'miss');
-            setTimeout(monstersAttack, 800);
+            setTimeout(playerTurnEnd, 800);
             return;
         }
 
@@ -293,8 +295,79 @@ function executeNormalAttack() {
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        setTimeout(monstersAttack, 800); // 0.8초 뒤 몬스터 반격
+        setTimeout(playerTurnEnd, 800); // 0.8초 뒤 소환수 공격 또는 몬스터 반격
     }
+}
+
+/**
+ * 플레이어 턴 종료 후 소환수 공격 -> 몬스터 공격 순서로 진행하는 함수
+ */
+function playerTurnEnd() {
+    // 소환수가 있으면 소환수가 먼저 공격
+    if (player.minions && player.minions.length > 0) {
+        minionsAttack();
+    } else { // 없으면 바로 몬스터 턴
+        monstersAttack();
+    }
+}
+
+/**
+ * 네크로맨서의 소환수들이 공격하는 함수.
+ * 소환수 공격 후 몬스터 턴으로 넘어갑니다.
+ */
+function minionsAttack() {
+    if (isGameOver) return;
+
+    const livingMinions = player.minions.filter(m => m.hp > 0);
+    
+    // 소환수가 없으면 바로 몬스터 턴으로 넘어갑니다.
+    if (livingMinions.length === 0) {
+        setTimeout(monstersAttack, 100);
+        return;
+    }
+
+    log('💀 소환수들이 공격을 시작합니다!', 'log-player');
+    let totalXpGained = 0;
+    let attackPromises = [];
+
+    livingMinions.forEach((minion, i) => {
+        const promise = new Promise(resolve => {
+            setTimeout(() => {
+                if (isGameOver || monsters.every(m => m.hp <= 0)) return resolve();
+                if (monsters[player.targetIndex].hp <= 0) findNextTarget();
+
+                const targetMonster = monsters[player.targetIndex];
+                const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
+                const targetMonsterElement = monsterWrappers[player.targetIndex];
+
+                const dmg = minion.atk;
+                targetMonster.hp -= dmg;
+                log(`💀 ${minion.name}이(가) ${targetMonster.name}에게 ${dmg}의 피해를 입혔습니다.`, 'log-player');
+                if(targetMonsterElement) showFloatingText(dmg, targetMonsterElement, 'minion-damage');
+
+                if (targetMonster.hp <= 0) {
+                    log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+                    playSound('monster-die');
+                    totalXpGained += targetMonster.xp;
+                }
+                updateUI();
+                resolve();
+            }, i * 400); // 0.4초 간격으로 순차 공격
+        });
+        attackPromises.push(promise);
+    });
+
+    // 모든 소환수 공격이 끝나면 몬스터 턴을 시작합니다.
+    Promise.all(attackPromises).then(() => {
+        if (isGameOver) return;
+        if (totalXpGained > 0) gainXP(totalXpGained);
+        if (monsters.every(m => m.hp <= 0)) {
+            winBattle();
+        } else {
+            findNextTarget();
+            setTimeout(monstersAttack, 400);
+        }
+    });
 }
 
 /**
@@ -527,44 +600,75 @@ function monstersAttack() {
                             usedSkill = false; // 정의되지 않은 스킬이면 일반 공격
                     }
                 }
-
+                
                 // --- 몬스터 일반 공격 ---
                 if (!usedSkill) {
-                    let dmg = Math.floor(Math.random() * 3) + monster.atk;
-                    let isCrit = false;
-                    // 몬스터 치명타 (17% 확률, 1.6배 데미지)
-                    if (Math.random() < 0.17) {
-                        isCrit = true;
-                        dmg = Math.floor(dmg * 1.6); // 데미지 계산 먼저
-                    }
-                    const originalDmg = dmg;
+                    const livingMinions = player.minions.filter(m => m.hp > 0);
+                    let targetIsPlayer = true;
 
-                    // 신성한 방패 버프 적용
-                    if (player.divineShieldBuff.active) {
-                        const reflectedDmg = Math.floor(originalDmg * 0.7);
-                        monster.hp -= reflectedDmg;
-                        log(`🛡️ 신성한 방패가 ${monster.name}에게 ${reflectedDmg}의 피해를 반사했습니다!`, 'log-player');
-                        if(monsterElement) showFloatingText(reflectedDmg, monsterElement, 'damage');
-                        dmg = Math.floor(originalDmg * 0.2); // 80% 피해 감소
+                    // 살아있는 미니언이 있으면 50% 확률로 미니언을 공격
+                    if (livingMinions.length > 0 && Math.random() < 0.5) {
+                        targetIsPlayer = false;
                     }
 
-                    // 방어 버프 적용
-                    if (player.defenseBuff.turns > 0) {
-                        dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
-                        if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
-                    }
+                    if (!targetIsPlayer) {
+                        // --- 미니언 공격 로직 ---
+                        const targetMinion = livingMinions[Math.floor(Math.random() * livingMinions.length)];
+                        const minionWrappers = document.querySelectorAll('#minion-area .minion-wrapper');
+                        const minionIndex = player.minions.findIndex(m => m.sourceId === targetMinion.sourceId);
+                        const targetMinionElement = minionWrappers[minionIndex];
 
-                    if (dmg > 0) {
-                        player.hp -= dmg;
+                        let dmg = Math.floor(Math.random() * 3) + monster.atk;
+                        if (Math.random() < 0.17) { // 몬스터 치명타
+                            dmg = Math.floor(dmg * 1.6);
+                            log(`⚡ 치명타! ${monster.name}의 강력한 공격! ${targetMinion.name}에게 ${dmg}의 피해를 입혔습니다.`, 'log-monster');
+                            if(targetMinionElement) showFloatingText(dmg, targetMinionElement, 'crit');
+                        } else {
+                            log(`${monster.name}의 공격! ${targetMinion.name}에게 ${dmg}의 피해를 입혔습니다.`, 'log-monster');
+                            if(targetMinionElement) showFloatingText(dmg, targetMinionElement, 'damage');
+                        }
+                        
+                        targetMinion.hp -= dmg;
                         playSound('hit');
-                    }
 
-                    if (isCrit) {
-                        log(`⚡ 치명타! ${monster.name}의 강력한 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
-                        showFloatingText(dmg, playerElement, 'crit');
+                        if (targetMinion.hp <= 0) {
+                            handleMinionDeath(targetMinion);
+                        }
                     } else {
-                        log(`${monster.name}의 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
-                        showFloatingText(dmg, playerElement, 'damage');
+                        // --- 플레이어 공격 로직 (기존) ---
+                        let dmg = Math.floor(Math.random() * 3) + monster.atk;
+                        let isCrit = false;
+                        if (Math.random() < 0.17) {
+                            isCrit = true;
+                            dmg = Math.floor(dmg * 1.6);
+                        }
+                        const originalDmg = dmg;
+
+                        if (player.divineShieldBuff.active) {
+                            const reflectedDmg = Math.floor(originalDmg * 0.7);
+                            monster.hp -= reflectedDmg;
+                            log(`🛡️ 신성한 방패가 ${monster.name}에게 ${reflectedDmg}의 피해를 반사했습니다!`, 'log-player');
+                            if(monsterElement) showFloatingText(reflectedDmg, monsterElement, 'damage');
+                            dmg = Math.floor(originalDmg * 0.2);
+                        }
+
+                        if (player.defenseBuff.turns > 0) {
+                            dmg = Math.floor(dmg * (1 - player.defenseBuff.reduction));
+                            if (!defenseBuffUsedThisTurn) { log(`🛡️ 방어 성공! 받는 피해가 감소했습니다.`, 'log-system'); defenseBuffUsedThisTurn = true; }
+                        }
+
+                        if (dmg > 0) {
+                            player.hp -= dmg;
+                            playSound('hit');
+                        }
+
+                        if (isCrit) {
+                            log(`⚡ 치명타! ${monster.name}의 강력한 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
+                            showFloatingText(dmg, playerElement, 'crit');
+                        } else {
+                            log(`${monster.name}의 공격! ${dmg}의 피해를 입었습니다.`, 'log-monster');
+                            showFloatingText(dmg, playerElement, 'damage');
+                        }
                     }
                 }
 
@@ -584,6 +688,26 @@ function monstersAttack() {
     });
 }
 
+/**
+ * 소환수가 죽었을 때 처리하는 함수.
+ * @param {object} minion - 죽은 소환수 객체.
+ */
+function handleMinionDeath(minion) {
+    log(`💀 ${minion.name}이(가) 쓰러졌습니다! 5층 후에 다시 소환할 수 있습니다.`, 'log-system');
+    
+    // 보관함에 있는 원본 영체의 상태를 업데이트합니다.
+    const originalSpirit = player.capturedSpirits.find(s => s.id === minion.sourceId);
+    if (originalSpirit) {
+        originalSpirit.isSummoned = false;
+        originalSpirit.cooldownUntilFloor = floor + 5;
+    }
+
+    // 필드에서 소환수를 제거합니다.
+    const minionIdx = player.minions.findIndex(m => m.sourceId === minion.sourceId);
+    if (minionIdx > -1) {
+        player.minions.splice(minionIdx, 1);
+    }
+}
 /**
  * 몬스터 턴 종료 후 플레이어 턴으로 전환하거나 게임오버를 처리합니다.
  */
@@ -667,7 +791,7 @@ function executePowerAttack() {
     if (player.isStunned) {
         log("플레이어가 기절해서 움직일 수 없습니다!", 'log-player');
         player.isStunned = false; // 턴을 넘기면서 기절 해제
-        setTimeout(monstersAttack, 800);
+        setTimeout(playerTurnEnd, 800);
         return;
     }
 
@@ -708,7 +832,7 @@ function executePowerAttack() {
         log(`💥 강 공격! 하지만 ${targetMonster.name}이(가) 공격을 회피했다! (MISS)`, 'log-monster');
         showFloatingText('MISS', targetMonsterElement, 'miss');
         updateUI(); // MP 감소를 UI에 즉시 반영
-        setTimeout(monstersAttack, 800);
+        setTimeout(playerTurnEnd, 800);
         return;
     }
 
@@ -782,7 +906,7 @@ function executePowerAttack() {
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        setTimeout(monstersAttack, 800);
+        setTimeout(playerTurnEnd, 800);
     }
 }
 
@@ -812,7 +936,7 @@ function executeSweepAttack() {
     if (player.isStunned) {
         log("플레이어가 기절해서 움직일 수 없습니다!", 'log-player');
         player.isStunned = false; // 턴을 넘기면서 기절 해제
-        setTimeout(monstersAttack, 800);
+        setTimeout(playerTurnEnd, 800);
         return;
     }
 
@@ -914,7 +1038,7 @@ function executeSweepAttack() {
                     winBattle();
                 } else {
                     findNextTarget();
-                    setTimeout(monstersAttack, 800);
+                    setTimeout(playerTurnEnd, 800);
                 }
             }
         }, index * 150); // 0.15초 간격으로 공격
@@ -1020,7 +1144,7 @@ function executeManaBlaster() {
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        setTimeout(monstersAttack, 800);
+        setTimeout(playerTurnEnd, 800);
     }
 }
 
@@ -1104,7 +1228,7 @@ function executeFireball() {
                 updateUI();
                 const allDead = monsters.every(m => m.hp <= 0);
                 if (allDead) winBattle();
-                else { findNextTarget(); setTimeout(monstersAttack, 800); }
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
             }
         }, index * 150); // 순차적으로 공격하는 것처럼 보이게 함
     });
@@ -1201,7 +1325,7 @@ function executeElectronicBeam() {
         updateUI();
         const allDead = monsters.every(m => m.hp <= 0);
         if (allDead) winBattle();
-        else { findNextTarget(); setTimeout(monstersAttack, 800); }
+        else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
     }, targets.length > 1 ? 400 : 200);
     
     updateUI();
@@ -1233,7 +1357,7 @@ function executeApplyPoison() {
     showFloatingText('독 바르기!', document.getElementById('player-character'), 'poison-buff');
     
     updateUI();
-    setTimeout(monstersAttack, 800); // 턴 종료
+    setTimeout(playerTurnEnd, 800); // 턴 종료
 }
 
 /**
@@ -1329,10 +1453,306 @@ function executeVitalStrike() {
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        setTimeout(monstersAttack, 800);
+        setTimeout(playerTurnEnd, 800);
     }
 }
 
+/**
+ * '영체 소환' 스킬을 실행하는 함수 (네크로맨서 전용).
+ * - 흡수한 영체 목록을 보여주는 모달을 엽니다.
+ */
+function executeSummonSpirit() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    if (player.capturedSpirits.length === 0) {
+        log("소환할 수 있는 영체가 없습니다. 먼저 '영체 흡수'로 영체를 포획하세요.", 'log-system');
+        return;
+    }
+
+    if (player.minions.length >= 3) {
+        log("더 이상 소환수를 부릴 수 없습니다. (최대 3기)", 'log-system');
+        return;
+    }
+
+    // UI 스크립트에 정의된 함수를 호출하여 모달을 엽니다.
+    openSummonSpiritModal();
+}
+
+/**
+ * 영체 소환 모달에서 영체를 선택했을 때 호출되는 확인 함수.
+ * @param {number} spiritIndex - player.capturedSpirits 배열의 인덱스
+ */
+function confirmSummonSpirit(spiritIndex) {
+    if (player.minions.length >= 3) {
+        log("더 이상 소환수를 부릴 수 없습니다. (최대 3기)", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+
+    // --- Get spirit data, don't remove it ---
+    const spiritData = player.capturedSpirits[spiritIndex];
+
+    // --- Check conditions ---
+    if (!spiritData) return;
+    if (spiritData.isSummoned) {
+        log("이미 소환된 영체입니다.", 'log-system');
+        return;
+    }
+    if (spiritData.cooldownUntilFloor > floor) {
+        log(`해당 영체는 ${spiritData.cooldownUntilFloor}층까지 재소환할 수 없습니다.`, 'log-system');
+        return;
+    }
+
+    player.mp -= totalMpCost;
+    playSound('boss-appear');
+
+    // --- Mark as summoned ---
+    spiritData.isSummoned = true;
+
+    // 소환될 영체의 능력치를 흡수한 몬스터 스펙의 80%로 설정
+    const minionHp = Math.floor(spiritData.baseHp * 0.8);
+    const minionAtk = Math.floor(spiritData.baseAtk * 0.8);
+
+    const newMinion = {
+        name: `${spiritData.name}의 영체`,
+        emoji: spiritData.emoji,
+        hp: minionHp,
+        maxHp: minionHp,
+        atk: minionAtk,
+        sourceId: spiritData.id, // Link to original spirit data
+    };
+
+    player.minions.push(newMinion);
+    log(`💀 ${newMinion.name}을(를) 전장에 소환했습니다! (HP: ${minionHp}, ATK: ${minionAtk})`, 'log-player');
+    
+    closeSummonSpiritModal(); // 모달 닫기
+    updateUI();
+    setTimeout(playerTurnEnd, 800);
+}
+
+/**
+ * 소환된 영체를 다시 보관함으로 되돌리는 함수.
+ * @param {number} spiritIndex - player.capturedSpirits 배열의 인덱스
+ */
+function confirmRecallSpirit(spiritIndex) {
+    const spiritData = player.capturedSpirits[spiritIndex];
+    if (!spiritData || !spiritData.isSummoned) {
+        log("소환되지 않은 영체는 보관할 수 없습니다.", 'log-system');
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    
+    // Find and remove the minion from the field
+    const minionIndex = player.minions.findIndex(m => m.sourceId === spiritData.id);
+    if (minionIndex > -1) {
+        const recalledMinion = player.minions.splice(minionIndex, 1)[0];
+        log(`👻 ${recalledMinion.name}을(를) 다시 영체 보관함으로 돌려보냅니다.`, 'log-player');
+    }
+
+    // Update the spirit's state
+    spiritData.isSummoned = false;
+
+    playSound('click'); // some sound
+    closeSummonSpiritModal();
+    updateUI();
+    setTimeout(playerTurnEnd, 800);
+}
+
+/**
+ * '영체 폭발' 스킬을 실행하는 함수 (네크로맨서 전용).
+ * - 소환된 모든 영체를 폭발시켜, 영체 수만큼 모든 적에게 광역 피해를 줍니다.
+ */
+function executeSpiritExplosion() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    if (player.minions.length === 0) {
+        log("폭발시킬 영체가 없습니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('black-flash');
+
+    const spiritsToExplode = [...player.minions];
+    
+    // --- Update captured spirits state ---
+    spiritsToExplode.forEach(minion => {
+        const originalSpirit = player.capturedSpirits.find(s => s.id === minion.sourceId);
+        if (originalSpirit) {
+            originalSpirit.isSummoned = false;
+            originalSpirit.cooldownUntilFloor = floor + 5; // 사용한 층 포함 5층 뒤에 사용 가능 (예: 1층 사용 -> 6층부터)
+        }
+    });
+
+    player.minions = []; // Clear minions from the field
+    const explosionCount = spiritsToExplode.length;
+    log(`💥 ${explosionCount}기의 영혼을 폭발시켜 모든 적을 공격합니다!`, 'log-player');
+
+    let totalXpGained = 0;
+
+    for (let i = 0; i < explosionCount; i++) {
+        setTimeout(() => {
+            const explosionDmg = 15 + player.mag * 2 + Math.floor(player.atk / 2);
+            log(`💥 ${spiritsToExplode[i].name}의 폭발! 모든 적에게 ${explosionDmg}의 피해!`, 'log-player');
+
+            monsters.forEach(monster => {
+                if (monster.hp > 0) {
+                    monster.hp -= explosionDmg;
+                    const monsterIndex = monsters.findIndex(m => m === monster);
+                    const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
+                    if (monsterElement) showFloatingText(explosionDmg, monsterElement, 'fireball');
+
+                    if (monster.hp <= 0) {
+                        log(`${monster.name}이(가) 폭발에 휘말려 쓰러졌습니다!`, 'log-player');
+                        totalXpGained += monster.xp;
+                    }
+                }
+            });
+
+            // 마지막 폭발 후에 턴 종료 처리
+            if (i === explosionCount - 1) {
+                if (totalXpGained > 0) gainXP(totalXpGained);
+                updateUI();
+                const allDead = monsters.every(m => m.hp <= 0);
+                if (allDead) winBattle();
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+            }
+        }, i * 200); // 0.2초 간격으로 연쇄 폭발
+    }
+    updateUI();
+}
+
+/**
+ * '영체 흡수' 스킬을 실행하는 함수 (네크로맨서 전용).
+ * - 체력이 7% 이하인 몬스터를 흡수하여 영체로 만듭니다.
+ */
+function executeSpiritAbsorption() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    if (targetMonster.hp > targetMonster.maxHp * 0.10) {
+        log("대상의 체력이 너무 많아 흡수할 수 없습니다.", 'log-system');
+        return; // 조건 미달 시 스킬 사용 불가 (턴, MP 소모 없음)
+    }
+
+    const totalMpCost = Math.floor(30 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+
+    const successRate = targetMonster.isBoss ? 0.55 : 0.80;
+    if (Math.random() < successRate) {
+        playSound('level-up');
+        const spiritData = {
+            id: Date.now() + Math.random(), // Add unique ID
+            name: targetMonster.name,
+            emoji: targetMonster.emoji,
+            baseHp: targetMonster.maxHp,
+            baseAtk: targetMonster.atk,
+            isSummoned: false, // Add isSummoned flag
+            cooldownUntilFloor: 0, // Add cooldown flag
+        };
+        player.capturedSpirits.push(spiritData);
+        log(`👻 ${targetMonster.name}의 영체를 흡수했습니다!`, 'log-player');
+        targetMonster.hp = 0; // 흡수된 몬스터는 즉시 처치
+        gainXP(targetMonster.xp);
+    } else {
+        playSound('hit');
+        log(`👻 영체 흡수에 실패했습니다...`, 'log-system');
+    }
+
+    updateUI();
+
+    // 모든 몬스터가 쓰러졌는지 확인
+    const allDead = monsters.every(m => m.hp <= 0);
+    if (allDead) {
+        winBattle(); // 전투 승리
+    } else {
+        findNextTarget(); // 흡수한 몬스터가 타겟이었다면 다음 타겟을 찾음
+        setTimeout(playerTurnEnd, 800); // 몬스터 턴으로 진행
+    }
+}
+
+/**
+ * '영혼을 담은 펀치' 스킬을 실행하는 함수 (네크로맨서 전용).
+ * - 단일 대상에게 공격력의 210% 피해를 줍니다.
+ */
+function executeSoulPunch() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('crit'); // Use a strong sound
+
+    const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
+    const targetMonsterElement = monsterWrappers[player.targetIndex];
+
+    let dmg = Math.floor(player.atk * 2.1 + player.magicDamageBonus);
+    log(`👊 영혼을 담은 펀치! ${targetMonster.name}에게 ${dmg}의 피해를 입혔습니다!`, 'log-player');
+    showFloatingText(dmg, targetMonsterElement, 'crit');
+
+    targetMonster.hp -= dmg;
+
+    if (targetMonsterElement) {
+        const emojiElement = targetMonsterElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+
+    updateUI();
+
+    const allDead = monsters.every(m => m.hp <= 0);
+    if (allDead) {
+        winBattle();
+    } else {
+        if (targetMonster.hp <= 0) {
+            gainXP(targetMonster.xp);
+            findNextTarget();
+        }
+        setTimeout(playerTurnEnd, 800);
+    }
+}
 /**
  * '신성한 방패' 스킬을 실행하는 함수 (성기사 전용).
  * - 1턴 동안 받는 피해를 80% 감소시키고, 받은 피해의 70%를 반사합니다. (MP 15 소모)
@@ -1357,7 +1777,7 @@ function executeDivineShield() {
     showFloatingText('신성한 방패!', document.getElementById('player-character'), 'buff');
     
     updateUI();
-    setTimeout(monstersAttack, 800); // 턴 종료
+    setTimeout(playerTurnEnd, 800); // 턴 종료
 }
 
 /**
@@ -1416,7 +1836,7 @@ function executeJudgment() {
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        setTimeout(monstersAttack, 800);
+        setTimeout(playerTurnEnd, 800);
     }
 }
 
@@ -1470,7 +1890,7 @@ function executeEarthShatteringSwordAura() {
                 updateUI();
                 const allDead = monsters.every(m => m.hp <= 0);
                 if (allDead) winBattle();
-                else { findNextTarget(); setTimeout(monstersAttack, 800); }
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
             }
         }, index * 150);
     });
@@ -1686,6 +2106,7 @@ function nextFloor() {
     turn = 1;
     isPlayerTurn = true;
     monsters = [];
+    // player.minions = []; // 네크로맨서의 소환수는 다음 층으로 이동해도 유지됩니다.
     
     // --- 플레이어 상태 회복 및 버프 턴 감소 ---
     player.hp = player.maxHp; // 다음 층 이동 시 체력은 완전 회복
@@ -1844,6 +2265,7 @@ function createMonster(template, multiplier) {
         xp: xpDrop,
         isStunned: false,
         isCharging: false,
+        isBoss: template.isBoss || false,
         poison: { turns: 0, damage: 0 },
         burn: { turns: 0, damage: 0 },
     };
@@ -1974,15 +2396,20 @@ function recalculatePlayerStats() {
     const finalLuk = player.luk + lootBonuses.luk;
     const finalFcs = player.fcs + lootBonuses.fcs;
 
+    // 캐릭터 클래스에 따른 기본 스탯 보정 (data.js 참조)
+    const charData = characterData[player.characterClass] || characterData.hero;
+    const baseCritChance = charData.stats.crit;
+    const baseEvasionChance = charData.stats.evasion;
+
     player.atk = player.baseAtk + (finalStr * 2) + weaponBonus;
     player.maxHp = player.baseMaxHp + (finalVit * 5) + armorBonus;
     player.maxMp = player.baseMaxMp + (finalMnd * 5);
-    player.critChance = 11 + (finalLuk * 0.7) + player.critBuff.bonus;
-    player.evasionChance = 4 + (finalAgi * 3);
+    player.critChance = baseCritChance + (finalLuk * 0.7) + player.critBuff.bonus;
+    player.evasionChance = baseEvasionChance + (finalAgi * 3);
     player.critDamage = 2 + player.critDamageBonus;
     player.goldBonus = 1 + (finalInt * 0.02) + lootGoldBonus;
     player.blackFlashChance = 0.008 + (finalFcs * 0.004);
-    player.magicDamageBonus = finalMag * 2.0;
+    player.magicDamageBonus = finalMag * 3.0;
 
     // 흑섬 버프 적용
     if (player.blackFlashBuff.active) {
@@ -2178,84 +2605,40 @@ function startNewGame(isNew = false, characterId = 'hero') {
     }
     // 게임 상태 초기화
     const initialPlayerState = {
-        baseMaxHp: 35, maxHp: 35, hp: 35, baseMaxMp: 40, maxMp: 40, mp: 40, 
-        baseAtk: 10, atk: 10, level: 1, xp: 0, xpToNextLevel: 100, statPoints: 0,
-        str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0,
-        characterClass: 'hero',
+        level: 1, xp: 0, xpToNextLevel: 100, statPoints: 0,
+        str: 0, vit: 0, mag: 0, mnd: 0, agi: 0, int: 0, luk: 0, fcs: 0, minions: [], capturedSpirits: [],
         poisonBuff: { turns: 0, damage: 0 },
         divineShieldBuff: { active: false, turns: 0 },
         blackFlashBuff: { active: false, duration: 0 }, critBuff: { turns: 0, bonus: 0 },
         guaranteedCrit: false, defenseBuff: { turns: 0, reduction: 0.6 },
         defenseStance: false, isStunned: false, evasionChance: 4, critChance: 11,
-        critDamage: 2, goldBonus: 1, coins: 0, baseEmoji: '', emoji: '🧑',
+        critDamage: 2, goldBonus: 1, coins: 0,
         equippedArmor: null, equippedWeapon: null, armorInventory: [],
         weaponInventory: [], lootInventory: [], targetIndex: 0,
         buff: { turns: 0, multiplier: 1.5 },
-        inventory: [
-            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
-            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
-            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
-        ],
         // 전리품 효과 초기화
         critDamageBonus: 0, mpCostMultiplier: 1, hpRegen: 0,
         bonusStatPointsPerLevel: 0, debuffResistance: 0,
     };
     Object.assign(player, initialPlayerState);
 
-    // 선택한 캐릭터에 따라 초기 스탯 설정
-    if (characterId === 'wizard') {
-        player.characterClass = 'wizard';
-        player.baseMaxHp = 30;
-        player.maxHp = 30;
-        player.hp = 30;
-        player.baseMaxMp = 60;
-        player.maxMp = 60;
-        player.mp = 60;
-        player.baseAtk = 6;
-        player.atk = 6;
-        player.baseEmoji = '🧙';
-        player.emoji = '🧙';
-        // 마법사는 마나 물약을 가지고 시작
-        player.inventory = [
-            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
-            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
-            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
-        ];
-    } else if (characterId === 'rogue') {
-        player.characterClass = 'rogue';
-        player.baseMaxHp = 30;
-        player.maxHp = 30;
-        player.hp = 30;
-        player.baseMaxMp = 35;
-        player.maxMp = 35;
-        player.mp = 35;
-        player.baseAtk = 12;
-        player.atk = 12;
-        player.baseEmoji = '🥷';
-        player.emoji = '🥷';
-        // 도적은 민첩과 집중이 높게 시작
-        player.agi = 5;
-        player.luk = 5;
-        recalculatePlayerStats(); // 스탯 적용
-        player.inventory = [ { type: 'heal', name: '기본 회복 물약', healAmount: 20 }, { type: 'heal', name: '기본 회복 물약', healAmount: 20 }, ];
-    } else if (characterId === 'paladin') {
-        player.characterClass = 'paladin';
-        player.baseMaxHp = 45;
-        player.maxHp = 45;
-        player.hp = 45;
-        player.baseMaxMp = 30;
-        player.maxMp = 30;
-        player.mp = 30;
-        player.baseAtk = 9;
-        player.atk = 9;
-        player.baseEmoji = '🛡️';
-        player.emoji = '🛡️';
-        player.inventory = [
-            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
-            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
-            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
-        ];
-    }
+    // characterData에서 선택된 캐릭터 정보 가져오기
+    const selectedCharacterData = characterData[characterId] || characterData.hero;
+
+    player.characterClass = selectedCharacterData.id;
+    player.baseMaxHp = selectedCharacterData.stats.hp;
+    player.baseMaxMp = selectedCharacterData.stats.mp;
+    player.baseAtk = selectedCharacterData.stats.atk;
+    player.baseEmoji = selectedCharacterData.emoji;
+    player.emoji = selectedCharacterData.emoji;
+    // 인벤토리는 깊은 복사를 통해 원본 데이터가 변경되지 않도록 합니다.
+    player.inventory = JSON.parse(JSON.stringify(selectedCharacterData.inventory));
+
+    recalculatePlayerStats(); // 스탯을 기반으로 최종 능력치(maxHp, atk 등)를 계산합니다.
+
+    // 새 게임 시작 시 체력과 마나를 최대로 설정합니다.
+    player.hp = player.maxHp;
+    player.mp = player.maxMp;
 
     floor = 1;
     turn = 1;

@@ -163,6 +163,28 @@ function updateUI() {
         monsterArea.appendChild(monsterWrapper);
     });
 
+    // 네크로맨서 소환수 UI 동적 생성 및 업데이트
+    const minionArea = document.getElementById('minion-area');
+    if (minionArea) {
+        minionArea.innerHTML = '';
+        if (player.minions && player.minions.length > 0) {
+            player.minions.forEach(minion => {
+                const minionWrapper = document.createElement('div');
+                minionWrapper.className = 'minion-wrapper'; // CSS 스타일링을 위한 클래스
+                minionWrapper.innerHTML = `
+                    <div class="character">
+                        <div class="emoji">${minion.emoji}</div>
+                        <div class="name" style="font-size: 12px;">${minion.name}</div>
+                        <div class="hp-bar-bg">
+                            <div class="hp-bar-fill" style="width: ${Math.max(0, minion.hp) / minion.maxHp * 100}%"></div>
+                        </div>
+                        <div class="hp-text" style="font-size: 11px;">${Math.max(0, minion.hp)} / ${minion.maxHp}</div>
+                    </div>
+                `;
+                minionArea.appendChild(minionWrapper);
+            });
+        }
+    }
     // 현재 층, 턴 정보 업데이트
     document.getElementById('floor-num').innerText = floor;
     document.getElementById('turn-num').innerText = turn;
@@ -180,6 +202,9 @@ function showSkillSelection() {
     controlsPanel.classList.add('skill-view');
     const defenseBtnClass = player.defenseStance ? 'btn-defend-active' : 'btn-defend';
 
+    // 모든 버튼의 높이를 통일하기 위해 내용 없는 설명 줄 추가
+    const emptyDesc = `<br><span class="skill-desc">&nbsp;</span>`;
+
     if (player.characterClass === 'wizard') {
         // 마법사 스킬 데미지 계산
         const manaBlasterDmg = Math.floor(player.atk * 1.5 + player.magicDamageBonus);
@@ -191,7 +216,7 @@ function showSkillSelection() {
             <button class="btn-attack" style="background-color: #3b82f6;" onclick="executeManaBlaster()">💧 마나 블래스터<br><span class="skill-desc">(MP 10 / 피해량: ${manaBlasterDmg})</span></button>
             <button class="btn-attack" style="background-color: #dc2626;" onclick="executeFireball()">🔥 파이어볼<br><span class="skill-desc">(MP 20 / 피해량: ${fireballDmg})</span></button>
             <button class="btn-attack" style="background-color: #f59e0b;" onclick="executeElectronicBeam()">⚡ 일렉트로닉 빔<br><span class="skill-desc">(MP 25 / 피해량: ${beamDmg} / 연쇄,기절)</span></button>
-            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기${emptyDesc}</button>
         `;
     } else if (player.characterClass === 'rogue') {
         // 도적 스킬 UI
@@ -204,7 +229,7 @@ function showSkillSelection() {
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
             <button class="btn-buff" style="${applyPoisonBtnStyle}" onclick="executeApplyPoison()">☠️ 독 바르기<br><span class="skill-desc">(MP 15 / 5턴 지속)</span></button>
             <button class="btn-attack" style="background-color: #be123c;" onclick="executeVitalStrike()">🩸 급소 찌르기<br><span class="skill-desc">(MP 20 / 피해량: ${vitalStrikeDmg}+)</span></button>
-            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기${emptyDesc}</button>
         `;
     } else if (player.characterClass === 'paladin') {
         // 성기사 스킬 UI
@@ -216,7 +241,18 @@ function showSkillSelection() {
             <button class="btn-defend" onclick="executeDivineShield()">🛡️ 신성한 방패<br><span class="skill-desc">(MP 15 / 1턴간 피해 반사&감소)</span></button>
             <button class="btn-attack" style="background-color: #f59e0b;" onclick="executeJudgment()">⚖️ 심판<br><span class="skill-desc">(MP 25 / 피해량: ${judgmentDesc})</span></button>
             <button class="btn-attack" style="background-color: #a16207;" onclick="executeEarthShatteringSwordAura()">💥 대지를 가르는 검기<br><span class="skill-desc">(MP 30 / 피해량: ${earthShatterDmg})</span></button>
-            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기${emptyDesc}</button>
+        `;
+    } else if (player.characterClass === 'necromancer') {
+        // 네크로맨서 스킬 UI
+        const soulPunchDmg = Math.floor(player.atk * 2.1 + player.magicDamageBonus);
+        controlsPanel.innerHTML = `
+            <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
+            <button class="btn-attack" style="background-color: #c12828;" onclick="executeSoulPunch()">👊 영혼 펀치<br><span class="skill-desc">(MP 10 / 피해량: ${soulPunchDmg})</span></button>
+            <button class="btn-heal" style="background-color: #14532d;" onclick="executeSpiritAbsorption()">🌀 영체 흡수<br><span class="skill-desc">(MP 30 / 적 포획)</span></button>
+            <button class="btn-buff" style="background-color: #581c87;" onclick="executeSummonSpirit()">👻 영체 소환/보관<br><span class="skill-desc">(MP 10)</span></button>
+            <button class="btn-attack" style="background-color: #7f1d1d;" onclick="executeSpiritExplosion()">💥 영체 폭발<br><span class="skill-desc">(MP 10 / 소환수 자폭)</span></button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기${emptyDesc}</button>
         `;
     } else {
         // 기본 용사 스킬 데미지 계산
@@ -228,7 +264,7 @@ function showSkillSelection() {
             <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span class="skill-desc">(MP 15 / 피해량: ${powerAttackDmg})</span></button>
             <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span class="skill-desc">(MP 25 / 피해량: ${sweepAttackDmg})</span></button>
             <button class="${defenseBtnClass}" onclick="toggleDefenseStance()">🛡️ 방어 태세<br><span class="skill-desc">(MP 10)</span></button>
-            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기</button>
+            <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기${emptyDesc}</button>
         `;
     }
 }
@@ -241,14 +277,21 @@ function showMainControls() {
     if (isGameOver) return;
     const controlsPanel = document.getElementById('controls-panel');
     controlsPanel.classList.remove('skill-view');
-    const saveButton = isLoggedIn() ? `<button class="btn-buff" onclick="saveGame()">💾 저장&종료</button>` : `<button class="btn-buff" onclick="goHomeAndConfirm()">💾 홈으로</button>`;
+
+    const saveButtonHtml = isLoggedIn() ? `💾 저장&종료` : `💾 홈으로`;
+    const saveButtonOnclick = isLoggedIn() ? `saveGame()` : `goHomeAndConfirm()`;
+
+    // 모든 버튼에 2줄 구조를 적용하여 높이를 통일합니다.
+    // 주 메뉴 버튼에는 내용이 없는 두 번째 줄을 추가합니다.
+    const emptyDesc = `<br><span class="skill-desc">&nbsp;</span>`;
+
     controlsPanel.innerHTML = `
-        <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬</button>
-        <button class="btn-heal" onclick="showAllPotions()">🧪 물약</button>
-        ${saveButton}
-        <button class="btn-armor" onclick="openInventoryModal('equipment')">🛡️ 장비</button>
-        <button class="btn-inventory" onclick="openInventoryModal('loot')">💎 전리품</button>
-        <button class="btn-buff" onclick="openInventoryModal('stats')">📊 스탯</button>
+        <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬${emptyDesc}</button>
+        <button class="btn-heal" onclick="showAllPotions()">🧪 물약${emptyDesc}</button>
+        <button class="btn-buff" onclick="${saveButtonOnclick}">${saveButtonHtml}${emptyDesc}</button>
+        <button class="btn-armor" onclick="openInventoryModal('equipment')">🛡️ 장비${emptyDesc}</button>
+        <button class="btn-inventory" onclick="openInventoryModal('loot')">💎 전리품${emptyDesc}</button>
+        <button class="btn-buff" onclick="openInventoryModal('stats')">📊 스탯${emptyDesc}</button>
     `;
 }
 
@@ -920,6 +963,88 @@ async function handleResetPassword() {
 }
 
 /**
+ * 네크로맨서의 '영체 소환' 모달을 엽니다.
+ */
+function openSummonSpiritModal() {
+    playSound('click');
+    let modal = document.getElementById('summon-spirit-modal');
+
+    // 모달이 없으면 동적으로 생성
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'summon-spirit-modal';
+        modal.className = 'modal';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+                <span class="close-btn" onclick="closeSummonSpiritModal()">&times;</span>
+                <h2>👻 소환할 영체 선택</h2>
+                <div id="summon-spirit-list" class="equipment-list"></div>
+                <button class="modal-close-btn" onclick="closeSummonSpiritModal()">닫기</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    renderSummonSpiritList();
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('visible'), 10);
+}
+
+/**
+ * '영체 소환' 모달을 닫습니다.
+ */
+function closeSummonSpiritModal() {
+    playSound('click');
+    const modal = document.getElementById('summon-spirit-modal');
+    if (modal) {
+        modal.classList.remove('visible');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
+}
+
+/**
+ * 보유 중인 영체 목록을 소환 모달에 렌더링합니다.
+ */
+function renderSummonSpiritList() {
+    const listEl = document.getElementById('summon-spirit-list');
+    listEl.innerHTML = '';
+
+    if (player.capturedSpirits.length === 0) {
+        listEl.innerHTML = '<div class="inventory-item" style="justify-content: center;">보유한 영체가 없습니다.</div>';
+        return;
+    }
+
+    player.capturedSpirits.forEach((spirit, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'inventory-item';
+        
+        let buttonHtml = '';
+        if (spirit.cooldownUntilFloor > floor) {
+            const remainingFloors = spirit.cooldownUntilFloor - floor;
+            buttonHtml = `<button class="btn-use" disabled>💀 사망 (${remainingFloors}층 후 부활)</button>`;
+        } else if (spirit.isSummoned) {
+            buttonHtml = `<button class="btn-heal" onclick="confirmRecallSpirit(${index})">보관</button>`;
+        } else {
+            const canSummon = player.minions.length < 3;
+            buttonHtml = `<button class="btn-use" onclick="confirmSummonSpirit(${index})" ${!canSummon ? 'disabled' : ''}>${canSummon ? '소환' : '소환 불가 (최대 3기)'}</button>`;
+        }
+
+        itemEl.innerHTML = `
+            <div class="item-info">
+                ${spirit.emoji} ${spirit.name}
+                <span class="skill-desc" style="color: #ccc;">(기본 HP: ${spirit.baseHp}, 기본 ATK: ${spirit.baseAtk})</span>
+            </div>
+            ${buttonHtml}
+        `;
+        listEl.appendChild(itemEl);
+    });
+}
+
+/**
  * 회원정보 수정 모달을 엽니다.
  * - 모달을 열기 전에 서버에서 현재 사용자 정보를 가져와 폼을 채웁니다.
  */
@@ -1130,6 +1255,7 @@ function getCharacterEmoji(characterClass) {
         case 'wizard': return '🧙';
         case 'rogue': return '🥷';
         case 'paladin': return '🛡️';
+        case 'necromancer': return '💀';
         default: return '';
     }
 }
@@ -1376,9 +1502,101 @@ function openCharacterSelectModal(isLoggedIn) {
     // '모험 시작' 버튼이 startNewGame을 올바르게 호출하도록 플래그를 window 객체에 저장합니다.
     window.isNewGameForLoggedInUser = isLoggedIn;
 
+    // 캐릭터 카드를 동적으로 생성하고 스탯 정보를 렌더링합니다.
+    renderCharacterCards();
+    renderCharacterSelectStats();
+
     const modal = document.getElementById('character-select-modal');
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('visible'), 10);
+}
+
+/**
+ * data.js의 characterData를 기반으로 캐릭터 선택 카드들을 동적으로 생성합니다.
+ * - 이 함수는 캐릭터 카드가 HTML에 하드코딩되어 있지 않아도 동작하도록 보장합니다.
+ */
+function renderCharacterCards() {
+    const characterListEl = document.getElementById('character-list');
+    if (!characterListEl || typeof characterData === 'undefined') return;
+
+    // 이미 모든 캐릭터 카드가 렌더링되었다면 중복 생성을 방지합니다.
+    const existingCardCount = characterListEl.children.length;
+    const totalCharacterCount = Object.keys(characterData).length;
+    if (existingCardCount === totalCharacterCount) {
+        return;
+    }
+
+    characterListEl.innerHTML = ''; // 기존 카드를 모두 지우고 새로 생성
+
+    for (const id in characterData) {
+        const char = characterData[id];
+        const cardEl = document.createElement('div');
+        cardEl.className = 'character-card';
+        cardEl.dataset.characterId = id;
+        cardEl.setAttribute('onclick', `selectCharacter('${id}')`);
+        cardEl.innerHTML = `
+            <div class="character-card-emoji">${char.emoji}</div>
+            <h3 class="character-card-name">${char.name}</h3>
+            <p class="character-card-desc">${char.description}</p>
+        `;
+        characterListEl.appendChild(cardEl);
+    }
+}
+
+/**
+ * 캐릭터 선택 모달의 각 캐릭터 카드에 기본 스탯을 렌더링합니다.
+ * - data.js의 characterData를 참조합니다.
+ * - 용사(hero)를 기준으로 스탯이 높으면 초록색, 낮으면 빨간색으로 표시합니다.
+ */
+function renderCharacterSelectStats() {
+    // characterData가 로드되었는지 확인
+    if (typeof characterData === 'undefined') return;
+
+    const heroStats = characterData.hero.stats;
+
+    for (const id in characterData) {
+        const card = document.querySelector(`.character-card[data-character-id="${id}"]`);
+        if (!card) continue;
+
+        // 스탯이 이미 렌더링되었다면 중복 생성 방지
+        if (card.querySelector('.character-stats')) continue;
+
+        const statsContainer = document.createElement('div');
+        statsContainer.className = 'character-stats';
+
+        const createStatLi = (label, value, baseValue, suffix = '') => {
+            let style = '';
+            // 용사 자신은 비교하지 않음
+            if (id !== 'hero') {
+                if (value > baseValue) {
+                    style = 'style="color: #22c55e; font-weight: bold;"'; // 초록색
+                } else if (value < baseValue) {
+                    style = 'style="color: #ef4444; font-weight: bold;"'; // 빨간색
+                }
+            }
+            return `<li ${style}>- ${label}: ${value}${suffix}</li>`;
+        };
+        let statsHtml = '<ul>';
+        statsHtml += createStatLi('최대 HP', characterData[id].stats.hp, heroStats.hp);
+        statsHtml += createStatLi('최대 MP', characterData[id].stats.mp, heroStats.mp);
+        statsHtml += createStatLi('기본 ATK', characterData[id].stats.atk, heroStats.atk);
+        statsHtml += createStatLi('기본 회피율', characterData[id].stats.evasion, heroStats.evasion, '%');
+        statsHtml += createStatLi('기본 치명타율', characterData[id].stats.crit, heroStats.crit, '%');
+        statsHtml += '</ul>';
+
+        statsContainer.innerHTML = `
+            <h4 style="margin-top: 12px; margin-bottom: 5px; border-top: 1px solid #444; padding-top: 12px;">기본 능력치</h4>
+            ${statsHtml}
+        `;
+
+        // 생성된 스탯 정보를 캐릭터 설명(<p>) 뒤에 추가
+        const description = card.querySelector('p');
+        if (description) {
+            description.insertAdjacentElement('afterend', statsContainer);
+        } else {
+            card.appendChild(statsContainer);
+        }
+    }
 }
 
 /**

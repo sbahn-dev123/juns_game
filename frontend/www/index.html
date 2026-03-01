@@ -50,49 +50,48 @@
 
             <!-- 전투 필드 (캐릭터 표시 영역) -->
             <div class="battle-field" id="battle-field">
-            <div class="character" id="player-character">
-                <div class="emoji" id="player-emoji"></div>
-                <div class="name">용사</div>
-                <div class="hp-bar-bg"><div class="hp-bar-fill" id="player-hp-bar"></div></div>
-                <div class="hp-text"><span id="player-hp">100</span> / <span id="player-max-hp">100</span></div>
+                <div class="player-side">
+                    <div class="character" id="player-character">
+                        <div class="emoji" id="player-emoji"></div>
+                        <div class="name">용사</div>
+                        <div class="hp-bar-bg"><div class="hp-bar-fill" id="player-hp-bar"></div></div>
+                        <div class="hp-text"><span id="player-hp">100</span> / <span id="player-max-hp">100</span></div>
+                    </div>
+                    <div id="minion-area" class="minion-area"></div>
+                </div>
+
+                <div class="vs-indicator">VS</div>
+
+                <div id="monster-area">
+                    <!-- 몬스터들이 동적으로 생성됩니다 -->
+                </div>
             </div>
 
-            <div id="monster-area">
-                <!-- 몬스터들이 동적으로 생성됩니다 -->
+            <!-- 하단 UI 영역 -->
+            <div class="bottom-ui-container">
+                <div class="player-status-bars">
+                    <div class="mp-bar-container">
+                        <div class="level-badge" style="color: #60a5fa;">MP</div>
+                        <div class="xp-bar-bg">
+                            <div class="mp-bar-fill" id="player-mp-bar"></div>
+                        </div>
+                        <div class="xp-text"><span id="player-mp">50</span> / <span id="player-max-mp">50</span></div>
+                    </div>
+                    <div class="xp-bar-container">
+                        <div class="level-badge">LV.<span id="player-level">1</span></div>
+                        <div class="xp-bar-bg"><div class="xp-bar-fill" id="player-xp-bar"></div></div>
+                        <div class="xp-text"><span id="player-xp">0</span> / <span id="player-xp-next">100</span> XP</div>
+                    </div>
+                </div>
+                <div class="log-and-controls">
+                    <div class="log-box" id="log-box">
+                        <div class="log-msg log-system">동굴 탐험을 시작합니다...</div>
+                    </div>
+                    <div class="controls" id="controls-panel">
+                        <!-- 컨트롤 버튼들이 동적으로 생성됩니다 -->
+                    </div>
+                </div>
             </div>
-        </div>
-
-            <!-- 전투 및 시스템 로그 -->
-            <div class="log-box" id="log-box">
-            <div class="log-msg log-system">동굴 탐험을 시작합니다...</div>
-        </div>
-
-        <!-- MP 및 경험치 바 -->
-        <div class="mp-bar-container">
-            <div class="level-badge" style="color: #60a5fa;">MP</div>
-            <div class="xp-bar-bg">
-                <div class="mp-bar-fill" id="player-mp-bar"></div>
-            </div>
-            <div class="xp-text">
-                <span id="player-mp">50</span> / <span id="player-max-mp">50</span>
-            </div>
-        </div>
-
-        <div class="xp-bar-container">
-            <div class="level-badge">LV.<span id="player-level">1</span></div>
-            <div class="xp-bar-bg">
-                <div class="xp-bar-fill" id="player-xp-bar"></div>
-            </div>
-            <div class="xp-text">
-                <span id="player-xp">0</span> / <span id="player-xp-next">100</span> XP
-            </div>
-        </div>
-
-        <!-- 하단 컨트롤 버튼 -->
-        <div class="controls" id="controls-panel">
-            <button class="btn-attack" onclick="showSkillSelection()">⚔️ 스킬</button>
-            <button class="btn-heal" onclick="showAllPotions()">🧪 물약</button>
-            <button class="btn-armor" onclick="openInventoryModal()">🛡️ 장비/스탯</button>
         </div>
     </div>
 

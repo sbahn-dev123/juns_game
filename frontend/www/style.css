@@ -195,7 +195,7 @@ body {
     transition: transform 0.15s ease-out, opacity 0.5s, filter 0.5s; /* 공격, 사망 등 애니메이션을 위함 */
 }
 
-.emoji { font-size: 130px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); transition: 0.2s; }
+.emoji { font-size: 100px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); transition: 0.2s; }
 .name { font-size: 22px; margin-top: 10px; color: #ccc; font-weight: bold; }
 
 /* 체력바 */
@@ -1205,7 +1205,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* 태블릿 (1200px 이하) */
 @media (max-width: 1200px) {
-    .emoji { font-size: 120px; }
+    .emoji { font-size: 95px; }
     .name { font-size: 22px; }
     .hp-bar-bg { width: 160px; }
     button { padding: 40px; font-size: 32px; }
@@ -1226,7 +1226,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     .game-container {
         padding: 10px; /* 내부 여백 축소 */
     }
-    .emoji { font-size: 100px; }
+    .emoji { font-size: 80px; }
     .name { font-size: 20px; }
     .hp-bar-bg { width: 140px; }
     .hp-text { font-size: 18px; }
@@ -1250,7 +1250,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
         gap: 8px; /* 캐릭터 간 간격 축소 */
         padding: 5px; /* 전투 필드 여백 축소 */
     }
-    .emoji { font-size: 52px; } /* 캐릭터 이모지 크기 추가 축소 (기존 65px에서 약 20% 감소) */
+    .emoji { font-size: 48px; } /* 캐릭터 이모지 크기 추가 축소 (기존 65px에서 약 20% 감소) */
     .name { font-size: 14px; margin-top: 4px; } /* 이름 폰트 축소 */
     .hp-bar-bg { width: 80px; height: 15px; margin-top: 4px; } /* 체력바 크기 축소 */
     .potion-container {
@@ -1351,7 +1351,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     .start-btn { width: 200px; font-size: 18px; }
     .floor-badge { font-size: 12px; padding: 6px 10px; }
     .header { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
-    .emoji { font-size: 44px; } /* 캐릭터 이모지 크기 추가 축소 (기존 55px에서 약 20% 감소) */
+    .emoji { font-size: 40px; } /* 캐릭터 이모지 크기 추가 축소 (기존 55px에서 약 20% 감소) */
     .log-box { font-size: 12px; height: 80px; }
     .xp-bar-container, .mp-bar-container { padding: 5px; }
     .xp-bar-bg { height: 15px; }
