@@ -1156,7 +1156,7 @@ function executeFireball() {
     // --- 기본 조건 검사 ---
     if (isGameOver || !isPlayerTurn) return;
 
-    const totalMpCost = Math.floor(20 * player.mpCostMultiplier);
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
@@ -1469,11 +1469,6 @@ function executeSummonSpirit() {
         return;
     }
 
-    if (player.minions.length >= 3) {
-        log("더 이상 소환수를 부릴 수 없습니다. (최대 3기)", 'log-system');
-        return;
-    }
-
     // UI 스크립트에 정의된 함수를 호출하여 모달을 엽니다.
     openSummonSpiritModal();
 }
@@ -1493,9 +1488,6 @@ function confirmSummonSpirit(spiritIndex) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
     }
-
-    isPlayerTurn = false;
-    toggleControls(false);
 
     // --- Get spirit data, don't remove it ---
     const spiritData = player.capturedSpirits[spiritIndex];
@@ -1527,15 +1519,15 @@ function confirmSummonSpirit(spiritIndex) {
         hp: spiritData.currentHp !== undefined ? spiritData.currentHp : spiritData.maxHp,
         maxHp: spiritData.maxHp,
         atk: minionAtk,
+        isBoss: spiritData.isBoss || false, // 보스 여부 플래그 추가
         sourceId: spiritData.id, // Link to original spirit data
     };
 
     player.minions.push(newMinion);
-    log(`💀 ${newMinion.name}을(를) 전장에 소환했습니다! (HP: ${minionHp}, ATK: ${minionAtk})`, 'log-player');
+    log(`💀 ${newMinion.name}을(를) 전장에 소환했습니다! (HP: ${newMinion.hp}, ATK: ${newMinion.atk})`, 'log-player');
     
     closeSummonSpiritModal(); // 모달 닫기
     updateUI();
-    setTimeout(playerTurnEnd, 800);
 }
 
 /**
@@ -1549,9 +1541,6 @@ function confirmRecallSpirit(spiritIndex) {
         return;
     }
 
-    isPlayerTurn = false;
-    toggleControls(false);
-    
     // Find and remove the minion from the field
     const minionIndex = player.minions.findIndex(m => m.sourceId === spiritData.id);
     if (minionIndex > -1) {
@@ -1566,22 +1555,16 @@ function confirmRecallSpirit(spiritIndex) {
     playSound('click'); // some sound
     closeSummonSpiritModal();
     updateUI();
-    setTimeout(playerTurnEnd, 800);
 }
 
 /**
- * '영체 폭발' 스킬을 실행하는 함수 (네크로맨서 전용).
- * - 소환된 모든 영체를 폭발시켜, 영체 수만큼 모든 적에게 광역 피해를 줍니다.
+ * '영혼 소용돌이' 스킬을 실행하는 함수 (네크로맨서 전용).
+ * - 모든 적에게 공격력의 130%만큼 광역 피해를 줍니다. (MP 15 소모)
  */
-function executeSpiritExplosion() {
+function executeSpiritVortex() {
     if (isGameOver || !isPlayerTurn) return;
 
-    if (player.minions.length === 0) {
-        log("폭발시킬 영체가 없습니다.", 'log-system');
-        return;
-    }
-
-    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
@@ -1592,52 +1575,44 @@ function executeSpiritExplosion() {
     player.mp -= totalMpCost;
     playSound('black-flash');
 
-    const spiritsToExplode = [...player.minions];
-    
-    // --- Update captured spirits state ---
-    spiritsToExplode.forEach(minion => {
-        const originalSpirit = player.capturedSpirits.find(s => s.id === minion.sourceId);
-        if (originalSpirit) {
-            originalSpirit.isSummoned = false;
-            originalSpirit.cooldownUntilFloor = floor + 5; // 사용한 층 포함 5층 뒤에 사용 가능 (예: 1층 사용 -> 6층부터)
-        }
-    });
 
-    player.minions = []; // Clear minions from the field
-    const explosionCount = spiritsToExplode.length;
-    log(`💥 ${explosionCount}기의 영혼을 폭발시켜 모든 적을 공격합니다!`, 'log-player');
+    log('🌪️ 영혼 소용돌이! 모든 적을 공격합니다!', 'log-player');
 
+    const livingMonsters = monsters.filter(m => m.hp > 0);
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
     let totalXpGained = 0;
 
-    for (let i = 0; i < explosionCount; i++) {
+    livingMonsters.forEach((monster, index) => {
         setTimeout(() => {
-            const explosionDmg = 15 + player.mag * 2 + Math.floor(player.atk / 2);
-            log(`💥 ${spiritsToExplode[i].name}의 폭발! 모든 적에게 ${explosionDmg}의 피해!`, 'log-player');
+            let dmg = Math.floor(player.atk * 1.3 + player.magicDamageBonus);
+            const monsterIndexInAll = monsters.findIndex(m => m === monster);
+            const targetElement = monsterElements[monsterIndexInAll];
+            
+            showFloatingText(dmg, targetElement, 'damage');
+            monster.hp -= dmg;
 
-            monsters.forEach(monster => {
-                if (monster.hp > 0) {
-                    monster.hp -= explosionDmg;
-                    const monsterIndex = monsters.findIndex(m => m === monster);
-                    const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
-                    if (monsterElement) showFloatingText(explosionDmg, monsterElement, 'fireball');
+            if (targetElement) {
+                const emojiElement = targetElement.querySelector('.emoji');
+                emojiElement.classList.add('hit');
+                setTimeout(() => emojiElement.classList.remove('hit'), 300);
+            }
 
-                    if (monster.hp <= 0) {
-                        log(`${monster.name}이(가) 폭발에 휘말려 쓰러졌습니다!`, 'log-player');
-                        totalXpGained += monster.xp;
-                    }
-                }
-            });
+            if (monster.hp <= 0) {
+                playSound('monster-die');
+                log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+                totalXpGained += monster.xp;
+            }
 
-            // 마지막 폭발 후에 턴 종료 처리
-            if (i === explosionCount - 1) {
+            if (index === livingMonsters.length - 1) {
                 if (totalXpGained > 0) gainXP(totalXpGained);
                 updateUI();
                 const allDead = monsters.every(m => m.hp <= 0);
                 if (allDead) winBattle();
                 else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
             }
-        }, i * 200); // 0.2초 간격으로 연쇄 폭발
-    }
+        }, index * 150);
+    });
+
     updateUI();
 }
 
@@ -1679,6 +1654,7 @@ function executeSpiritAbsorption() {
             emoji: targetMonster.emoji,
             baseHp: targetMonster.maxHp,
             baseAtk: targetMonster.atk,
+            isBoss: targetMonster.isBoss || false, // 보스 여부 저장
             maxHp: spiritMaxHp, // 최대 체력 저장
             currentHp: spiritMaxHp, // 현재 체력 저장 (처음엔 최대)
             isSummoned: false,

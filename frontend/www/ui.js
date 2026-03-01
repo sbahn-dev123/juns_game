@@ -214,7 +214,7 @@ function showSkillSelection() {
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
             <button class="btn-attack" style="background-color: #3b82f6;" onclick="executeManaBlaster()">💧 마나 블래스터<br><span class="skill-desc">(MP 10 / 피해량: ${manaBlasterDmg})</span></button>
-            <button class="btn-attack" style="background-color: #dc2626;" onclick="executeFireball()">🔥 파이어볼<br><span class="skill-desc">(MP 20 / 피해량: ${fireballDmg})</span></button>
+            <button class="btn-attack" style="background-color: #dc2626;" onclick="executeFireball()">🔥 파이어볼<br><span class="skill-desc">(MP 15 / 피해량: ${fireballDmg})</span></button>
             <button class="btn-attack" style="background-color: #f59e0b;" onclick="executeElectronicBeam()">⚡ 일렉트로닉 빔<br><span class="skill-desc">(MP 25 / 피해량: ${beamDmg} / 연쇄,기절)</span></button>
             <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기${emptyDesc}</button>
         `;
@@ -246,12 +246,13 @@ function showSkillSelection() {
     } else if (player.characterClass === 'necromancer') {
         // 네크로맨서 스킬 UI
         const soulPunchDmg = Math.floor(player.atk * 2.1 + player.magicDamageBonus);
+        const spiritVortexDmg = Math.floor(player.atk * 1.3 + player.magicDamageBonus);
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ 일반 공격<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
             <button class="btn-attack" style="background-color: #c12828;" onclick="executeSoulPunch()">👊 영혼 펀치<br><span class="skill-desc">(MP 10 / 피해량: ${soulPunchDmg})</span></button>
             <button class="btn-heal" style="background-color: #14532d;" onclick="executeSpiritAbsorption()">🌀 영체 흡수<br><span class="skill-desc">(MP 25 / HP < ATK인 적 포획)</span></button>
-            <button class="btn-buff" style="background-color: #581c87;" onclick="executeSummonSpirit()">👻 영체 소환/보관<br><span class="skill-desc">(MP 0)</span></button>
-            <button class="btn-attack" style="background-color: #7f1d1d;" onclick="executeSpiritExplosion()">💥 영체 폭발<br><span class="skill-desc">(MP 10 / 소환수 자폭)</span></button>
+            <button class="btn-buff" style="background-color: #581c87;" onclick="executeSummonSpirit()">👻 영체 소환/보관<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>
+            <button class="btn-attack" style="background-color: #7f1d1d;" onclick="executeSpiritVortex()">🌪️ 영혼 소용돌이<br><span class="skill-desc">(MP 15 / 피해량: ${spiritVortexDmg})</span></button>
             <button class="btn-inventory btn-back" onclick="showMainControls()">↩️ 뒤로가기${emptyDesc}</button>
         `;
     } else {
@@ -1018,6 +1019,9 @@ function renderSummonSpiritList() {
         return;
     }
 
+    const bossMinionCount = player.minions.filter(m => m.isBoss).length;
+    const normalMinionCount = player.minions.length - bossMinionCount;
+
     player.capturedSpirits.forEach((spirit, index) => {
         const itemEl = document.createElement('div');
         itemEl.className = 'inventory-item';
@@ -1029,8 +1033,16 @@ function renderSummonSpiritList() {
         } else if (spirit.isSummoned) {
             buttonHtml = `<button class="btn-heal" onclick="confirmRecallSpirit(${index})">보관</button>`;
         } else {
-            const canSummon = player.minions.length < 3;
-            buttonHtml = `<button class="btn-use" onclick="confirmSummonSpirit(${index})" ${!canSummon ? 'disabled' : ''}>${canSummon ? '소환' : '소환 불가 (최대 3기)'}</button>`;
+            let canSummon = true;
+            let disabledReason = '';
+            if (player.minions.length >= 3) {
+                canSummon = false; disabledReason = '소환 불가 (최대 3기)';
+            } else if (spirit.isBoss && bossMinionCount >= 1) {
+                canSummon = false; disabledReason = '소환 불가 (보스 1기 초과)';
+            } else if (!spirit.isBoss && normalMinionCount >= 2) {
+                canSummon = false; disabledReason = '소환 불가 (일반 2기 초과)';
+            }
+            buttonHtml = `<button class="btn-use" onclick="confirmSummonSpirit(${index})" ${!canSummon ? 'disabled' : ''}>${canSummon ? '소환' : disabledReason}</button>`;
         }
 
         itemEl.innerHTML = `
@@ -1658,15 +1670,6 @@ function openInventoryModal(activeTab) {
     tempStats = { str: player.str, vit: player.vit, mag: player.mag, mnd: player.mnd, agi: player.agi, int: player.int, luk: player.luk, fcs: player.fcs };
 
     const modal = document.getElementById('equipment-modal');
-    modal.style.display = 'flex';
-
-    // 모바일 환경에서 모달 내용이 잘리는 것을 방지하기 위해
-    // 모달 컨텐츠에 최대 높이와 스크롤을 적용합니다.
-    const modalContent = modal.querySelector('.modal-content');
-    if (modalContent) {
-        modalContent.style.maxHeight = '85vh';
-        modalContent.style.overflowY = 'auto';
-    }
     
     // 전리품 섹션이 없으면 동적으로 생성
     const container = modal.querySelector('.management-container');
@@ -1676,67 +1679,50 @@ function openInventoryModal(activeTab) {
         lootSection.id = 'loot-management-section';
         lootSection.className = 'management-section';
         lootSection.innerHTML = `
-            <h3>전리품</h3>
+            <h3 style="text-align: center; margin-bottom: 15px;">💎 전리품</h3>
             <div id="loot-inventory-list" class="equipment-list" style="max-height: 60vh; overflow-y: auto;"></div>
         `;
         // 스탯 섹션 앞에 전리품 섹션 삽입
-        const statSectionEl = container.querySelector('.stat-up-list')?.closest('.management-section');
+        const statSectionEl = document.getElementById('stat-management-section');
         if (statSectionEl) {
             container.insertBefore(lootSection, statSectionEl);
         } else {
             container.appendChild(lootSection);
         }
     }
-    
+
     // 모달 내용 렌더링 (UI에 요소가 존재하도록 보장)
     renderStatUpModal();
     renderEquipment();
     renderLootInventory();
 
     // --- 섹션 및 UI 요소 가져오기 ---
-    const modalTitleEl = modal.querySelector('h2'); // 모달의 메인 제목
-    const managementContainer = container;
-    const currentEquipmentSection = document.getElementById('current-equipment-display');
-    const armorSection = document.getElementById('equipment-armor-list')?.closest('.management-section');
-    const weaponSection = document.getElementById('equipment-weapon-list')?.closest('.management-section');
-    const statSection = document.querySelector('.stat-up-list')?.closest('.management-section');
-    // lootSection은 위에서 이미 정의됨
+    const modalTitleEl = modal.querySelector('.shop-title');
+    const equipmentSection = document.getElementById('equipment-management-section');
+    const statSection = document.getElementById('stat-management-section');
+    // lootSection은 위에서 이미 정의 및 생성됨
 
     // --- 모든 관련 섹션 숨기기 ---
-    if (currentEquipmentSection) currentEquipmentSection.style.display = 'none';
-    if (armorSection) armorSection.style.display = 'none';
-    if (weaponSection) weaponSection.style.display = 'none';
+    if (equipmentSection) equipmentSection.style.display = 'none';
     if (lootSection) lootSection.style.display = 'none';
     if (statSection) statSection.style.display = 'none';
-
-    // --- 컨테이너 스타일 초기화 및 탭에 맞게 재설정 ---
-    managementContainer.style.display = 'grid'; // 그리드를 기본값으로 재설정
-    managementContainer.style.gridTemplateColumns = '';
-    managementContainer.style.margin = '';
 
     switch (activeTab) {
         case 'equipment':
             if (modalTitleEl) modalTitleEl.innerText = '🛡️ 장비 관리';
-            if (currentEquipmentSection) currentEquipmentSection.style.display = 'block';
-            if (armorSection) armorSection.style.display = 'block';
-            if (weaponSection) weaponSection.style.display = 'block';
-            
-            // 단일 뷰로 표시하기 위해 그리드 해제
-            managementContainer.style.display = 'block';
+            if (equipmentSection) equipmentSection.style.display = 'flex';
             break;
         case 'loot':
             if (modalTitleEl) modalTitleEl.innerText = '💎 전리품';
-            if (lootSection) lootSection.style.display = 'block';
-            // 단일 뷰로 표시하기 위해 그리드 해제
-            managementContainer.style.display = 'block';
+            if (lootSection) lootSection.style.display = 'flex';
             break;
         case 'stats':
             if (modalTitleEl) modalTitleEl.innerText = '📊 스탯 분배';
-            if (statSection) statSection.style.display = 'block';
-            // 단일 뷰로 표시하기 위해 그리드 해제
-            managementContainer.style.display = 'block';
+            if (statSection) statSection.style.display = 'flex';
             break;
     }
+
+    modal.style.display = 'flex';
 }
 
 /**
