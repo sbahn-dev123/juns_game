@@ -182,6 +182,7 @@ const characterData = {
         id: 'hero',
         name: '용사',
         emoji: '🧑',
+        attackName: '일반 공격',
         description: '균형 잡힌 능력치를 가진 만능형 전사입니다. 어떤 상황에서도 안정적인 활약을 펼칩니다.',
         stats: { hp: 35, mp: 40, atk: 10, crit: 11, evasion: 4 },
         inventory: [
@@ -194,6 +195,7 @@ const characterData = {
         id: 'wizard',
         name: '마법사',
         emoji: '🧙',
+        attackName: '마법탄',
         description: '강력한 원소 마법으로 다수의 적을 섬멸합니다. 체력은 약하지만 높은 마나와 마법 공격력을 가집니다.',
         stats: { hp: 30, mp: 60, atk: 8, crit: 11, evasion: 4 },
         inventory: [
@@ -206,6 +208,7 @@ const characterData = {
         id: 'rogue',
         name: '도적',
         emoji: '🥷',
+        attackName: '단검 공격',
         description: '민첩한 몸놀림과 치명적인 독 공격에 특화된 암살자입니다. 높은 공격력과 고유 회피/치명타율을 자랑합니다.',
         stats: { hp: 30, mp: 30, atk: 12, crit: 15, evasion: 15 },
         inventory: [
@@ -218,6 +221,7 @@ const characterData = {
         id: 'paladin',
         name: '성기사',
         emoji: '🛡️',
+        attackName: '신성한 일격',
         description: '신성한 힘으로 자신을 보호하고 적을 심판합니다. 높은 체력과 방어 능력을 바탕으로 안정적인 전투를 이끌어갑니다.',
         stats: { hp: 45, mp: 30, atk: 11, crit: 11, evasion: 4 },
         inventory: [
@@ -230,12 +234,26 @@ const characterData = {
         id: 'necromancer',
         name: '네크로맨서',
         emoji: '💀',
-        description: '적의 영체를 흡수하여 아군으로 만듭니다. 흡수한 영체를 소환하고 폭발시켜 전투를 지배합니다.',
+        attackName: '영혼 공격',
+        description: '적의 영체를 흡수하여 아군으로 만듭니다. 흡수한 영체를 소환하고 강력한 영혼 마법으로 전투를 지배합니다.',
         stats: { hp: 30, mp: 60, atk: 7, crit: 11, evasion: 4 },
         inventory: [
             { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
             { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
             { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
+        ]
+    },
+    gambler: {
+        id: 'gambler',
+        name: '도박꾼',
+        emoji: '🎲',
+        attackName: '행운의 펀치',
+        description: '운에 모든 것을 겁니다. 인생은 한 방! 대박 아니면 쪽박, 짜릿한 전투를 즐깁니다.',
+        stats: { hp: 40, mp: 50, atk: 10, crit: 11, evasion: 4 },
+        inventory: [
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'critBuff', name: '기본 집중의 물약', bonus: 7, turns: 5 },
         ]
     }
 };
