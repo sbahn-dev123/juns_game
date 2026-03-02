@@ -1976,3 +1976,104 @@ function executeAllIn() {
         showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
     }
 }
+
+//** ============================================================ **//
+//** 8. 영역 전개 (Domain Expansion) 스킬
+//** ============================================================ **//
+
+const domainData = {
+    hero: { name: '불굴의 투기장', mpCost: 40, style: { color: 'orange', textShadow: '0 0 10px red' } },
+    wizard: { name: '만상(森羅萬象)의 섭리', mpCost: 50, style: { color: '#8b5cf6', textShadow: '0 0 10px #c4b5fd' } },
+    rogue: { name: '자복암영정(自伏暗影庭)', mpCost: 35, style: { color: '#3f3f46', textShadow: '0 0 10px #a1a1aa' } },
+    paladin: { name: '신성한 심판의 영역', mpCost: 45, style: { color: '#facc15', textShadow: '0 0 10px #fef08a' } },
+    necromancer: { name: '망자의 연회', mpCost: 35, style: { color: '#7e22ce', textShadow: '0 0 10px #c084fc' } },
+    gambler: { name: '복마어주자(伏魔御廚子)', mpCost: 30, style: { color: '#be123c', textShadow: '0 0 10px #fda4af' } }
+};
+
+/**
+ * 영역 전개를 활성화하는 토글 함수.
+ * @param {string} characterClass - 영역을 사용하는 캐릭터의 클래스.
+ */
+function activateDomain(characterClass) {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const domain = domainData[characterClass];
+    if (!domain) return;
+
+    const totalMpCost = Math.floor(domain.mpCost * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    player.mp -= totalMpCost;
+    player.domainActive = true;
+    playSound('boss-appear');
+
+    log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
+
+    const domainCircle = document.getElementById('domain-expansion-circle');
+    if (domainCircle) {
+        domainCircle.style.display = 'block';
+        domainCircle.style.animation = 'none';
+        domainCircle.offsetHeight; // Reflow
+        domainCircle.style.animation = 'expand-domain-persistent 1.5s forwards';
+    }
+    
+    updateUI();
+    showSkillSelection(); // 버튼 상태 갱신
+}
+
+/**
+ * 활성화된 영역을 해제하는 토글 함수.
+ * @param {boolean} [isForced=false] - MP 부족 등으로 강제 해제되었는지 여부.
+ */
+function deactivateDomain(isForced = false) {
+    if (isGameOver) return;
+
+    player.domainActive = false;
+    playSound('click'); // 해제는 간단한 사운드 사용
+
+    if (isForced) {
+        log('MP가 부족하여 영역이 강제로 해제됩니다!', 'log-system', { color: '#ef4444' });
+    } else {
+        log('영역을 해제합니다.', 'log-system');
+    }
+
+    const domainCircle = document.getElementById('domain-expansion-circle');
+    if (domainCircle) {
+        domainCircle.style.animation = 'none';
+        domainCircle.offsetHeight; // Reflow
+        domainCircle.style.animation = 'shrink-domain 1s forwards';
+        setTimeout(() => {
+            if (!player.domainActive) {
+                domainCircle.style.display = 'none';
+            }
+        }, 1000);
+    }
+
+    updateUI();
+    showSkillSelection(); // 버튼 상태 갱신
+}
+
+/**
+ * 공격 시 '독 바르기' 버프가 활성화되어 있으면 대상에게 독 효과를 적용합니다.
+ * @param {object} monster - 독을 적용할 몬스터 객체.
+ */
+function applyPoisonEffect(monster) {
+    // 도적의 '독 바르기' 버프가 활성화 상태일 때만 작동
+    if (player.characterClass === 'rogue' && player.poisonBuff.turns > 0) {
+        // 이미 중독 상태면 턴만 갱신, 아니면 새로 적용
+        if (monster.poison && monster.poison.turns > 0) {
+            monster.poison.turns = 3;
+        } else {
+            monster.poison = { turns: 3, damage: player.poisonBuff.damage };
+        }
+        
+        const monsterIndex = monsters.findIndex(m => m === monster);
+        const monsterElement = document.querySelectorAll('#monster-area .monster-wrapper')[monsterIndex];
+        
+        log(`☠️ ${monster.name}에게 독을 묻혔습니다!`, 'log-player');
+        if (monsterElement) showFloatingText('POISON', monsterElement, 'poison-buff');
+    }
+}

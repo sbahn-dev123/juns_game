@@ -280,6 +280,22 @@ function generateMonstersForFloor(floorNumber) {
 }
 
 /**
+ * 몬스터가 쓰러졌을 때 공통으로 처리하는 함수 (사망 로그, 사운드, 경험치 획득).
+ * 중복 처리를 방지하기 위해 isDeathProcessed 플래그를 사용합니다.
+ * @param {object} monster - 쓰러진 몬스터 객체.
+ * @param {string} [reason=''] - 사망 원인 (e.g., '화상 피해').
+ */
+function handleMonsterDeath(monster, reason = '') {
+    if (!monster || monster.isDeathProcessed) return;
+
+    monster.isDeathProcessed = true;
+    playSound('monster-die');
+    const reasonText = reason ? `(${reason})` : '';
+    log(`${monster.name}을(를) 쓰러뜨렸다! ${reasonText}`, 'log-player');
+    gainXP(monster.xp);
+}
+
+/**
  * 몬스터 템플릿과 난이도 배율을 기반으로 실제 몬스터 객체를 생성하는 함수
  * @param {object} template - 몬스터 도감(data.js)에 정의된 몬스터 템플릿.
  * @param {number} multiplier - 난이도 배율 (층이 높아질수록 증가).
@@ -299,6 +315,7 @@ function createMonster(template, multiplier) {
         isStunned: false,
         isCharging: false,
         isBoss: template.isBoss || false,
+        isDeathProcessed: false, // 사망 처리 여부 플래그
         poison: { turns: 0, damage: 0 },
         burn: { turns: 0, damage: 0 },
     };

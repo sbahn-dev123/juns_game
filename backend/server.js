@@ -78,8 +78,8 @@ app.get('/config.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   const isProduction = process.env.NODE_ENV === 'production';
   const apiUrl = isProduction 
-    ? (process.env.PROD_API_URL)
-    : 'http://localhost:3000';
+    ? (process.env.PROD_API_URL) // 예: https://your-domain.com/api
+    : 'http://localhost:3000/api';
   res.send(`window.API_URL = "${apiUrl}";`);
 });
 
