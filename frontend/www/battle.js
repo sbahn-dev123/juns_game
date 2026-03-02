@@ -189,17 +189,13 @@ function executeNormalAttack() {
     const allDead = monsters.every(m => m.hp <= 0);
     if (allDead) {
         if (targetMonster.hp <= 0) {
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            playSound('monster-die');
-            gainXP(targetMonster.xp);
+            handleMonsterDeath(targetMonster, player.targetIndex);
         }
         winBattle();
     } else {
         // 현재 타겟 몬스터가 죽었는지 확인
         if (targetMonster.hp <= 0) {
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            playSound('monster-die');
-            gainXP(targetMonster.xp);
+            handleMonsterDeath(targetMonster, player.targetIndex);
             findNextTarget();
         }
         setTimeout(playerTurnEnd, 800); // 0.8초 뒤 소환수 공격 또는 몬스터 반격
@@ -253,9 +249,7 @@ function minionsAttack() {
                 if(targetMonsterElement) showFloatingText(dmg, targetMonsterElement, 'minion-damage');
 
                 if (targetMonster.hp <= 0) {
-                    log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-                    playSound('monster-die');
-                    totalXpGained += targetMonster.xp;
+                    handleMonsterDeath(targetMonster, player.targetIndex);
                 }
                 updateUI();
                 resolve();
@@ -267,7 +261,6 @@ function minionsAttack() {
     // 모든 소환수 공격이 끝나면 몬스터 턴을 시작합니다.
     Promise.all(attackPromises).then(() => {
         if (isGameOver) return;
-        if (totalXpGained > 0) gainXP(totalXpGained);
         if (monsters.every(m => m.hp <= 0)) {
             winBattle();
         } else {
@@ -305,9 +298,7 @@ function monstersAttack() {
                 if(monsterElement) showFloatingText(burnDamage, monsterElement, 'burn');
 
                 if (monster.hp <= 0) {
-                    log(`${monster.name}이(가) 화상 피해로 쓰러졌다!`, 'log-monster');
-                    playSound('monster-die');
-                    gainXP(monster.xp);
+                    handleMonsterDeath(monster, monsterIndex, '화상 피해');
                     updateUI();
 
                     // 모든 몬스터가 죽었는지 확인
@@ -335,9 +326,7 @@ function monstersAttack() {
                 if(monsterElement) showFloatingText(poisonDamage, monsterElement, 'poison');
 
                 if (monster.hp <= 0) {
-                    log(`${monster.name}이(가) 중독 피해로 쓰러졌다!`, 'log-monster');
-                    playSound('monster-die');
-                    gainXP(monster.xp);
+                    handleMonsterDeath(monster, monsterIndex, '중독 피해');
                     updateUI();
                     const allDead = monsters.every(m => m.hp <= 0);
                     if (allDead) {
@@ -764,6 +753,27 @@ function endMonstersTurn() {
             }
         }
 
+        // 턴 종료 시 영역 유지비 소모
+        if (player.domainActive) {
+            const maintenanceCost = 15;
+            if (player.mp >= maintenanceCost) {
+                player.mp -= maintenanceCost;
+                log(`🔮 영역 유지를 위해 MP를 ${maintenanceCost} 소모합니다.`, 'log-system');
+                // 턴 종료 시 영역 효과 발동
+                await applyDomainEffects();
+            } else {
+                deactivateDomain(true); // MP 부족으로 강제 해제
+            }
+        }
+
+        // 스킬 봉인 턴 감소
+        if (player.skillLockTurns > 0) {
+            player.skillLockTurns--;
+            if (player.skillLockTurns === 0) {
+                log('⛓️ 스킬 봉인이 해제되었습니다.', 'log-system');
+            }
+        }
+
         // 도박꾼 힘 버프 턴 감소
         if (player.strBuff.turns > 0) {
             player.strBuff.turns--;
@@ -805,6 +815,7 @@ function endMonstersTurn() {
  * - 15 MP를 소모하며, 3%의 고정 흑섬 발동 확률을 가집니다.
  */
 function executePowerAttack() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const targetMonster = monsters[player.targetIndex];
@@ -956,6 +967,7 @@ function executePowerAttack() {
  * - 25 MP를 소모합니다.
  */
 function executeSweepAttack() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     // 방어 태세 여부에 따라 총 MP 소모량 계산
@@ -1055,9 +1067,7 @@ function executeSweepAttack() {
 
             // 몬스터 사망 처리 및 경험치 합산
             if (monster.hp <= 0) {
-                playSound('monster-die');
-                log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-                totalXpGained += monster.xp;
+                handleMonsterDeath(monster, monsterIndexInAll);
             } else {
                 // 살아남은 몬스터에게만 기절 확률 적용
                 if (Math.random() < 0.03) {
@@ -1069,9 +1079,6 @@ function executeSweepAttack() {
 
             // --- 마지막 몬스터 공격 후 턴 종료 처리 ---
             if (index === livingMonsters.length - 1) {
-                if (totalXpGained > 0) {
-                    gainXP(totalXpGained);
-                }
                 updateUI();
                 const allDead = monsters.every(m => m.hp <= 0);
                 if (allDead) {
@@ -1112,6 +1119,7 @@ function toggleDefenseStance() {
  * - 턴을 소모하지 않습니다.
  */
 function executeShoutOfResolve() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     // 버프가 활성화 상태이면 취소
@@ -1170,6 +1178,7 @@ function applyPoisonEffect(monster) {
  * - 단일 대상에게 마법 피해를 줍니다. (MP 20 소모)
  */
 function executeManaBlaster() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const targetMonster = monsters[player.targetIndex];
@@ -1208,17 +1217,11 @@ function executeManaBlaster() {
 
     const allDead = monsters.every(m => m.hp <= 0);
     if (allDead) {
-        if (targetMonster.hp <= 0) {
-            playSound('monster-die');
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            gainXP(targetMonster.xp);
-        }
+        if (targetMonster.hp <= 0) handleMonsterDeath(targetMonster, player.targetIndex);
         winBattle();
     } else {
         if (targetMonster.hp <= 0) {
-            playSound('monster-die');
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            gainXP(targetMonster.xp);
+            handleMonsterDeath(targetMonster, player.targetIndex);
             findNextTarget();
         }
         setTimeout(playerTurnEnd, 800);
@@ -1230,6 +1233,7 @@ function executeManaBlaster() {
  * - 단일 대상에게 강력한 화염 피해를 줍니다. (MP 25 소모)
  */
 function executeFireball() {
+    if (checkSkillLock()) return;
     // --- 기본 조건 검사 ---
     if (isGameOver || !isPlayerTurn) return;
 
@@ -1318,6 +1322,7 @@ function executeFireball() {
  * - 60% 확률로 인접한 다른 적에게 연쇄 공격을 가합니다. (MP 25 소모)
  */
 function executeElectronicBeam() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const totalMpCost = Math.floor(25 * player.mpCostMultiplier);
@@ -1385,9 +1390,7 @@ function executeElectronicBeam() {
         }
 
         if (monster.hp <= 0) {
-            playSound('monster-die');
-            log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            totalXpGained += monster.xp;
+            handleMonsterDeath(monster, monsterIndex);
         }
     };
 
@@ -1398,7 +1401,6 @@ function executeElectronicBeam() {
 
     // --- 턴 종료 처리 ---
     setTimeout(() => {
-        if (totalXpGained > 0) gainXP(totalXpGained);
         updateUI();
         const allDead = monsters.every(m => m.hp <= 0);
         if (allDead) winBattle();
@@ -1413,6 +1415,7 @@ function executeElectronicBeam() {
  * - 5턴간 자신의 공격에 독 효과를 부여합니다. (MP 15 소모)
  */
 function executeApplyPoison() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
@@ -1442,6 +1445,7 @@ function executeApplyPoison() {
  * - 단일 대상에게 피해를 주며, 중독 상태일 경우 추가 피해를 줍니다. (MP 20 소모)
  */
 function executeVitalStrike() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const targetMonster = monsters[player.targetIndex];
@@ -1517,17 +1521,11 @@ function executeVitalStrike() {
 
     const allDead = monsters.every(m => m.hp <= 0);
     if (allDead) {
-        if (targetMonster.hp <= 0) {
-            playSound('monster-die');
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            gainXP(targetMonster.xp);
-        }
+        if (targetMonster.hp <= 0) handleMonsterDeath(targetMonster, player.targetIndex);
         winBattle();
     } else {
         if (targetMonster.hp <= 0) {
-            playSound('monster-die');
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            gainXP(targetMonster.xp);
+            handleMonsterDeath(targetMonster, player.targetIndex);
             findNextTarget();
         }
         setTimeout(playerTurnEnd, 800);
@@ -1539,6 +1537,7 @@ function executeVitalStrike() {
  * - 2턴간 회피율을 30% 증가시킵니다.
  */
 function executeSmokeBomb() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     // 버프가 활성화 상태이면 취소
@@ -1575,6 +1574,7 @@ function executeSmokeBomb() {
  * - 무작위 적을 공격하고, 치명타 시 1턴간 숨습니다.
  */
 function executeShadowRaid() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
     const totalMpCost = Math.floor(25 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
@@ -1622,11 +1622,11 @@ function executeShadowRaid() {
     updateUI();
     const allDead = monsters.every(m => m.hp <= 0);
     if (allDead) {
-        if (targetMonster.hp <= 0) gainXP(targetMonster.xp);
+        if (targetMonster.hp <= 0) handleMonsterDeath(targetMonster, targetIndex);
         winBattle();
     } else {
         if (targetMonster.hp <= 0) {
-            gainXP(targetMonster.xp);
+            handleMonsterDeath(targetMonster, targetIndex);
             findNextTarget();
         }
         setTimeout(playerTurnEnd, 800);
@@ -1638,6 +1638,7 @@ function executeShadowRaid() {
  * - 최대 체력의 30%만큼 피해를 흡수하는 보호막을 생성합니다.
  */
 function executeIceWall() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     // 버프가 활성화 상태이면 취소
@@ -1766,6 +1767,7 @@ function confirmRecallSpirit(spiritIndex) {
  * - 모든 적에게 공격력의 130%만큼 광역 피해를 줍니다. (MP 15 소모)
  */
 function executeSpiritVortex() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
@@ -1825,6 +1827,7 @@ function executeSpiritVortex() {
  * - 체력이 7% 이하인 몬스터를 흡수하여 영체로 만듭니다.
  */
 function executeSpiritAbsorption() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const targetMonster = monsters[player.targetIndex];
@@ -1867,7 +1870,7 @@ function executeSpiritAbsorption() {
         player.capturedSpirits.push(spiritData);
         log(`👻 ${targetMonster.name}의 영체를 흡수했습니다!`, 'log-player');
         targetMonster.hp = 0; // 흡수된 몬스터는 즉시 처치
-        gainXP(targetMonster.xp);
+        handleMonsterDeath(targetMonster, player.targetIndex);
     } else {
         playSound('hit');
         log(`👻 영체 흡수에 실패했습니다...`, 'log-system');
@@ -1890,6 +1893,7 @@ function executeSpiritAbsorption() {
  * - 단일 대상에게 공격력의 210% 피해를 줍니다.
  */
 function executeSoulPunch() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const targetMonster = monsters[player.targetIndex];
@@ -1931,7 +1935,7 @@ function executeSoulPunch() {
         winBattle();
     } else {
         if (targetMonster.hp <= 0) {
-            gainXP(targetMonster.xp);
+            handleMonsterDeath(targetMonster, player.targetIndex);
             findNextTarget();
         }
         setTimeout(playerTurnEnd, 800);
@@ -1942,6 +1946,7 @@ function executeSoulPunch() {
  * - 1턴 동안 받는 피해를 80% 감소시키고, 받은 피해의 70%를 반사합니다. (MP 15 소모)
  */
 function executeDivineShield() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     // 버프가 활성화 상태이면 취소
@@ -1977,6 +1982,7 @@ function executeDivineShield() {
  * - 대상의 현재 체력 30%만큼 신성 피해를 줍니다. (MP 25 소모)
  */
 function executeJudgment() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const targetMonster = monsters[player.targetIndex];
@@ -2015,17 +2021,11 @@ function executeJudgment() {
 
     const allDead = monsters.every(m => m.hp <= 0);
     if (allDead) {
-        if (targetMonster.hp <= 0) {
-            playSound('monster-die');
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            gainXP(targetMonster.xp);
-        }
+        if (targetMonster.hp <= 0) handleMonsterDeath(targetMonster, player.targetIndex);
         winBattle();
     } else {
         if (targetMonster.hp <= 0) {
-            playSound('monster-die');
-            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-            gainXP(targetMonster.xp);
+            handleMonsterDeath(targetMonster, player.targetIndex);
             findNextTarget();
         }
         setTimeout(playerTurnEnd, 800);
@@ -2037,6 +2037,7 @@ function executeJudgment() {
  * - 4턴 동안 턴마다 체력을 10% 회복합니다.
  */
 function executeBlessing() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     // 버프가 활성화 상태이면 취소
@@ -2071,6 +2072,7 @@ function executeBlessing() {
  * - 모든 적에게 공격력의 200%만큼 광역 피해를 줍니다. (MP 30 소모)
  */
 function executeEarthShatteringSwordAura() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const totalMpCost = Math.floor(30 * player.mpCostMultiplier);
@@ -2129,6 +2131,7 @@ function executeEarthShatteringSwordAura() {
  * - 단일 대상에게 공격력의 180% 피해를 줍니다.
  */
 function executeLuckyPunch() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const targetMonster = monsters[player.targetIndex];
@@ -2170,7 +2173,7 @@ function executeLuckyPunch() {
         winBattle();
     } else {
         if (targetMonster.hp <= 0) {
-            gainXP(targetMonster.xp);
+            handleMonsterDeath(targetMonster, player.targetIndex);
             findNextTarget();
         }
         setTimeout(playerTurnEnd, 800);
@@ -2182,6 +2185,7 @@ function executeLuckyPunch() {
  * - 모든 적에게 공격력의 140%만큼 광역 피해를 줍니다.
  */
 function executeThrowPunchingMachine() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
@@ -2240,6 +2244,7 @@ function executeThrowPunchingMachine() {
  * - 무작위 버프를 얻습니다.
  */
 function executeSpinRoulette() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
 
     const totalMpCost = Math.floor(20 * player.mpCostMultiplier);
@@ -2291,6 +2296,7 @@ function executeSpinRoulette() {
  * - 50% 확률로 체력을 회복하거나, 50% 확률로 무작위 적을 공격합니다.
  */
 function executeCoinToss() {
+    if (checkSkillLock()) return;
     if (isGameOver || !isPlayerTurn) return;
     const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
@@ -2322,10 +2328,7 @@ function executeCoinToss() {
             showFloatingText(dmg, targetMonsterElement, 'damage');
             targetMonster.hp -= dmg;
 
-            if (targetMonster.hp <= 0) {
-                log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-                gainXP(targetMonster.xp);
-            }
+            if (targetMonster.hp <= 0) handleMonsterDeath(targetMonster, targetIndex);
         } else {
             log("💰 코인 토스 (뒷면)! 공격할 대상이 없습니다...", 'log-system');
         }
@@ -2355,12 +2358,11 @@ function executeFinalBlow() {
         return;
     }
 
-    isPlayerTurn = false;
-    toggleControls(false);
     player.mp -= totalMpCost;
-    playSound('black-flash'); // A very strong sound
-
-    log('⚔️ 최후의 일격! 모든 힘을 담아 내리칩니다!', 'log-player');
+    playSound('boss-appear'); // 영역 전개 사운드
+    triggerDomainExpansion(); // 영역 전개 시각 효과
+    log('영역 전개: 불굴의 투기장', 'log-player', { fontSize: '24px', color: 'orange', textShadow: '0 0 10px red' });
+    log('⚔️ 최후의 일격! 영역 내의 적에게 모든 힘을 담아 내리칩니다!', 'log-player');
 
     const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
     const targetMonsterElement = monsterWrappers[player.targetIndex];
@@ -2400,7 +2402,7 @@ function executeFinalBlow() {
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        setTimeout(playerTurnEnd, 800);
+        showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
     }
 }
 
@@ -2417,12 +2419,11 @@ function executeMeteor() {
         return;
     }
 
-    isPlayerTurn = false;
-    toggleControls(false);
     player.mp -= totalMpCost;
-    playSound('boss-appear'); // Sound of something big coming
-
-    log('☄️ 메테오! 하늘에서 거대한 운석을 소환합니다!', 'log-player');
+    playSound('boss-appear'); // 영역 전개 사운드
+    triggerDomainExpansion(); // 영역 전개 시각 효과
+    log('영역 전개: 만상(森羅萬象)의 섭리', 'log-player', { fontSize: '24px', color: '#8b5cf6', textShadow: '0 0 10px #c4b5fd' });
+    log('☄️ 메테오! 영역 내의 모든 적에게 거대한 운석을 소환합니다!', 'log-player');
 
     const livingMonsters = monsters.filter(m => m.hp > 0);
     const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
@@ -2449,17 +2450,17 @@ function executeMeteor() {
             }
 
             if (monster.hp <= 0) {
-                playSound('monster-die');
-                log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-                totalXpGained += monster.xp;
+                handleMonsterDeath(monster, monsterIndexInAll);
             }
 
             if (index === livingMonsters.length - 1) {
-                if (totalXpGained > 0) gainXP(totalXpGained);
                 updateUI();
                 const allDead = monsters.every(m => m.hp <= 0);
                 if (allDead) winBattle();
-                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+                else {
+                    findNextTarget();
+                    showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
+                }
             }
         }, index * 150);
     });
@@ -2486,12 +2487,12 @@ function executeShadowRend() {
         return;
     }
 
-    isPlayerTurn = false;
-    toggleControls(false);
     player.mp -= totalMpCost;
-    
-    log('🔪 그림자 절기! 수많은 그림자가 적들을 난무합니다!', 'log-player');
-    
+    playSound('boss-appear'); // 영역 전개 사운드
+    triggerDomainExpansion(); // 영역 전개 시각 효과
+    log('영역 전개: 자복암영정(自伏暗影庭)', 'log-player', { fontSize: '24px', color: '#3f3f46', textShadow: '0 0 10px #a1a1aa' });
+    log('🔪 그림자 절기! 영역 내의 적들을 그림자로 난무합니다!', 'log-player');
+
     let totalXpGained = 0;
     const hitCount = 5;
     const attackPromises = [];
@@ -2540,7 +2541,7 @@ function executeShadowRend() {
             winBattle();
         } else {
             findNextTarget();
-            setTimeout(playerTurnEnd, 800);
+            showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
         }
     });
 }
@@ -2558,12 +2559,11 @@ function executeHeavensWrath() {
         return;
     }
 
-    isPlayerTurn = false;
-    toggleControls(false);
     player.mp -= totalMpCost;
-    playSound('boss-appear');
-
-    log('✨ 천상의 분노! 신성한 빛이 모든 적을 심판합니다!', 'log-player');
+    playSound('boss-appear'); // 영역 전개 사운드
+    triggerDomainExpansion(); // 영역 전개 시각 효과
+    log('영역 전개: 신성한 심판의 영역', 'log-player', { fontSize: '24px', color: '#facc15', textShadow: '0 0 10px #fef08a' });
+    log('✨ 천상의 분노! 영역 내의 모든 적을 신성한 빛으로 심판합니다!', 'log-player');
 
     const livingMonsters = monsters.filter(m => m.hp > 0);
     const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
@@ -2592,17 +2592,17 @@ function executeHeavensWrath() {
             }
 
             if (monster.hp <= 0) {
-                playSound('monster-die');
-                log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-                totalXpGained += monster.xp;
+                handleMonsterDeath(monster, monsterIndexInAll);
             }
 
             if (index === livingMonsters.length - 1) {
-                if (totalXpGained > 0) gainXP(totalXpGained);
                 updateUI();
                 const allDead = monsters.every(m => m.hp <= 0);
                 if (allDead) winBattle();
-                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+                else {
+                    findNextTarget();
+                    showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
+                }
             }
         }, index * 150);
     });
@@ -2623,13 +2623,13 @@ function executeSoulExplosion() {
         return;
     }
 
-    isPlayerTurn = false;
-    toggleControls(false);
     player.mp -= totalMpCost;
-    playSound('black-flash');
+    playSound('boss-appear'); // 영역 전개 사운드
+    triggerDomainExpansion(); // 영역 전개 시각 효과
 
     const livingMinionsCount = player.minions.filter(m => m.hp > 0).length;
-    log(`💀 영혼 폭발! 소환수들의 힘을 증폭시켜 방출합니다! (소환수: ${livingMinionsCount}기)`, 'log-player');
+    log('영역 전개: 망자의 연회', 'log-player', { fontSize: '24px', color: '#7e22ce', textShadow: '0 0 10px #c084fc' });
+    log(`💀 영혼 폭발! 영역 내의 영혼들을 폭발시킵니다! (소환수: ${livingMinionsCount}기)`, 'log-player');
 
     const livingMonsters = monsters.filter(m => m.hp > 0);
     const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
@@ -2653,17 +2653,17 @@ function executeSoulExplosion() {
             }
 
             if (monster.hp <= 0) {
-                playSound('monster-die');
-                log(`${monster.name}을(를) 쓰러뜨렸다!`, 'log-player');
-                totalXpGained += monster.xp;
+                handleMonsterDeath(monster, monsterIndexInAll);
             }
 
             if (index === livingMonsters.length - 1) {
-                if (totalXpGained > 0) gainXP(totalXpGained);
                 updateUI();
                 const allDead = monsters.every(m => m.hp <= 0);
                 if (allDead) winBattle();
-                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+                else {
+                    findNextTarget();
+                    showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
+                }
             }
         }, index * 150);
     });
@@ -2690,12 +2690,11 @@ function executeAllIn() {
         return;
     }
 
-    isPlayerTurn = false;
-    toggleControls(false);
     player.mp -= totalMpCost;
-    playSound('buy');
-
-    log('🎲 올인! 운명에 모든 것을 겁니다!', 'log-player');
+    playSound('boss-appear'); // 영역 전개 사운드
+    triggerDomainExpansion(); // 영역 전개 시각 효과
+    log('영역 전개: 복마어주자(伏魔御廚子)', 'log-player', { fontSize: '24px', color: '#be123c', textShadow: '0 0 10px #fda4af' });
+    log('🎲 올인! 영역 내에서 운명에 모든 것을 겁니다!', 'log-player');
 
     const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
     const targetMonsterElement = monsterWrappers[player.targetIndex];
@@ -2709,6 +2708,11 @@ function executeAllIn() {
         player.hp -= selfDmg;
         log(`💥 파산! 스킬이 실패하여 ${selfDmg}의 피해를 입습니다!`, 'log-system', { color: '#ef4444' });
         showFloatingText(selfDmg, playerElement, 'damage');
+        if (player.hp <= 0) {
+            updateUI();
+            gameOver();
+            return;
+        }
     } else if (roll < 20) { // 15% 잭팟
         dmg = Math.floor(player.atk * 6.0 + player.magicDamageBonus);
         log(`JACKPOT! 잭팟! ${targetMonster.name}에게 ${dmg}의 엄청난 피해를 입혔습니다!`, 'log-player', { color: '#fde047' });
@@ -2749,7 +2753,7 @@ function executeAllIn() {
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        setTimeout(playerTurnEnd, 800);
+        showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
     }
 }
 
@@ -2771,4 +2775,79 @@ function findNextTarget() {
     if (nextTargetIndex !== -1) {
         player.targetIndex = nextTargetIndex;
     }
+}
+
+//** ============================================================ **//
+//** 8. 영역 전개 (Domain Expansion) 스킬
+//** ============================================================ **//
+
+const domainData = {
+    hero: { name: '불굴의 투기장', mpCost: 40, style: { color: 'orange', textShadow: '0 0 10px red' } },
+    wizard: { name: '만상(森羅萬象)의 섭리', mpCost: 50, style: { color: '#8b5cf6', textShadow: '0 0 10px #c4b5fd' } },
+    rogue: { name: '자복암영정(自伏暗影庭)', mpCost: 35, style: { color: '#3f3f46', textShadow: '0 0 10px #a1a1aa' } },
+    paladin: { name: '신성한 심판의 영역', mpCost: 45, style: { color: '#facc15', textShadow: '0 0 10px #fef08a' } },
+    necromancer: { name: '망자의 연회', mpCost: 35, style: { color: '#7e22ce', textShadow: '0 0 10px #c084fc' } },
+    gambler: { name: '복마어주자(伏魔御廚子)', mpCost: 30, style: { color: '#be123c', textShadow: '0 0 10px #fda4af' } }
+};
+
+/**
+ * 영역 전개를 활성화하는 토글 함수.
+ * @param {string} characterClass - 영역을 사용하는 캐릭터의 클래스.
+ */
+function activateDomain(characterClass) {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const domain = domainData[characterClass];
+    if (!domain) return;
+
+    const totalMpCost = Math.floor(domain.mpCost * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    player.mp -= totalMpCost;
+    player.domainActive = true;
+    playSound('boss-appear');
+
+    log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
+
+    const domainCircle = document.getElementById('domain-expansion-circle');
+    if (domainCircle) {
+        domainCircle.style.display = 'block';
+        domainCircle.style.animation = 'none';
+        domainCircle.offsetHeight; // Reflow
+        domainCircle.style.animation = 'expand-domain-persistent 1.5s forwards';
+    }
+    
+    updateUI();
+    showSkillSelection(); // 버튼 상태 갱신
+}
+
+/**
+ * 활성화된 영역을 해제하는 토글 함수.
+ */
+function deactivateDomain() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    player.domainActive = false;
+    playSound('click'); // 해제는 간단한 사운드 사용
+
+    log('영역을 해제합니다.', 'log-system');
+
+    const domainCircle = document.getElementById('domain-expansion-circle');
+    if (domainCircle) {
+        domainCircle.style.animation = 'none';
+        domainCircle.offsetHeight; // Reflow
+        domainCircle.style.animation = 'shrink-domain 1s forwards';
+        // 애니메이션이 끝난 후 완전히 숨김
+        setTimeout(() => {
+            if (!player.domainActive) { // 그 사이에 다시 활성화되지 않았는지 확인
+                domainCircle.style.display = 'none';
+            }
+        }, 1000);
+    }
+
+    updateUI();
+    showSkillSelection(); // 버튼 상태 갱신
 }

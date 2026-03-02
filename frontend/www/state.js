@@ -56,6 +56,9 @@ const player = {
     strBuff: { multiplier: 1, turns: 0 }, // 도박꾼 힘 버프
     invincibleBuff: { active: false, turns: 0 }, // 도박꾼 무적 버프
     isStunned: false,   // 플레이어의 기절 상태 여부
+    domainActive: false, // 영역 전개 활성화 상태
+    skillLockTurns: 0, // 영역 해제 후 스킬 사용 불가 턴
+    domainCooldownUntilFloor: 0, // 영역 전개 재사용 가능 층
     // --- 계산된 스탯 ---
     evasionChance: 4,   // 최종 회피 확률 (%)
     critChance: 11,     // 최종 치명타 확률 (%)
