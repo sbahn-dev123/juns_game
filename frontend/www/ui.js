@@ -215,15 +215,20 @@ function showSkillSelection() {
     if (player.characterClass === 'wizard') {
         // 마법사 스킬 데미지 계산
         const manaBlasterDmg = Math.floor(player.atk * 1.5 + player.magicDamageBonus);
-        const fireballDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
+        const fireballDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus); // MP 20으로 수정
         const beamDmg = Math.floor(player.atk * 2.5 + player.magicDamageBonus);
         const iceWallBtnStyle = `background-color: ${player.iceWall.active ? '#60a5fa' : '#3b82f6'};`;
+        const domain = domainData.wizard;
 
         const domainButtonHtml = player.domainActive
             ? `<button class="btn-defend-active" onclick="deactivateDomain()">🌀 영역 해제<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>`
-            : `<button class="btn-attack" style="background: linear-gradient(45deg, #8b5cf6, #c084fd);" onclick="activateDomain('wizard')">
-                ☄️ 영역 전개: 만상(森羅萬象)의 섭리<br><span class="skill-desc">(MP 50 / 턴 미소모)</span>
-               </button>`;
+            : (floor < player.domainCooldownUntilFloor
+                ? `<button class="btn-attack" disabled style="background: linear-gradient(45deg, #555, #333);">
+                       ☄️ 영역 재사용 대기<br><span class="skill-desc">(${player.domainCooldownUntilFloor}층부터 사용 가능)</span>
+                   </button>`
+                : `<button class="btn-attack" style="background: linear-gradient(45deg, #8b5cf6, #c4b5fd);" onclick="activateDomain('wizard')">
+                    ☄️ 영역 전개: ${domain.name}<br><span class="skill-desc">(MP ${domain.mpCost} / 턴 미소모)</span>
+                   </button>`);
 
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ ${normalAttackName}<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
@@ -242,12 +247,17 @@ function showSkillSelection() {
         const vitalStrikeDmg = Math.floor(player.atk * 1.2 + player.magicDamageBonus);
         const shadowRaidDmg = Math.floor(player.atk * 1.5 + player.magicDamageBonus);
         const smokeBombBtnStyle = `background-color: ${player.smokeBombBuff.active ? '#6b7280' : '#4b5563'};`;
+        const domain = domainData.rogue;
 
         const domainButtonHtml = player.domainActive
             ? `<button class="btn-defend-active" onclick="deactivateDomain()">🌀 영역 해제<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>`
-            : `<button class="btn-attack" style="background: linear-gradient(45deg, #4c1d95, #1e293b);" onclick="activateDomain('rogue')">
-                   🌙 영역 전개: 자복암영정(自伏暗影庭)<br><span class="skill-desc">(MP 35 / 턴 미소모)</span>
-               </button>`;
+            : (floor < player.domainCooldownUntilFloor
+                ? `<button class="btn-attack" disabled style="background: linear-gradient(45deg, #555, #333);">
+                       🌙 영역 재사용 대기<br><span class="skill-desc">(${player.domainCooldownUntilFloor}층부터 사용 가능)</span>
+                   </button>`
+                : `<button class="btn-attack" style="background: linear-gradient(45deg, #4c1d95, #1e293b);" onclick="activateDomain('rogue')">
+                       🌙 영역 전개: ${domain.name}<br><span class="skill-desc">(MP ${domain.mpCost} / 턴 미소모)</span>
+                   </button>`);
 
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ ${normalAttackName}<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
@@ -264,12 +274,17 @@ function showSkillSelection() {
         const earthShatterDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
         const divineShieldBtnStyle = `background-color: ${player.divineShieldBuff.active ? '#facc15' : '#eab308'};`;
         const blessingBtnStyle = `background-color: ${player.blessingBuff.active ? '#4ade80' : '#22c55e'};`;
+        const domain = domainData.paladin;
 
         const domainButtonHtml = player.domainActive
             ? `<button class="btn-defend-active" onclick="deactivateDomain()">🌀 영역 해제<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>`
-            : `<button class="btn-attack" style="background: linear-gradient(45deg, #facc15, #fef08a); color: #422006;" onclick="activateDomain('paladin')">
-                   🌟 영역 전개: 신성한 심판의 영역<br><span class="skill-desc">(MP 45 / 턴 미소모)</span>
-               </button>`;
+            : (floor < player.domainCooldownUntilFloor
+                ? `<button class="btn-attack" disabled style="background: linear-gradient(45deg, #555, #333);">
+                       🌟 영역 재사용 대기<br><span class="skill-desc">(${player.domainCooldownUntilFloor}층부터 사용 가능)</span>
+                   </button>`
+                : `<button class="btn-attack" style="background: linear-gradient(45deg, #facc15, #fef08a); color: #422006;" onclick="activateDomain('paladin')">
+                       🌟 영역 전개: ${domain.name}<br><span class="skill-desc">(MP ${domain.mpCost} / 턴 미소모)</span>
+                   </button>`);
 
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ ${normalAttackName}<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
@@ -284,12 +299,17 @@ function showSkillSelection() {
         // 도박꾼 스킬 UI
         const luckyPunchDmg = Math.floor(player.atk * 1.8 + player.magicDamageBonus);
         const machineThrowDmg = Math.floor(player.atk * 1.4 + player.magicDamageBonus);
+        const domain = domainData.gambler;
 
         const domainButtonHtml = player.domainActive
             ? `<button class="btn-defend-active" onclick="deactivateDomain()">🌀 영역 해제<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>`
-            : `<button class="btn-attack" style="background: linear-gradient(45deg, #be123c, #fda4af);" onclick="activateDomain('gambler')">
-                   🃏 영역 전개: 복마어주자(伏魔御廚子)<br><span class="skill-desc">(MP 30 / 턴 미소모)</span>
-               </button>`;
+            : (floor < player.domainCooldownUntilFloor
+                ? `<button class="btn-attack" disabled style="background: linear-gradient(45deg, #555, #333);">
+                       🃏 영역 재사용 대기<br><span class="skill-desc">(${player.domainCooldownUntilFloor}층부터 사용 가능)</span>
+                   </button>`
+                : `<button class="btn-attack" style="background: linear-gradient(45deg, #be123c, #fda4af);" onclick="activateDomain('gambler')">
+                       🃏 영역 전개: ${domain.name}<br><span class="skill-desc">(MP ${domain.mpCost} / 턴 미소모)</span>
+                   </button>`);
 
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ ${normalAttackName}<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
@@ -304,12 +324,17 @@ function showSkillSelection() {
         // 네크로맨서 스킬 UI
         const soulPunchDmg = Math.floor(player.atk * 2.1 + player.magicDamageBonus);
         const spiritVortexDmg = Math.floor(player.atk * 1.3 + player.magicDamageBonus);
+        const domain = domainData.necromancer;
 
         const domainButtonHtml = player.domainActive
             ? `<button class="btn-defend-active" onclick="deactivateDomain()">🌀 영역 해제<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>`
-            : `<button class="btn-attack" style="background: linear-gradient(45deg, #581c87, #0f172a);" onclick="activateDomain('necromancer')">
-                   💥 영역 전개: 망자의 연회<br><span class="skill-desc">(MP 35 / 턴 미소모)</span>
-               </button>`;
+            : (floor < player.domainCooldownUntilFloor
+                ? `<button class="btn-attack" disabled style="background: linear-gradient(45deg, #555, #333);">
+                       💥 영역 재사용 대기<br><span class="skill-desc">(${player.domainCooldownUntilFloor}층부터 사용 가능)</span>
+                   </button>`
+                : `<button class="btn-attack" style="background: linear-gradient(45deg, #581c87, #0f172a);" onclick="activateDomain('necromancer')">
+                       💥 영역 전개: ${domain.name}<br><span class="skill-desc">(MP ${domain.mpCost} / 턴 미소모)</span>
+                   </button>`);
 
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ ${normalAttackName}<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
@@ -325,12 +350,17 @@ function showSkillSelection() {
         const powerAttackDmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
         const sweepAttackDmg = Math.floor(player.atk * 0.8 + player.magicDamageBonus);
         const shoutBtnStyle = `background-color: ${player.shoutOfResolveBuff.active ? '#fb923c' : '#f97316'};`;
+        const domain = domainData.hero;
 
         const domainButtonHtml = player.domainActive
             ? `<button class="btn-defend-active" onclick="deactivateDomain()">🌀 영역 해제<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>`
-            : `<button class="btn-attack" style="background: linear-gradient(45deg, #f59e0b, #ef4444);" onclick="activateDomain('hero')">
-                   🌟 영역 전개: 불굴의 투기장<br><span class="skill-desc">(MP 40 / 턴 미소모)</span>
-               </button>`;
+            : (floor < player.domainCooldownUntilFloor
+                ? `<button class="btn-attack" disabled style="background: linear-gradient(45deg, #555, #333);">
+                       🌟 영역 재사용 대기<br><span class="skill-desc">(${player.domainCooldownUntilFloor}층부터 사용 가능)</span>
+                   </button>`
+                : `<button class="btn-attack" style="background: linear-gradient(45deg, #f59e0b, #ef4444);" onclick="activateDomain('hero')">
+                       🌟 영역 전개: ${domain.name}<br><span class="skill-desc">(MP ${domain.mpCost} / 턴 미소모)</span>
+                   </button>`);
 
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ ${normalAttackName}<br><span class="skill-desc">(피해량: ${player.atk})</span></button>

@@ -37,6 +37,7 @@ router.get('/', async (req, res) => {
             {
                 $project: {
                     username: 1,
+                    characterClass: 1,
                     score: 1,
                     date: 1,
                     country: { $arrayElemAt: ['$userDetails.country', 0] },
@@ -50,6 +51,7 @@ router.get('/', async (req, res) => {
         const formattedScores = topScores.map(score => ({
             username: score.username,
             score: score.score,
+            characterClass: score.characterClass,
             date: score.date,
             country: score.country,
             // Check if game state exists and player is alive to determine liveFloor
@@ -70,7 +72,7 @@ router.get('/', async (req, res) => {
 // @desc    Add a new score
 // @access  Private
 router.post('/', auth, async (req, res) => {
-    const { score } = req.body;
+    const { score, characterClass } = req.body;
 
     try {
         const userScore = await Score.findOne({ user: req.user.id });
@@ -79,6 +81,7 @@ router.post('/', auth, async (req, res) => {
             // Update score if new score is higher
             if (score > userScore.score) {
                 userScore.score = score;
+                userScore.characterClass = characterClass;
                 userScore.date = Date.now();
                 await userScore.save();
                 res.json(userScore);
@@ -90,7 +93,8 @@ router.post('/', auth, async (req, res) => {
             const newScore = new Score({
                 user: req.user.id,
                 username: req.user.username,
-                score
+                score,
+                characterClass
             });
             const savedScore = await newScore.save();
             res.json(savedScore);

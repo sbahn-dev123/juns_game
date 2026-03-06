@@ -269,3 +269,13 @@ const statInfo = {
     luk: { name: '집중', description: '치명타 확률을 0.7% 증가시킵니다.' },
     fcs: { name: '고도의 집중', description: '흑섬 확률을 0.4% 증가시킵니다.'}
 };
+
+//* 영역 전개 스킬 정보: 스킬 버튼 및 로그에 사용됩니다.
+const domainData = {
+    hero: { name: '불굴의 투기장', mpCost: 40, style: { color: 'orange', textShadow: '0 0 10px red' } },
+    wizard: { name: '진리의 문', mpCost: 50, style: { color: '#8b5cf6', textShadow: '0 0 10px #c4b5fd' } },
+    rogue: { name: '환영의 장막', mpCost: 35, style: { color: '#3f3f46', textShadow: '0 0 10px #a1a1aa' } },
+    paladin: { name: '천벌의 성역', mpCost: 45, style: { color: '#facc15', textShadow: '0 0 10px #fef08a' } },
+    necromancer: { name: '사혼의 연회', mpCost: 35, style: { color: '#7e22ce', textShadow: '0 0 10px #c084fc' } },
+    gambler: { name: '운명의 무대', mpCost: 30, style: { color: '#be123c', textShadow: '0 0 10px #fda4af' } }
+};

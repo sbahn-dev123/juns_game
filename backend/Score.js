@@ -14,6 +14,10 @@ const ScoreSchema = new Schema({
         type: Number,
         required: true
     },
+    characterClass: {
+        type: String,
+        default: 'hero'
+    },
     date: {
         type: Date,
         default: Date.now

@@ -381,7 +381,8 @@ function executeFinalBlow() {
     player.mp -= totalMpCost;
     playSound('boss-appear'); // 영역 전개 사운드
     triggerDomainExpansion(); // 영역 전개 시각 효과
-    log('영역 전개: 불굴의 투기장', 'log-player', { fontSize: '24px', color: 'orange', textShadow: '0 0 10px red' });
+    const domain = domainData[player.characterClass];
+    log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
     log('⚔️ 최후의 일격! 영역 내의 적에게 모든 힘을 담아 내리칩니다!', 'log-player');
 
     const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
@@ -725,7 +726,8 @@ function executeMeteor() {
     player.mp -= totalMpCost;
     playSound('boss-appear'); // 영역 전개 사운드
     triggerDomainExpansion(); // 영역 전개 시각 효과
-    log('영역 전개: 만상(森羅萬象)의 섭리', 'log-player', { fontSize: '24px', color: '#8b5cf6', textShadow: '0 0 10px #c4b5fd' });
+    const domain = domainData[player.characterClass];
+    log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
     log('☄️ 메테오! 영역 내의 모든 적에게 거대한 운석을 소환합니다!', 'log-player');
 
     const livingMonsters = monsters.filter(m => m.hp > 0);
@@ -1022,7 +1024,8 @@ function executeShadowRend() {
     player.mp -= totalMpCost;
     playSound('boss-appear'); // 영역 전개 사운드
     triggerDomainExpansion(); // 영역 전개 시각 효과
-    log('영역 전개: 자복암영정(自伏暗影庭)', 'log-player', { fontSize: '24px', color: '#3f3f46', textShadow: '0 0 10px #a1a1aa' });
+    const domain = domainData[player.characterClass];
+    log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
     log('🔪 그림자 절기! 영역 내의 적들을 그림자로 난무합니다!', 'log-player');
 
     let totalXpGained = 0;
@@ -1367,9 +1370,9 @@ function executeSoulExplosion() {
     player.mp -= totalMpCost;
     playSound('boss-appear'); // 영역 전개 사운드
     triggerDomainExpansion(); // 영역 전개 시각 효과
-
     const livingMinionsCount = player.minions.filter(m => m.hp > 0).length;
-    log('영역 전개: 망자의 연회', 'log-player', { fontSize: '24px', color: '#7e22ce', textShadow: '0 0 10px #c084fc' });
+    const domain = domainData[player.characterClass];
+    log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
     log(`💀 영혼 폭발! 영역 내의 영혼들을 폭발시킵니다! (소환수: ${livingMinionsCount}기)`, 'log-player');
 
     const livingMonsters = monsters.filter(m => m.hp > 0);
@@ -1622,7 +1625,8 @@ function executeHeavensWrath() {
     player.mp -= totalMpCost;
     playSound('boss-appear'); // 영역 전개 사운드
     triggerDomainExpansion(); // 영역 전개 시각 효과
-    log('영역 전개: 신성한 심판의 영역', 'log-player', { fontSize: '24px', color: '#facc15', textShadow: '0 0 10px #fef08a' });
+    const domain = domainData[player.characterClass];
+    log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
     log('✨ 천상의 분노! 영역 내의 모든 적을 신성한 빛으로 심판합니다!', 'log-player');
 
     const livingMonsters = monsters.filter(m => m.hp > 0);
@@ -1913,7 +1917,8 @@ function executeAllIn() {
     player.mp -= totalMpCost;
     playSound('boss-appear'); // 영역 전개 사운드
     triggerDomainExpansion(); // 영역 전개 시각 효과
-    log('영역 전개: 복마어주자(伏魔御廚子)', 'log-player', { fontSize: '24px', color: '#be123c', textShadow: '0 0 10px #fda4af' });
+    const domain = domainData[player.characterClass];
+    log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
     log('🎲 올인! 영역 내에서 운명에 모든 것을 겁니다!', 'log-player');
 
     const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
@@ -1981,21 +1986,22 @@ function executeAllIn() {
 //** 8. 영역 전개 (Domain Expansion) 스킬
 //** ============================================================ **//
 
-const domainData = {
-    hero: { name: '불굴의 투기장', mpCost: 40, style: { color: 'orange', textShadow: '0 0 10px red' } },
-    wizard: { name: '만상(森羅萬象)의 섭리', mpCost: 50, style: { color: '#8b5cf6', textShadow: '0 0 10px #c4b5fd' } },
-    rogue: { name: '자복암영정(自伏暗影庭)', mpCost: 35, style: { color: '#3f3f46', textShadow: '0 0 10px #a1a1aa' } },
-    paladin: { name: '신성한 심판의 영역', mpCost: 45, style: { color: '#facc15', textShadow: '0 0 10px #fef08a' } },
-    necromancer: { name: '망자의 연회', mpCost: 35, style: { color: '#7e22ce', textShadow: '0 0 10px #c084fc' } },
-    gambler: { name: '복마어주자(伏魔御廚子)', mpCost: 30, style: { color: '#be123c', textShadow: '0 0 10px #fda4af' } }
-};
-
 /**
  * 영역 전개를 활성화하는 토글 함수.
  * @param {string} characterClass - 영역을 사용하는 캐릭터의 클래스.
  */
 function activateDomain(characterClass) {
     if (isGameOver || !isPlayerTurn) return;
+
+    // 스킬 봉인 및 재사용 대기시간 확인
+    if (player.skillLockTurns > 0) {
+        log(`⛓️ 스킬이 봉인되어 있어 영역을 전개할 수 없습니다! (${player.skillLockTurns}턴 남음)`, 'log-system');
+        return;
+    }
+    if (floor < player.domainCooldownUntilFloor) {
+        log(`쿨타임 중에는 영역을 전개할 수 없습니다. (${player.domainCooldownUntilFloor}층부터 사용 가능)`, 'log-system');
+        return;
+    }
 
     const domain = domainData[characterClass];
     if (!domain) return;
@@ -2032,6 +2038,9 @@ function deactivateDomain(isForced = false) {
     if (isGameOver) return;
 
     player.domainActive = false;
+    player.skillLockTurns = 3; // 3턴간 스킬 봉인
+    player.domainCooldownUntilFloor = floor + 6; // 6층 재사용 대기시간
+
     playSound('click'); // 해제는 간단한 사운드 사용
 
     if (isForced) {
@@ -2039,6 +2048,8 @@ function deactivateDomain(isForced = false) {
     } else {
         log('영역을 해제합니다.', 'log-system');
     }
+
+    log(`⛓️ 영역 해제 패널티로 3턴간 스킬이 봉인되고, ${player.domainCooldownUntilFloor}층까지 영역을 다시 사용할 수 없습니다.`, 'log-system', { color: '#f59e0b' });
 
     const domainCircle = document.getElementById('domain-expansion-circle');
     if (domainCircle) {

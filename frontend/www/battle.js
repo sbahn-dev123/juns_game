@@ -759,7 +759,7 @@ function endMonstersTurn() {
 
         // 턴 종료 시 영역 유지비 소모
         if (player.domainActive) {
-            const maintenanceCost = 15;
+            const maintenanceCost = 5;
             if (player.mp >= maintenanceCost) {
                 player.mp -= maintenanceCost;
                 log(`🔮 영역 유지를 위해 MP를 ${maintenanceCost} 소모합니다.`, 'log-system');
