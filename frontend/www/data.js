@@ -255,6 +255,32 @@ const characterData = {
             { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
             { type: 'critBuff', name: '기본 집중의 물약', bonus: 7, turns: 5 },
         ]
+    },
+    limitless: {
+        id: 'limitless',
+        name: '무하한 능력자',
+        emoji: '🌌',
+        attackName: '연속 타격',
+        description: '무한을 다루는 현대 최강의 능력자. 압도적인 주력으로 공간을 지배합니다.',
+        stats: { hp: 40, mp: 60, atk: 11, crit: 11, evasion: 10 },
+        inventory: [
+            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
+            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
+            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
+        ]
+    },
+    curseKing: {
+        id: 'curseKing',
+        name: '저주의 왕',
+        emoji: '⛓️',
+        attackName: '저주의 주먹',
+        description: '저주 그 자체가 된 존재. 자신의 생명력을 대가로 압도적인 힘을 구사합니다.',
+        stats: { hp: 40, mp: 60, atk: 13, crit: 11, evasion: 4 },
+        inventory: [
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'heal', name: '기본 회복 물약', healAmount: 20 },
+            { type: 'mpPotion', name: '기본 마나 물약', mpAmount: 20 },
+        ]
     }
 };
 
@@ -277,5 +303,7 @@ const domainData = {
     rogue: { name: '환영의 장막', mpCost: 35, style: { color: '#3f3f46', textShadow: '0 0 10px #a1a1aa' } },
     paladin: { name: '천벌의 성역', mpCost: 45, style: { color: '#facc15', textShadow: '0 0 10px #fef08a' } },
     necromancer: { name: '사혼의 연회', mpCost: 35, style: { color: '#7e22ce', textShadow: '0 0 10px #c084fc' } },
-    gambler: { name: '운명의 무대', mpCost: 30, style: { color: '#be123c', textShadow: '0 0 10px #fda4af' } }
+    gambler: { name: '운명의 무대', mpCost: 30, style: { color: '#be123c', textShadow: '0 0 10px #fda4af' } },
+    limitless: { name: '무량공처', mpCost: 50, style: { color: '#000000', textShadow: '0 0 10px #a78bfa' } },
+    curseKing: { name: '복마어주자', mpCost: 50, style: { color: '#4a044e', textShadow: '0 0 10px #e879f9' } }
 };

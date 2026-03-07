@@ -1,10 +1,8 @@
 //! =================================================================
 //! ui-game.js
 //!
-//! 이 파일은 핵심 게임 플레이 화면의 UI 렌더링 및 조작을 담당합니다.
-//! - 정보 출력 (로그, 데미지 텍스트)
-//! - 게임 상태 UI 업데이트 (체력바, 몬스터, 버프 아이콘 등)
-//! - 컨트롤 패널 관리 (스킬, 아이템 버튼 등)
+//! @deprecated This file's contents have been merged into ui.js to resolve function duplication and reference errors.
+//! This file can be removed from the project.
 //! =================================================================
 
 /**
@@ -21,6 +19,168 @@ function log(msg, type = '', styles = {}) {
     Object.assign(p.style, styles);
     box.appendChild(p);
     box.scrollTop = box.scrollHeight; // 자동 스크롤
+}
+
+/**
+ * 도박꾼 영역 전개 시 룰렛 애니메이션을 표시합니다.
+ * @param {Array<string>} finalNumbers - 최종적으로 표시될 3개의 숫자 배열.
+ * @returns {Promise<void>} - 애니메이션 완료 시 resolve되는 Promise
+ */
+function showGamblerRouletteAnimation(finalNumbers) {
+    return new Promise(resolve => {
+        const playerElement = document.getElementById('player-character');
+        if (!playerElement) {
+            resolve();
+            return;
+        }
+
+        const battleField = document.getElementById('battle-field');
+        let rouletteContainer = document.querySelector('.gambler-roulette-container');
+        if (rouletteContainer) rouletteContainer.remove(); // 이전 애니메이션이 있으면 제거
+
+        rouletteContainer = document.createElement('div');
+        rouletteContainer.className = 'gambler-roulette-container';
+        
+        for (let i = 0; i < 3; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'roulette-slot';
+            slot.innerText = '7';
+            rouletteContainer.appendChild(slot);
+        }
+
+        battleField.appendChild(rouletteContainer);
+
+        const playerRect = playerElement.getBoundingClientRect();
+        const battleFieldRect = battleField.getBoundingClientRect();
+        rouletteContainer.style.position = 'absolute';
+        rouletteContainer.style.left = `${playerRect.left - battleFieldRect.left + playerRect.width / 2 - 60}px`;
+        rouletteContainer.style.top = `${playerRect.top - battleFieldRect.top - 50}px`;
+        rouletteContainer.style.display = 'flex';
+        rouletteContainer.style.gap = '5px';
+        rouletteContainer.style.zIndex = '20';
+
+        const slots = rouletteContainer.querySelectorAll('.roulette-slot');
+        slots.forEach(slot => {
+            Object.assign(slot.style, {
+                width: '30px', height: '40px', border: '2px solid gold',
+                backgroundColor: 'black', color: 'white', display: 'flex',
+                justifyContent: 'center', alignItems: 'center', fontSize: '24px',
+                fontWeight: 'bold', textShadow: '0 0 5px yellow', borderRadius: '4px'
+            });
+        });
+
+        const spinDuration = 1500;
+        const intervalTime = 50;
+        let elapsed = 0;
+
+        const spinInterval = setInterval(() => {
+            elapsed += intervalTime;
+            slots.forEach((slot, index) => {
+                if (elapsed < spinDuration * ((index + 1) / 3.5)) {
+                    slot.innerText = Math.floor(Math.random() * 8);
+                } else {
+                    slot.innerText = finalNumbers[index];
+                }
+            });
+
+            if (elapsed >= spinDuration) {
+                clearInterval(spinInterval);
+                setTimeout(() => {
+                    rouletteContainer.remove();
+                    resolve();
+                }, 1200);
+            }
+        }, intervalTime);
+    });
+}
+
+/**
+ * 플레이어로부터 몬스터에게 날아가는 효과 애니메이션을 표시합니다.
+ * @param {'poison-orb' | 'shadow-dash' | 'holy-lightning' | 'soul-skull'} effectType - 효과 종류
+ * @param {HTMLElement} targetMonsterElement - 대상 몬스터 요소
+ * @returns {Promise<void>} - 애니메이션 완료 시 resolve되는 Promise
+ */
+function showEffectAnimation(effectType, targetMonsterElement) {
+    return new Promise(resolve => {
+        const playerElement = document.getElementById('player-character');
+        if (!playerElement || !targetMonsterElement) {
+            resolve();
+            return;
+        }
+
+        const battleField = document.getElementById('battle-field');
+        const effectEl = document.createElement('div');
+        Object.assign(effectEl.style, { position: 'absolute', transition: 'all 0.5s ease-out', zIndex: '20' });
+
+        const targetRect = targetMonsterElement.getBoundingClientRect();
+        const battleFieldRect = battleField.getBoundingClientRect();
+
+        switch (effectType) {
+            case 'poison-orb':
+                effectEl.innerText = '☠️';
+                effectEl.style.fontSize = '24px';
+                effectEl.style.textShadow = '0 0 10px #86efac';
+                break;
+            case 'shadow-dash':
+                const playerEmoji = document.getElementById('player-emoji');
+                const originalTransform = playerEmoji.style.transform;
+                const playerRect = playerElement.getBoundingClientRect();
+                const dx = targetRect.left - playerRect.left - 20;
+                const dy = targetRect.top - playerRect.top;
+                
+                playerEmoji.style.transition = 'transform 0.2s ease-in-out';
+                playerEmoji.style.transform = `translate(${dx}px, ${dy}px) scale(1.2)`;
+                
+                setTimeout(() => {
+                    playerEmoji.style.transform = originalTransform;
+                    setTimeout(resolve, 200);
+                }, 200);
+                return;
+            case 'holy-lightning':
+                effectEl.innerText = '⚡';
+                Object.assign(effectEl.style, { fontSize: '48px', color: 'yellow', textShadow: '0 0 15px white', transition: 'opacity 0.3s, transform 0.3s' });
+                break;
+            case 'soul-skull':
+                effectEl.innerText = '💀';
+                Object.assign(effectEl.style, { fontSize: '32px', color: '#a78bfa', textShadow: '0 0 10px #c4b5fd' });
+                break;
+        }
+
+        battleField.appendChild(effectEl);
+
+        if (effectType === 'holy-lightning') {
+            const startX = targetRect.left - battleFieldRect.left + (targetRect.width / 2) - 15;
+            const startY = targetRect.top - battleFieldRect.top - 60;
+            Object.assign(effectEl.style, { left: `${startX}px`, top: `${startY}px`, opacity: '0', transform: 'scale(0.5)' });
+
+            setTimeout(() => {
+                Object.assign(effectEl.style, { opacity: '1', transform: 'scale(1)' });
+                playSound('crit');
+            }, 50);
+            setTimeout(() => {
+                effectEl.remove();
+                resolve();
+            }, 400);
+        } else {
+            const playerRect = playerElement.getBoundingClientRect();
+            const startX = playerRect.left - battleFieldRect.left + (playerRect.width / 2);
+            const startY = playerRect.top - battleFieldRect.top + 20;
+            const endX = targetRect.left - battleFieldRect.left + (targetRect.width / 2);
+            const endY = targetRect.top - battleFieldRect.top + 20;
+
+            effectEl.style.left = `${startX}px`;
+            effectEl.style.top = `${startY}px`;
+
+            setTimeout(() => {
+                Object.assign(effectEl.style, { left: `${endX}px`, top: `${endY}px`, transform: 'scale(0.5)', opacity: '0' });
+            }, 50);
+
+            setTimeout(() => {
+                effectEl.remove();
+                resolve();
+            }, 550);
+        }
+    });
 }
 
 /**
@@ -296,13 +456,25 @@ function showSkillSelection() {
         // 도박꾼 스킬 UI
         const luckyPunchDmg = Math.floor(player.atk * 1.8 + player.magicDamageBonus);
         const machineThrowDmg = Math.floor(player.atk * 1.4 + player.magicDamageBonus);
+        const domain = domainData.gambler;
+
+        const domainButtonHtml = player.domainActive
+            ? `<button class="btn-defend-active" onclick="deactivateDomain()">🌀 영역 해제<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>`
+            : (floor < player.domainCooldownUntilFloor
+                ? `<button class="btn-attack" disabled style="background: linear-gradient(45deg, #555, #333);">
+                       🃏 영역 재사용 대기<br><span class="skill-desc">(${player.domainCooldownUntilFloor}층부터 사용 가능)</span>
+                   </button>`
+                : `<button class="btn-attack" style="background: linear-gradient(45deg, #be123c, #fda4af);" onclick="activateDomain('gambler')">
+                       🃏 영역 전개: ${domain.name}<br><span class="skill-desc">(MP ${domain.mpCost} / 턴 미소모)</span>
+                   </button>`);
+
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ ${normalAttackName}<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
-            <button class="btn-attack" style="background-color: #c12828;" onclick="executeLuckyPunch()">🎲 럭키 펀치<br><span class="skill-desc">(MP 10 / 피해량: ${luckyPunchDmg})</span></button>
+            <button class="btn-attack" style="background-color: #c12828;" onclick="executeLuckyPunch()">🎲 럭키 펀치<br><span class="skill-desc">(MP 15 / 피해량: ${luckyPunchDmg})</span></button>
             <button class="btn-attack" style="background-color: #9a2020;" onclick="executeThrowPunchingMachine()">🎰 펀칭머신 던지기<br><span class="skill-desc">(MP 15 / 피해량: ${machineThrowDmg})</span></button>
             <button class="btn-buff" style="background-color: #f59e0b;" onclick="executeSpinRoulette()">🎡 룰렛 돌리기<br><span class="skill-desc">(MP 20 / 무작위 버프)</span></button>
             <button class="btn-heal" style="background-color: #ca8a04;" onclick="executeCoinToss()">💰 코인 토스<br><span class="skill-desc">(MP 15 / 회복 or 공격)</span></button>
-            <button class="btn-attack" style="background: linear-gradient(45deg, #16a34a, #facc15);" onclick="executeAllIn()">🃏 올인<br><span class="skill-desc">(MP 30 / 운명의 한 판)</span></button>
+            ${domainButtonHtml}
             <button class="btn-inventory btn-back" onclick="showMainControls()" style="grid-column: 1 / -1;">↩️ 뒤로가기${emptyDesc}</button>
         `;
     } else if (player.characterClass === 'necromancer') {
@@ -335,8 +507,26 @@ function showSkillSelection() {
         const sweepAttackDmg = Math.floor(player.atk * 0.8 + player.magicDamageBonus);
         const finalBlowDmg = Math.floor(player.atk * 4.0 + player.magicDamageBonus);
         const shoutBtnStyle = `background-color: ${player.shoutOfResolveBuff.active ? '#fb923c' : '#f97316'};`;
+        const domain = domainData.hero;
+
+        const domainButtonHtml = player.domainActive
+            ? `<button class="btn-defend-active" onclick="deactivateDomain()">🌀 영역 해제<br><span class="skill-desc">(MP 0 / 턴 미소모)</span></button>`
+            : (floor < player.domainCooldownUntilFloor
+                ? `<button class="btn-attack" disabled style="background: linear-gradient(45deg, #555, #333);">
+                       🌟 영역 재사용 대기<br><span class="skill-desc">(${player.domainCooldownUntilFloor}층부터 사용 가능)</span>
+                   </button>`
+                : `<button class="btn-attack" style="background: linear-gradient(45deg, #f59e0b, #ef4444);" onclick="activateDomain('hero')">
+                       🌟 영역 전개: ${domain.name}<br><span class="skill-desc">(MP ${domain.mpCost} / 턴 미소모)</span>
+                   </button>`);
 
         controlsPanel.innerHTML = `
             <button class="btn-attack" onclick="executeNormalAttack()">⚔️ ${normalAttackName}<br><span class="skill-desc">(피해량: ${player.atk})</span></button>
             <button class="btn-attack" style="background-color: #c12828;" onclick="executePowerAttack()">💥 강 공격<br><span class="skill-desc">(MP 15 / 피해량: ${powerAttackDmg})</span></button>
-            <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span class="skill-desc
+            <button class="btn-attack" style="background-color: #9a2020;" onclick="executeSweepAttack()">🌪️ 휩쓸기<br><span class="skill-desc">(MP 25 / 피해량: ${sweepAttackDmg})</span></button>
+            <button class="${defenseBtnClass}" onclick="toggleDefenseStance()">🛡️ 방어 태세<br><span class="skill-desc">(MP 10)</span></button>
+            <button class="btn-heal" style="${shoutBtnStyle}" onclick="executeShoutOfResolve()">🗣️ 결의의 외침<br><span class="skill-desc">(MP 20 / 턴 미소모)</span></button>
+            ${domainButtonHtml}
+            <button class="btn-inventory btn-back" onclick="showMainControls()" style="grid-column: 1 / -1;">↩️ 뒤로가기${emptyDesc}</button>
+        `;
+    }
+}

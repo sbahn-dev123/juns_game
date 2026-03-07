@@ -784,14 +784,12 @@ function executeMeteor() {
 function executeApplyPoison() {
     if (isGameOver || !isPlayerTurn) return;
 
-    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
     }
 
-    isPlayerTurn = false;
-    toggleControls(false);
     player.mp -= totalMpCost;
     playSound('heal'); // 버프 사운드 재사용
 
@@ -803,7 +801,7 @@ function executeApplyPoison() {
     showFloatingText('독 바르기!', document.getElementById('player-character'), 'poison-buff');
     
     updateUI();
-    setTimeout(playerTurnEnd, 800); // 턴 종료
+    showSkillSelection(); // 턴을 소모하지 않으므로 UI만 갱신
 }
 
 /**
@@ -1314,7 +1312,7 @@ function executeSoulPunch() {
         return;
     }
 
-    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
@@ -1600,7 +1598,7 @@ function executeEarthShatteringSwordAura() {
                 if (allDead) winBattle();
                 else {
                     findNextTarget();
-                    showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
+                    setTimeout(playerTurnEnd, 800);
                 }
             }
         }, index * 150);
@@ -1694,7 +1692,7 @@ function executeLuckyPunch() {
         return;
     }
 
-    const totalMpCost = Math.floor(10 * player.mpCostMultiplier);
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
     if (player.mp < totalMpCost) {
         alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
         return;
@@ -1724,13 +1722,20 @@ function executeLuckyPunch() {
 
     const allDead = monsters.every(m => m.hp <= 0);
     if (allDead) {
+        if (targetMonster.hp <= 0) {
+            playSound('monster-die');
+            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
+            gainXP(targetMonster.xp);
+        }
         winBattle();
     } else {
         if (targetMonster.hp <= 0) {
+            playSound('monster-die');
+            log(`${targetMonster.name}을(를) 쓰러뜨렸다!`, 'log-player');
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
+        setTimeout(playerTurnEnd, 800);
     }
 }
 
@@ -1784,10 +1789,7 @@ function executeThrowPunchingMachine() {
                 updateUI();
                 const allDead = monsters.every(m => m.hp <= 0);
                 if (allDead) winBattle();
-                else {
-                    findNextTarget();
-                    showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
-                }
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
             }
         }, index * 150);
     });
@@ -1799,7 +1801,7 @@ function executeThrowPunchingMachine() {
  * '룰렛 돌리기' 스킬을 실행하는 함수 (도박꾼 전용).
  * - 무작위 버프를 얻습니다.
  */
-function executeSpinRoulette() {
+async function executeSpinRoulette() {
     if (isGameOver || !isPlayerTurn) return;
 
     const totalMpCost = Math.floor(20 * player.mpCostMultiplier);
@@ -1813,37 +1815,69 @@ function executeSpinRoulette() {
     player.mp -= totalMpCost;
     playSound('buy');
 
+    // Helper function to generate roulette numbers
+    const generateRouletteNumbers = (isJackpot, jackpotType = null) => {
+        if (isJackpot) {
+            switch (jackpotType) {
+                case 'str': return ['4', '4', '4'];
+                case 'crit': return ['6', '6', '6'];
+                case 'invincible': return ['7', '7', '7'];
+                default: return ['7', '7', '7'];
+            }
+        } else {
+            const n1 = Math.floor(Math.random() * 8).toString();
+            let n2;
+            do {
+                n2 = Math.floor(Math.random() * 8).toString();
+            } while (n1 === n2);
+            const result = [n1, n1, n2];
+            for (let i = result.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [result[i], result[j]] = [result[j], result[i]];
+            }
+            return result;
+        }
+    };
+
     const roll = Math.random() * 100;
     let outcomeText = '';
+    let finalNumbers = [];
+    let jackpotType = null;
 
     if (roll < 40) { // 40%
         player.strBuff = { multiplier: 1.2, turns: 5 };
         outcomeText = '힘 1.2배 증가 (5턴)!';
+        finalNumbers = generateRouletteNumbers(false);
     } else if (roll < 70) { // 30%
         player.strBuff = { multiplier: 1.5, turns: 5 };
         outcomeText = '힘 1.5배 증가 (5턴)!';
+        finalNumbers = generateRouletteNumbers(false);
     } else if (roll < 90) { // 20%
         player.critBuff = { bonus: 30, turns: 5 };
         outcomeText = '치명타 확률 30% 증가 (5턴)!';
+        finalNumbers = generateRouletteNumbers(false);
     } else { // 10% Jackpot
         const jackpotRoll = Math.random() * 100;
         if (jackpotRoll < 50) { // 50% of 10%
             player.strBuff = { multiplier: 2, turns: 4 };
-            outcomeText = '잭팟! 4️⃣4️⃣4️⃣ 힘 2배 증가 (4턴)!';
+            jackpotType = 'str'; outcomeText = '잭팟! 4️⃣4️⃣4️⃣ 힘 2배 증가 (4턴)!';
         } else if (jackpotRoll < 85) { // 35% of 10%
             player.critBuff = { bonus: 60, turns: 4 };
-            outcomeText = '잭팟! 6️⃣6️⃣6️⃣ 치명타 확률 60% 증가 (4턴)!';
+            jackpotType = 'crit'; outcomeText = '잭팟! 6️⃣6️⃣6️⃣ 치명타 확률 60% 증가 (4턴)!';
         } else { // 15% of 10%
             player.invincibleBuff = { active: true, turns: 5 };
-            outcomeText = '잭팟! 7️⃣7️⃣7️⃣ 5턴간 무적!';
+            jackpotType = 'invincible'; outcomeText = '잭팟! 7️⃣7️⃣7️⃣ 5턴간 무적!';
         }
+        finalNumbers = generateRouletteNumbers(true, jackpotType);
     }
+
+    await showGamblerRouletteAnimation(finalNumbers);
 
     log(`🎲 룰렛 결과: ${outcomeText}`, 'log-system');
     showFloatingText(outcomeText, document.getElementById('player-character'), 'buff');
     recalculatePlayerStats();
     updateUI();
-    setTimeout(playerTurnEnd, 800);
+    setTimeout(playerTurnEnd, 200);
 }
 
 /**
@@ -1978,7 +2012,7 @@ function executeAllIn() {
             gainXP(targetMonster.xp);
             findNextTarget();
         }
-        showSkillSelection(); // 턴을 소모하지 않으므로 스킬 선택창을 다시 표시
+        setTimeout(playerTurnEnd, 800);
     }
 }
 
@@ -2014,12 +2048,17 @@ function activateDomain(characterClass) {
 
     player.mp -= totalMpCost;
     player.domainActive = true;
+    player.domainStartTurn = turn; // 영역 시작 턴 기록
     playSound('boss-appear');
+
+    // 도메인 활성화에 따른 스탯 변화(영웅, 마법사 등)를 즉시 적용
+    recalculatePlayerStats();
 
     log(`영역 전개: ${domain.name}`, 'log-player', { fontSize: '24px', ...domain.style });
 
     const domainCircle = document.getElementById('domain-expansion-circle');
     if (domainCircle) {
+        domainCircle.style.zIndex = '5'; // UI(z-index: 10 이상)보다 낮은 z-index로 설정하여 UI가 가려지지 않도록 함
         domainCircle.style.display = 'block';
         domainCircle.style.animation = 'none';
         domainCircle.offsetHeight; // Reflow
@@ -2036,6 +2075,25 @@ function activateDomain(characterClass) {
  */
 function deactivateDomain(isForced = false) {
     if (isGameOver) return;
+
+    // 무하한 능력자: 영역 해제 시 지속 스턴 효과 적용
+    if (player.characterClass === 'limitless' && player.domainActive) {
+        const domainDuration = turn - player.domainStartTurn;
+        if (domainDuration > 1) {
+            const stunTurns = domainDuration - 1;
+            log(`🌌 [무량공처]의 잔향이 남아 몬스터들을 ${stunTurns}턴 동안 속박합니다!`, 'log-system');
+            monsters.forEach(monster => {
+                if (monster.hp > 0) {
+                    monster.stunTurns = stunTurns;
+                    const monsterEl = document.querySelectorAll('#monster-area .monster-wrapper')[monsters.indexOf(monster)];
+                    if (monsterEl) showFloatingText('속박', monsterEl, 'stun');
+                }
+            });
+        }
+    }
+
+    // 도메인 비활성화에 따른 스탯 변화를 즉시 적용
+    recalculatePlayerStats();
 
     player.domainActive = false;
     player.skillLockTurns = 3; // 3턴간 스킬 봉인
@@ -2059,6 +2117,7 @@ function deactivateDomain(isForced = false) {
         setTimeout(() => {
             if (!player.domainActive) {
                 domainCircle.style.display = 'none';
+                domainCircle.style.zIndex = ''; // z-index 초기화
             }
         }, 1000);
     }
@@ -2086,5 +2145,548 @@ function applyPoisonEffect(monster) {
         
         log(`☠️ ${monster.name}에게 독을 묻혔습니다!`, 'log-player');
         if (monsterElement) showFloatingText('POISON', monsterElement, 'poison-buff');
+    }
+}
+
+//** ============================================================ **//
+//** 9. 무하한 능력자 (Limitless User) 스킬
+//** ============================================================ **//
+
+/**
+ * '술식 순전: 창' 스킬을 실행하는 함수 (무하한 능력자 전용).
+ * - 모든 적에게 피해를 주고 2턴간 공격력을 20% 감소시킵니다.
+ */
+function executeCursedTechniqueBlue() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const totalMpCost = Math.floor(20 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('crit');
+
+    log('🔵 술식 순전: 창! 모든 적에게 인력을 방출합니다!', 'log-player');
+
+    const livingMonsters = monsters.filter(m => m.hp > 0);
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
+    let totalXpGained = 0;
+
+    livingMonsters.forEach((monster, index) => {
+        setTimeout(() => {
+            let dmg = Math.floor(player.atk * 1.5 + player.magicDamageBonus);
+            const monsterIndexInAll = monsters.findIndex(m => m === monster);
+            const targetElement = monsterElements[monsterIndexInAll];
+            
+            showFloatingText(dmg, targetElement, 'mana-blast');
+            monster.hp -= dmg;
+
+            // 공격력 감소 디버프 적용
+            monster.atkDebuff = { turns: 2, multiplier: 0.8 };
+            log(`🌀 ${monster.name}의 공격력이 약화됩니다!`, 'log-monster');
+            if (targetElement) showFloatingText('ATK Down', targetElement, 'debuff');
+
+            if (targetElement) {
+                const emojiElement = targetElement.querySelector('.emoji');
+                emojiElement.classList.add('hit');
+                setTimeout(() => emojiElement.classList.remove('hit'), 300);
+            }
+
+            if (monster.hp <= 0) {
+                handleMonsterDeath(monster);
+                totalXpGained += monster.xp;
+            }
+
+            if (index === livingMonsters.length - 1) {
+                if (totalXpGained > 0) gainXP(totalXpGained);
+                updateUI();
+                const allDead = monsters.every(m => m.hp <= 0);
+                if (allDead) winBattle();
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+            }
+        }, index * 150);
+    });
+
+    updateUI();
+}
+
+/**
+ * '술식 반전: 혁' 스킬을 실행하는 함수 (무하한 능력자 전용).
+ * - 모든 적에게 강력한 척력의 피해를 줍니다.
+ */
+function executeCursedTechniqueRed() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const primaryTarget = monsters[player.targetIndex];
+    if (primaryTarget.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(25 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('black-flash');
+
+    log('🔴 술식 반전: 혁! 척력을 방출합니다!', 'log-player');
+
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
+
+    // --- Main Damage ---
+    const mainDmg = Math.floor(player.atk * 2.2 + player.magicDamageBonus);
+    const primaryTargetElement = monsterElements[player.targetIndex];
+    showFloatingText(mainDmg, primaryTargetElement, 'fireball');
+    primaryTarget.hp -= mainDmg;
+    if (primaryTargetElement) {
+        const emojiElement = primaryTargetElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+    if (primaryTarget.hp <= 0) {
+        handleMonsterDeath(primaryTarget);
+    }
+
+    // --- Splash Damage ---
+    const otherLivingMonsters = monsters.filter(m => m.hp > 0 && m !== primaryTarget);
+    const splashDmg = Math.floor(mainDmg * 0.7);
+    const splashChance = 0.80;
+
+    otherLivingMonsters.forEach((monster, index) => {
+        setTimeout(() => {
+            if (monster.hp > 0 && Math.random() < splashChance) {
+                const monsterIndexInAll = monsters.findIndex(m => m === monster);
+                const targetElement = monsterElements[monsterIndexInAll];
+                
+                log(`🔴 혁의 여파가 ${monster.name}에게 튀어 ${splashDmg}의 피해를 입혔습니다.`, 'log-monster');
+                showFloatingText(splashDmg, targetElement, 'damage');
+                monster.hp -= splashDmg;
+
+                if (targetElement) {
+                    const emojiElement = targetElement.querySelector('.emoji');
+                    emojiElement.classList.add('hit');
+                    setTimeout(() => emojiElement.classList.remove('hit'), 300);
+                }
+
+                if (monster.hp <= 0) {
+                    handleMonsterDeath(monster);
+                }
+            }
+
+            // After processing all other monsters, end the turn
+            if (index === otherLivingMonsters.length - 1) {
+                updateUI();
+                const allDead = monsters.every(m => m.hp <= 0);
+                if (allDead) winBattle();
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+            }
+        }, (index + 1) * 150);
+    });
+
+    // If there are no other monsters, end the turn immediately after the main hit.
+    if (otherLivingMonsters.length === 0) {
+        updateUI();
+        const allDead = monsters.every(m => m.hp <= 0);
+        if (allDead) winBattle();
+        else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+    }
+
+    updateUI();
+}
+
+/**
+ * '무한을 두른 주먹' 스킬을 실행하는 함수 (무하한 능력자 전용).
+ * - 단일 대상에게 공격력의 180% 피해를 줍니다.
+ */
+function executeInfinityFist() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+    
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('crit');
+
+    const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
+    const targetMonsterElement = monsterWrappers[player.targetIndex];
+
+    let dmg = Math.floor(player.atk * 1.8 + player.magicDamageBonus);
+    log(`👊 무한을 두른 주먹! ${targetMonster.name}에게 ${dmg}의 피해를 입혔습니다!`, 'log-player');
+    showFloatingText(dmg, targetMonsterElement, 'damage');
+
+    targetMonster.hp -= dmg;
+
+    if (targetMonsterElement) {
+        const emojiElement = targetMonsterElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+
+    updateUI();
+
+    const allDead = monsters.every(m => m.hp <= 0);
+    if (allDead) {
+        if (targetMonster.hp <= 0) {
+            handleMonsterDeath(targetMonster);
+        }
+        winBattle();
+    } else {
+        if (targetMonster.hp <= 0) {
+            handleMonsterDeath(targetMonster);
+            findNextTarget();
+        }
+        setTimeout(playerTurnEnd, 800);
+    }
+}
+
+/**
+ * '허식: 자' 스킬을 실행하는 함수 (무하한 능력자 전용).
+ * - 단일 대상에게 상상을 초월하는 가상의 질량을 날립니다. 
+ */
+function executeHollowPurple() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const primaryTarget = monsters[player.targetIndex];
+    if (primaryTarget.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(40 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('boss-appear');
+
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
+
+    // --- Main Damage ---
+    const mainDmg = Math.floor(player.atk * 4.0 + player.magicDamageBonus);
+    log(`🟣 허식: 자! ${primaryTarget.name}에게 ${mainDmg}의 상상을 초월하는 피해를 입혔습니다!`, 'log-player');
+    const primaryTargetElement = monsterElements[player.targetIndex];
+    showFloatingText(mainDmg, primaryTargetElement, 'black-flash');
+    primaryTarget.hp -= mainDmg;
+    if (primaryTargetElement) {
+        const emojiElement = primaryTargetElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+    if (primaryTarget.hp <= 0) {
+        handleMonsterDeath(primaryTarget);
+    }
+
+    // --- Splash Damage ---
+    const otherLivingMonsters = monsters.filter(m => m.hp > 0 && m !== primaryTarget);
+    const splashDmg = Math.floor(mainDmg * 0.7);
+    const splashChance = 0.65;
+
+    otherLivingMonsters.forEach((monster, index) => {
+        setTimeout(() => {
+            if (monster.hp > 0 && Math.random() < splashChance) {
+                const monsterIndexInAll = monsters.findIndex(m => m === monster);
+                const targetElement = monsterElements[monsterIndexInAll];
+                
+                log(`🟣 자의 여파가 ${monster.name}에게 튀어 ${splashDmg}의 피해를 입혔습니다.`, 'log-monster');
+                showFloatingText(splashDmg, targetElement, 'damage');
+                monster.hp -= splashDmg;
+
+                if (targetElement) {
+                    const emojiElement = targetElement.querySelector('.emoji');
+                    emojiElement.classList.add('hit');
+                    setTimeout(() => emojiElement.classList.remove('hit'), 300);
+                }
+
+                if (monster.hp <= 0) {
+                    handleMonsterDeath(monster);
+                }
+            }
+
+            // After processing all other monsters, end the turn
+            if (index === otherLivingMonsters.length - 1) {
+                updateUI();
+                const allDead = monsters.every(m => m.hp <= 0);
+                if (allDead) winBattle();
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+            }
+        }, (index + 1) * 150);
+    });
+
+    // If there are no other monsters, end the turn immediately after the main hit.
+    if (otherLivingMonsters.length === 0) {
+        updateUI();
+        const allDead = monsters.every(m => m.hp <= 0);
+        if (allDead) winBattle();
+        else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+    }
+
+    updateUI();
+}
+
+//** ============================================================ **//
+//** 10. 저주의 왕 (King of Curses) 스킬
+//** ============================================================ **//
+
+/**
+ * '해' 스킬을 실행하는 함수 (저주의 왕 전용).
+ * - 모든 적에게 공격력의 200% 피해를 줍니다.
+ */
+function executeDismantle() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const totalMpCost = Math.floor(20 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('black-flash');
+
+    log('🔪 해! 모든 적을 베어냅니다!', 'log-player');
+
+    const livingMonsters = monsters.filter(m => m.hp > 0);
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
+    let totalXpGained = 0;
+
+    livingMonsters.forEach((monster, index) => {
+        setTimeout(() => {
+            let dmg = Math.floor(player.atk * 2.0 + player.magicDamageBonus);
+            const monsterIndexInAll = monsters.findIndex(m => m === monster);
+            const targetElement = monsterElements[monsterIndexInAll];
+            
+            showFloatingText(dmg, targetElement, 'damage');
+            monster.hp -= dmg;
+
+            if (targetElement) {
+                const emojiElement = targetElement.querySelector('.emoji');
+                emojiElement.classList.add('hit');
+                setTimeout(() => emojiElement.classList.remove('hit'), 300);
+            }
+
+            if (monster.hp <= 0) {
+                handleMonsterDeath(monster);
+                totalXpGained += monster.xp;
+            }
+
+            if (index === livingMonsters.length - 1) {
+                if (totalXpGained > 0) gainXP(totalXpGained);
+                updateUI();
+                const allDead = monsters.every(m => m.hp <= 0);
+                if (allDead) winBattle();
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+            }
+        }, index * 150);
+    });
+
+    updateUI();
+}
+
+/**
+ * '팔' 스킬을 실행하는 함수 (저주의 왕 전용).
+ * - 단일 대상에게 공격력의 275% 피해를 줍니다.
+ */
+function executeCleave() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(25 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('crit');
+
+    const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
+    const targetMonsterElement = monsterWrappers[player.targetIndex];
+
+    let dmg = Math.floor(player.atk * 2.5 + player.magicDamageBonus);
+    log(`🪓 팔! ${targetMonster.name}에게 ${dmg}의 강력한 피해를 입혔습니다!`, 'log-player');
+    showFloatingText(dmg, targetMonsterElement, 'crit');
+
+    targetMonster.hp -= dmg;
+
+    if (targetMonsterElement) {
+        const emojiElement = targetMonsterElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+
+    updateUI();
+
+    const allDead = monsters.every(m => m.hp <= 0);
+    if (allDead) {
+        if (targetMonster.hp <= 0) handleMonsterDeath(targetMonster);
+        winBattle();
+    } else {
+        if (targetMonster.hp <= 0) {
+            handleMonsterDeath(targetMonster);
+            findNextTarget();
+        }
+        setTimeout(playerTurnEnd, 800);
+    }
+}
+
+/**
+ * '푸가' 스킬을 실행하는 함수 (저주의 왕 전용).
+ * - 단일 대상에게 공격력의 300% 피해를 줍니다.
+ * - 영역 전개 중 사용 시, 영역을 해제하고 500%의 피해를 줍니다.
+ */
+async function executeFuga() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const totalMpCost = Math.floor(30 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    
+    let damageMultiplier;
+    const isDomainFuga = player.domainActive;
+
+    if (isDomainFuga) {
+        playSound('boss-appear');
+        damageMultiplier = 5.0;
+        log(`⛓️ 최대출력 푸가! 모든 적에게 파괴적인 참격을 날리고 영역이 붕괴됩니다!`, 'log-player');
+        deactivateDomain(); // 영역 해제
+    } else {
+        playSound('black-flash');
+        damageMultiplier = 3.0;
+        log(`🎶 푸가! 모든 적에게 참격을 날립니다!`, 'log-player');
+    }
+
+    const livingMonsters = monsters.filter(m => m.hp > 0);
+    const monsterElements = document.querySelectorAll('#monster-area .monster-wrapper');
+    let totalXpGained = 0;
+
+    livingMonsters.forEach((monster, index) => {
+        setTimeout(() => {
+            const dmg = Math.floor(player.atk * damageMultiplier + player.magicDamageBonus);
+            const burnDmg = Math.floor(dmg * 0.2); // 20% of damage as burn
+            const monsterIndexInAll = monsters.findIndex(m => m === monster);
+            const targetElement = monsterElements[monsterIndexInAll];
+
+            showFloatingText(dmg, targetElement, 'black-flash');
+            monster.hp -= dmg;
+
+            // 화상 효과 적용
+            monster.burn = { turns: 3, damage: burnDmg };
+            log(`🔥 ${monster.name}이(가) 참격의 열기로 화상 상태가 되었습니다! (3턴간 ${burnDmg} 피해)`, 'log-monster');
+            if (targetElement) showFloatingText('화상', targetElement, 'burn');
+
+            if (targetElement) {
+                const emojiElement = targetElement.querySelector('.emoji');
+                emojiElement.classList.add('hit');
+                setTimeout(() => emojiElement.classList.remove('hit'), 300);
+            }
+
+            if (monster.hp <= 0) {
+                handleMonsterDeath(monster);
+                totalXpGained += monster.xp;
+            }
+
+            if (index === livingMonsters.length - 1) {
+                if (totalXpGained > 0) gainXP(totalXpGained);
+                updateUI();
+                const allDead = monsters.every(m => m.hp <= 0);
+                if (allDead) winBattle();
+                else { findNextTarget(); setTimeout(playerTurnEnd, 800); }
+            }
+        }, index * 150);
+    });
+
+    updateUI();
+}
+
+/**
+ * '참격을 담은 펀치' 스킬을 실행하는 함수 (저주의 왕 전용).
+ * - 단일 대상에게 공격력의 140% 피해를 줍니다.
+ */
+function executeCleavePunch() {
+    if (isGameOver || !isPlayerTurn) return;
+
+    const targetMonster = monsters[player.targetIndex];
+    if (targetMonster.hp <= 0) {
+        log("이미 쓰러진 몬스터입니다.", 'log-system');
+        return;
+    }
+
+    const totalMpCost = Math.floor(15 * player.mpCostMultiplier);
+    if (player.mp < totalMpCost) {
+        alert(`MP가 부족합니다! (필요: ${totalMpCost})`);
+        return;
+    }
+
+    isPlayerTurn = false;
+    toggleControls(false);
+    player.mp -= totalMpCost;
+    playSound('attack');
+
+    const monsterWrappers = document.querySelectorAll('#monster-area .monster-wrapper');
+    const targetMonsterElement = monsterWrappers[player.targetIndex];
+
+    let dmg = Math.floor(player.atk * 1.5 + player.magicDamageBonus);
+    log(`💥 참격을 담은 펀치! ${targetMonster.name}에게 ${dmg}의 피해를 입혔습니다!`, 'log-player');
+    showFloatingText(dmg, targetMonsterElement, 'damage');
+
+    targetMonster.hp -= dmg;
+
+    if (targetMonsterElement) {
+        const emojiElement = targetMonsterElement.querySelector('.emoji');
+        emojiElement.classList.add('hit');
+        setTimeout(() => emojiElement.classList.remove('hit'), 300);
+    }
+
+    updateUI();
+
+    const allDead = monsters.every(m => m.hp <= 0);
+    if (allDead) {
+        if (targetMonster.hp <= 0) handleMonsterDeath(targetMonster);
+        winBattle();
+    } else {
+        if (targetMonster.hp <= 0) {
+            handleMonsterDeath(targetMonster);
+            findNextTarget();
+        }
+        setTimeout(playerTurnEnd, 800);
     }
 }

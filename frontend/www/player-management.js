@@ -182,6 +182,12 @@ function recalculatePlayerStats() {
     player.maxMp = player.baseMaxMp + (finalMnd * 5);
     player.critChance = baseCritChance + (finalLuk * 0.7) + player.critBuff.bonus;
     player.evasionChance = baseEvasionChance + (finalAgi * 3);
+
+    // 도적: 연막탄 버프 적용
+    if (player.smokeBombBuff.active) {
+        player.evasionChance += 30;
+    }
+
     player.critDamage = 2 + player.critDamageBonus;
     player.goldBonus = 1 + (finalInt * 0.02) + lootGoldBonus;
     player.blackFlashChance = 0.008 + (finalFcs * 0.004);
@@ -202,6 +208,24 @@ function recalculatePlayerStats() {
         player.goldBonus = player.goldBonus * 1.6;
         player.blackFlashChance = player.blackFlashChance * 1.6;
         player.magicDamageBonus = player.magicDamageBonus * 1.6;
+    }
+
+    // 영역 전개 효과 적용 (Hero, Wizard, Rogue)
+    if (player.domainActive) {
+        if (player.characterClass === 'hero') {
+            // 불굴의 투기장: 모든 능력치 2배 증가
+            player.atk = Math.floor(player.atk * 2.0);
+            player.maxHp = Math.floor(player.maxHp * 2.0);
+            player.maxMp = Math.floor(player.maxMp * 2.0);
+            player.critChance = player.critChance * 2.0;
+            player.evasionChance = player.evasionChance * 2.0;
+        } else if (player.characterClass === 'wizard') {
+            // 진리의 문: MP 소모량 85% 감소
+            player.mpCostMultiplier *= 0.15;
+        } else if (player.characterClass === 'rogue') {
+            // 환영의 장막: 회피율 55% 증가
+            player.evasionChance += 55;
+        }
     }
 
     // 회피율 최대치(60%) 적용

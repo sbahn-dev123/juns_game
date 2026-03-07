@@ -212,6 +212,14 @@ function nextFloor() {
  * @returns {Array<object>} - 생성된 몬스터 객체 배열
  */
 function generateMonstersForFloor(floorNumber) {
+    // 새 게임 시작 시(1층) 일부 상태를 초기화하여 이전 게임의 효과가 남는 버그 수정
+    if (floorNumber === 1) {
+        player.domainCooldownUntilFloor = 0;
+        player.skillLockTurns = 0;
+        player.blackFlashBuff = { active: false, duration: 0 };
+        log('새로운 모험을 시작합니다!', 'log-system');
+    }
+
     let generatedMonsters = [];
     const isBossFloor = floorNumber % 10 === 0;
 
@@ -318,6 +326,10 @@ function createMonster(template, multiplier) {
         isDeathProcessed: false, // 사망 처리 여부 플래그
         poison: { turns: 0, damage: 0 },
         burn: { turns: 0, damage: 0 },
+        atkDebuff: { turns: 0, multiplier: 1 }, // 공격력 감소 디버프용
+        stunTurns: 0, // 무량공처 지속 스턴용
+        holyShocked: false, // 성기사 영역 전개 효과용
+        soulPoison: false, // 네크로맨서 영역 전개 효과용
     };
 }
 
@@ -340,5 +352,5 @@ async function gameOver() {
     }
  
     // 게임 오버 모달을 표시합니다.
-    showGameOverModal(floor);
+    showGameOverModal(floor, player.characterClass);
 }

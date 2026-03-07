@@ -59,6 +59,7 @@ const player = {
     domainActive: false, // 영역 전개 활성화 상태
     skillLockTurns: 0, // 영역 해제 후 스킬 사용 불가 턴
     domainCooldownUntilFloor: 0, // 영역 전개 재사용 가능 층
+    domainStartTurn: 0, // 영역 전개 시작 턴
     // --- 계산된 스탯 ---
     evasionChance: 4,   // 최종 회피 확률 (%)
     critChance: 11,     // 최종 치명타 확률 (%)
